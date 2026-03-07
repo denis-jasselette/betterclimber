@@ -60,7 +60,7 @@ export type LogLevel = 'info' | 'warn' | 'error' | 'debug';
 
 export interface LogEntry {
 	id: string;
-	ts: Date;
+	ts: number;
 	level: LogLevel;
 	message: string;
 }
@@ -107,7 +107,7 @@ export class BoardConnector {
 	log(level: LogLevel, message: string): void {
 		const entry: LogEntry = {
 			id: generateId(),
-			ts: new Date(),
+			ts: Date.now(),
 			level,
 			message
 		};
@@ -176,7 +176,7 @@ export class BoardConnector {
 			this.log('info', `Connected to ${this.deviceName}`);
 
 			// Persist to recent boards
-			saveRecentBoard(this.deviceName);
+			if (this.deviceName) saveRecentBoard(this.deviceName);
 			this.recentBoards = loadRecentBoards();
 		} catch (err) {
 			this.rxCharacteristic = null;
