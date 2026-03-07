@@ -1,42 +1,51 @@
-# sv
+# Kilterboard App
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+A Progressive Web App for searching, browsing, and sending climbs to your Kilter Board via Bluetooth Low Energy (BLE).
 
-## Creating a project
+## Features
 
-If you're seeing this, you've probably already done this step. Congrats!
+- **Climb Search** — Filter climbs by angle, grade (V-scale or French), quality, and more
+- **BLE Connectivity** — Send climbs directly to your Kilter Board using the Aurora protocol
+- **Multiple Angles** — Support for all Kilter Board angles (20°–60°)
+- **Grade Systems** — View grades in V-scale or French grading
+- **Offline Support** — PWA-enabled for offline access
+- **Track Progress** — Mark climbs as attempted, ticked, or liked
 
-```sh
-# create a new project
-npx sv create my-app
-```
+## Tech Stack
 
-To recreate this project with the same configuration:
+- **SvelteKit** with Svelte 5
+- **TypeScript**
+- **TailwindCSS**
+- **PWA** (vite-plugin-pwa)
 
-```sh
-# recreate this project
-pnpm dlx sv@0.12.5 create --template minimal --types ts --add prettier eslint tailwindcss="plugins:typography,forms" mcp="ide:opencode" --install pnpm kilterboard-app
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+## Getting Started
 
 ```sh
-npm run dev
+# Install dependencies
+pnpm install
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+# Start development server
+pnpm dev
+
+# Build for production
+pnpm build
 ```
 
-## Building
+## Project Structure
 
-To create a production version of your app:
-
-```sh
-npm run build
 ```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+src/
+├── lib/
+│   ├── ble/              # Bluetooth Low Energy (BLE) protocol
+│   │   ├── aurora-protocol.ts
+│   │   ├── board-connector.ts
+│   │   └── board-connector.svelte.ts
+│   ├── components/      # Svelte UI components
+│   ├── data/             # Types, repository, and data access
+│   └── *.svelte.ts       # Svelte 5 state stores
+└── routes/
+    ├── +page.svelte      # Main climb search page
+    ├── climb/[uuid]/     # Individual climb detail
+    ├── ble-debug/        # BLE debugging tools
+    └── settings/         # User preferences
+```
