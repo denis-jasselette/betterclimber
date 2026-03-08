@@ -37,7 +37,9 @@
 	let loading = $state(false);
 
 	// Seed the shared results store so the detail page can resolve prev/next.
-	untrack(() => { resultsStore.list = data.results ?? []; });
+	untrack(() => {
+		resultsStore.list = data.results ?? [];
+	});
 
 	// ── Mobile filter drawer ─────────────────────────────────────────────────
 	let filterDrawerOpen = $state(false);
@@ -124,7 +126,7 @@
 		<button
 			onclick={() => (filterDrawerOpen = !filterDrawerOpen)}
 			aria-label="Toggle filters"
-			class="relative flex items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-xs font-semibold text-muted transition hover:border-border hover:text-text md:hidden"
+			class="relative flex h-9 items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-3 text-sm font-semibold text-muted transition hover:border-border hover:text-text md:hidden"
 		>
 			<svg
 				class="size-4"
@@ -138,12 +140,18 @@
 				<line x1="8" y1="12" x2="16" y2="12" />
 				<line x1="11" y1="18" x2="13" y2="18" />
 			</svg>
-			Filters
+			<span class="hidden sm:inline">Filters</span>
 			{#if searchStore.filters.gradeMin !== null || searchStore.filters.gradeMax !== null || searchStore.filters.minQuality > 0 || searchStore.filters.excludeTicked || searchStore.filters.onlyAttempted || searchStore.filters.onlyLiked}
 				<span
-					class="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-cyan-500 text-[10px] font-bold text-white"
+					class="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-cyan-500 text-[10px] font-bold text-white"
 				>
-					{[searchStore.filters.gradeMin !== null || searchStore.filters.gradeMax !== null, searchStore.filters.minQuality > 0, searchStore.filters.excludeTicked, searchStore.filters.onlyAttempted, searchStore.filters.onlyLiked].filter(Boolean).length}
+					{[
+						searchStore.filters.gradeMin !== null || searchStore.filters.gradeMax !== null,
+						searchStore.filters.minQuality > 0,
+						searchStore.filters.excludeTicked,
+						searchStore.filters.onlyAttempted,
+						searchStore.filters.onlyLiked
+					].filter(Boolean).length}
 				</span>
 			{/if}
 		</button>
@@ -165,7 +173,7 @@
 
 		<!-- Filter panel -->
 		<aside
-			class="fixed bottom-0 left-0 right-0 z-40 max-h-[85vh] overflow-y-auto rounded-t-2xl border-t border-border bg-bg p-5 transition-transform duration-300 md:sticky md:top-20 md:block md:max-h-none md:w-72 md:shrink-0 md:translate-y-0 md:rounded-none md:border-none md:p-0 {filterDrawerOpen
+			class="fixed right-0 bottom-0 left-0 z-40 max-h-[85vh] overflow-y-auto rounded-t-2xl border-t border-border bg-bg p-5 transition-transform duration-300 md:sticky md:top-20 md:block md:max-h-none md:w-72 md:shrink-0 md:translate-y-0 md:rounded-none md:border-none md:p-0 {filterDrawerOpen
 				? 'translate-y-0'
 				: 'translate-y-full md:translate-y-0'}"
 		>
@@ -177,7 +185,13 @@
 					aria-label="Close filters"
 					class="rounded-lg p-1 text-muted hover:text-text"
 				>
-					<svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<svg
+						class="size-5"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
 						<path d="M18 6 6 18M6 6l12 12" />
 					</svg>
 				</button>
@@ -205,7 +219,9 @@
 						<path d="M3 20h18M3 20 12 4l9 16" />
 					</svg>
 					<p class="text-base font-semibold text-muted">Select an angle to get started</p>
-					<p class="text-sm text-muted/70">Use the angle picker in the top bar to choose your board angle.</p>
+					<p class="text-sm text-muted/70">
+						Use the angle picker in the top bar to choose your board angle.
+					</p>
 				</div>
 			{:else if loading}
 				<!-- Skeleton cards -->
@@ -233,7 +249,13 @@
 				<div class="space-y-3">
 					<VirtualList items={results} pageSize={20} key={(item) => item.climb.uuid}>
 						{#snippet children(item)}
-							<ClimbCard {item} {connector} href="/climb/{item.climb.uuid}{effectiveAngle !== null ? `?angle=${effectiveAngle}` : ''}" />
+							<ClimbCard
+								{item}
+								{connector}
+								href="/climb/{item.climb.uuid}{effectiveAngle !== null
+									? `?angle=${effectiveAngle}`
+									: ''}"
+							/>
 						{/snippet}
 					</VirtualList>
 				</div>

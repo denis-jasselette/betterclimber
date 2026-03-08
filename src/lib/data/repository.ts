@@ -14,24 +14,24 @@
  *   resolveHolds(climb)     → Promise<ResolvedHold[]>
  */
 
-import type {
-	Climb,
-	ClimbFilters,
-	ClimbStats,
-	ClimbWithStats,
-	Led,
-	Placement,
-	ResolvedHold
-} from './types';
-import { difficultyToGrade, gradeToDifficulty, DIFFICULTY_GRADES } from './types';
 import { parseFrames } from './frames-parser';
 import { getUuidsWhere } from './log-service';
+import type {
+    Climb,
+    ClimbFilters,
+    ClimbStats,
+    ClimbWithStats,
+    Led,
+    Placement,
+    ResolvedHold
+} from './types';
+import { DIFFICULTY_GRADES } from './types';
 
 // ── Mock data imports ────────────────────────────────────────────────────────
-import climbsJson from './mock/climbs.json';
 import climbStatsJson from './mock/climb-stats.json';
-import placementsJson from './mock/placements.json';
+import climbsJson from './mock/climbs.json';
 import ledsJson from './mock/leds.json';
+import placementsJson from './mock/placements.json';
 
 // Cast the raw JSON to typed arrays
 const allClimbs = climbsJson as Climb[];

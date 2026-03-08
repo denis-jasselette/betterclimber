@@ -38,33 +38,58 @@
 <div data-dropdown class="relative">
 	<button
 		bind:this={buttonEl}
-		onclick={(e) => { e.stopPropagation(); open = !open; }}
-		class="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-semibold transition active:scale-95
+		onclick={(e) => {
+			e.stopPropagation();
+			open = !open;
+		}}
+		class="flex h-9 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition active:scale-95
 			{angle !== null
-				? 'border-orange-500 bg-orange-500/15 text-orange-300'
-				: 'border-border bg-surface-raised text-muted hover:border-border hover:text-text'}"
+			? 'border-orange-500 bg-orange-500/15 text-orange-300'
+			: 'border-border bg-surface-raised text-muted hover:border-border hover:text-text'}"
 	>
 		<!-- Angle icon -->
-		<svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+		<svg
+			class="size-4 shrink-0"
+			xmlns="http://www.w3.org/2000/svg"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2"
+		>
 			<path d="M3 20h18M3 20 12 4l9 16" />
 		</svg>
 		<span>{angle !== null ? `${angle}°` : 'Angle'}</span>
-		<svg class="size-3.5 shrink-0 transition-transform {open ? 'rotate-180' : ''}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+		<svg
+			class="size-3.5 shrink-0 transition-transform {open ? 'rotate-180' : ''}"
+			xmlns="http://www.w3.org/2000/svg"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2.5"
+		>
 			<path d="m6 9 6 6 6-6" />
 		</svg>
 	</button>
 
 	{#if open}
-		<div class="absolute right-0 top-full z-50 mt-1.5 min-w-[7rem] overflow-hidden rounded-xl border border-border bg-surface shadow-2xl">
+		<div
+			class="absolute top-full right-0 z-50 mt-1.5 min-w-[7rem] overflow-hidden rounded-xl border border-border bg-surface shadow-2xl"
+		>
 			{#each ALL_ANGLES as a}
 				<button
 					onclick={() => select(a)}
 					class="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-sm transition hover:bg-surface-raised
-						{angle === a ? 'text-orange-300 font-semibold' : 'text-text/80'}"
+						{angle === a ? 'font-semibold text-orange-300' : 'text-text/80'}"
 				>
 					{a}°
 					{#if angle === a}
-						<svg class="size-3.5 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+						<svg
+							class="size-3.5 text-orange-400"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="3"
+						>
 							<path d="M20 6 9 17l-5-5" />
 						</svg>
 					{/if}

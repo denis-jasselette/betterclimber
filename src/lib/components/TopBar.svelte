@@ -22,7 +22,9 @@
 	const displayAngle = $derived(angleProp !== undefined ? angleProp : searchStore.angle);
 </script>
 
-<header class="sticky top-0 z-50 flex items-center gap-3 border-b border-border bg-bg/90 px-4 py-3 backdrop-blur-sm">
+<header
+	class="sticky top-0 z-50 flex items-center gap-3 border-b border-border bg-bg/90 px-4 py-3 backdrop-blur-sm"
+>
 	<!-- Logo + title -->
 	<div class="flex items-center gap-2">
 		<svg
@@ -44,7 +46,7 @@
 			<circle cx="12" cy="16" r="1.5" fill="currentColor" stroke="none" />
 			<circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="none" />
 		</svg>
-		<span class="text-base font-bold tracking-tight text-text">Kilterboard</span>
+		<span class="hidden text-base font-bold tracking-tight text-text sm:inline">Kilterboard</span>
 	</div>
 
 	<div class="flex-1"></div>

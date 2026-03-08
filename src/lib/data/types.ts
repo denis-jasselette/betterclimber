@@ -189,7 +189,7 @@ export const ALL_GRADES: string[] = [
 ];
 
 /** All supported board angles for the Kilter Board. */
-export const ALL_ANGLES = [20, 25, 30, 35, 40, 45, 50, 55, 60] as const;
+export const ALL_ANGLES = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70] as const;
 export type Angle = (typeof ALL_ANGLES)[number];
 
 // ─── Search / filter types ───────────────────────────────────────────────────
