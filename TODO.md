@@ -1,0 +1,7 @@
+- [ ] Migrate to biome for linting
+- [ ] GitHub action to check linting, types, build
+- [ ] Setup dependabot
+- [ ] Enforce quality gates before committing by setting up instructions in CLAUDE.md
+- [ ] Provide context about the project in CLAUDE.md or doc/ files for lazy loading to optimize future context loading
+- [ ] Still an issue with a horizontal scrollbar showing on the filter lateral menu, debug using playwright-cli
+- [ ] Investigate how we can sync more climbs from the database file to give access to the full list of climbs available from the proprietary app
