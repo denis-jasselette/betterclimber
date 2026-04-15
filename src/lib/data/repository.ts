@@ -14,8 +14,13 @@
  *   resolveHolds(climb)     → Promise<ResolvedHold[]>
  */
 
-import { parseFrames } from './frames-parser';
-import { getUuidsWhere } from './log-service';
+import { parseFrames } from './frames-parser'
+import { getUuidsWhere } from './log-service'
+// ── Mock data imports ────────────────────────────────────────────────────────
+import climbStatsJson from './mock/climb-stats.json'
+import climbsJson from './mock/climbs.json'
+import ledsJson from './mock/leds.json'
+import placementsJson from './mock/placements.json'
 import type {
 	Climb,
 	ClimbFilters,
@@ -24,40 +29,34 @@ import type {
 	Led,
 	Placement,
 	ResolvedHold
-} from './types';
-import { DIFFICULTY_GRADES } from './types';
-
-// ── Mock data imports ────────────────────────────────────────────────────────
-import climbStatsJson from './mock/climb-stats.json';
-import climbsJson from './mock/climbs.json';
-import ledsJson from './mock/leds.json';
-import placementsJson from './mock/placements.json';
+} from './types'
+import { DIFFICULTY_GRADES } from './types'
 
 // Cast the raw JSON to typed arrays
-const allClimbs = climbsJson as Climb[];
-const allStats = climbStatsJson as ClimbStats[];
-const allPlacements = placementsJson as Placement[];
-const allLeds = ledsJson as Led[];
+const allClimbs = climbsJson as Climb[]
+const allStats = climbStatsJson as ClimbStats[]
+const allPlacements = placementsJson as Placement[]
+const allLeds = ledsJson as Led[]
 
 // ── Index maps for O(1) lookups ───────────────────────────────────────────────
 
 /** placement_id → Led.position */
-const ledByPlacementId = new Map<number, number>();
+const ledByPlacementId = new Map<number, number>()
 {
 	// Build: placement → hole_id, hole_id → led.position
-	const holeToLedPos = new Map<number, number>(allLeds.map((l) => [l.hole_id, l.position]));
+	const holeToLedPos = new Map<number, number>(allLeds.map((l) => [l.hole_id, l.position]))
 	for (const p of allPlacements) {
-		const pos = holeToLedPos.get(p.hole_id);
-		if (pos !== undefined) ledByPlacementId.set(p.id, pos);
+		const pos = holeToLedPos.get(p.hole_id)
+		if (pos !== undefined) ledByPlacementId.set(p.id, pos)
 	}
 }
 
 /** climb_uuid → ClimbStats[] */
-const statsByClimbUuid = new Map<string, ClimbStats[]>();
+const statsByClimbUuid = new Map<string, ClimbStats[]>()
 for (const s of allStats) {
-	const arr = statsByClimbUuid.get(s.climb_uuid) ?? [];
-	arr.push(s);
-	statsByClimbUuid.set(s.climb_uuid, arr);
+	const arr = statsByClimbUuid.get(s.climb_uuid) ?? []
+	arr.push(s)
+	statsByClimbUuid.set(s.climb_uuid, arr)
 }
 
 // ── Internal helpers ─────────────────────────────────────────────────────────
@@ -67,10 +66,10 @@ for (const s of allStats) {
  * Prefers a benchmark record, otherwise highest ascent count.
  */
 function pickBestStats(stats: ClimbStats[]): ClimbStats | null {
-	if (stats.length === 0) return null;
-	const benchmark = stats.find((s) => s.benchmark_difficulty !== null);
-	if (benchmark) return benchmark;
-	return stats.reduce((best, s) => (s.ascent_count > best.ascent_count ? s : best), stats[0]);
+	if (stats.length === 0) return null
+	const benchmark = stats.find((s) => s.benchmark_difficulty !== null)
+	if (benchmark) return benchmark
+	return stats.reduce((best, s) => (s.ascent_count > best.ascent_count ? s : best), stats[0])
 }
 
 /**
@@ -79,31 +78,31 @@ function pickBestStats(stats: ClimbStats[]): ClimbStats | null {
  */
 function pickActiveStats(stats: ClimbStats[], angle: number | null): ClimbStats | null {
 	if (angle !== null) {
-		const atAngle = stats.find((s) => s.angle === angle);
-		if (atAngle) return atAngle;
+		const atAngle = stats.find((s) => s.angle === angle)
+		if (atAngle) return atAngle
 	}
-	return pickBestStats(stats);
+	return pickBestStats(stats)
 }
 
 function joinClimb(climb: Climb, angle: number | null): ClimbWithStats {
-	const stats = statsByClimbUuid.get(climb.uuid) ?? [];
-	return { climb, stats, activeStats: pickActiveStats(stats, angle) };
+	const stats = statsByClimbUuid.get(climb.uuid) ?? []
+	return { climb, stats, activeStats: pickActiveStats(stats, angle) }
 }
 
 // ── Grade range helpers ───────────────────────────────────────────────────────
 
 /** Minimum numeric difficulty for a given V-grade label. */
 function gradeToMinDifficulty(grade: string): number {
-	const matches = DIFFICULTY_GRADES.filter((g) => g.boulder_name === grade);
-	if (matches.length === 0) return 0;
-	return Math.min(...matches.map((g) => g.difficulty));
+	const matches = DIFFICULTY_GRADES.filter((g) => g.boulder_name === grade)
+	if (matches.length === 0) return 0
+	return Math.min(...matches.map((g) => g.difficulty))
 }
 
 /** Maximum numeric difficulty for a given V-grade label. */
 function gradeToMaxDifficulty(grade: string): number {
-	const matches = DIFFICULTY_GRADES.filter((g) => g.boulder_name === grade);
-	if (matches.length === 0) return Infinity;
-	return Math.max(...matches.map((g) => g.difficulty));
+	const matches = DIFFICULTY_GRADES.filter((g) => g.boulder_name === grade)
+	if (matches.length === 0) return Infinity
+	return Math.max(...matches.map((g) => g.difficulty))
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -129,88 +128,88 @@ export async function searchClimbs(
 		onlyCampus = false,
 		onlyRoutes = false,
 		onlyRecentlyLit = false
-	} = filters;
+	} = filters
 
-	const queryLower = query.trim().toLowerCase();
+	const queryLower = query.trim().toLowerCase()
 
 	// Pre-load user log sets (sync, from localStorage)
-	const tickedUuids = excludeTicked ? getUuidsWhere((e) => e.ticked) : new Set<string>();
+	const tickedUuids = excludeTicked ? getUuidsWhere((e) => e.ticked) : new Set<string>()
 	const attemptedUuids = onlyAttempted
 		? getUuidsWhere((e) => e.attemptCount > 0)
-		: new Set<string>();
-	const likedUuids = onlyLiked ? getUuidsWhere((e) => e.liked) : new Set<string>();
-	const litUuids = onlyRecentlyLit ? getUuidsWhere((e) => !!e.lastLitAt) : new Set<string>();
+		: new Set<string>()
+	const likedUuids = onlyLiked ? getUuidsWhere((e) => e.liked) : new Set<string>()
+	const litUuids = onlyRecentlyLit ? getUuidsWhere((e) => !!e.lastLitAt) : new Set<string>()
 
 	// Pre-compute grade range as numeric difficulty bounds
-	const diffMin = gradeMin !== null ? gradeToMinDifficulty(gradeMin) : -Infinity;
-	const diffMax = gradeMax !== null ? gradeToMaxDifficulty(gradeMax) : Infinity;
-	const hasGradeFilter = gradeMin !== null || gradeMax !== null;
+	const diffMin = gradeMin !== null ? gradeToMinDifficulty(gradeMin) : -Infinity
+	const diffMax = gradeMax !== null ? gradeToMaxDifficulty(gradeMax) : Infinity
+	const hasGradeFilter = gradeMin !== null || gradeMax !== null
 
-	const results: ClimbWithStats[] = [];
+	const results: ClimbWithStats[] = []
 
 	for (const climb of allClimbs) {
-		if (climb.is_draft) continue;
+		if (climb.is_draft) continue
 
 		// User-log exclusions / inclusions
-		if (excludeTicked && tickedUuids.has(climb.uuid)) continue;
-		if (onlyAttempted && !attemptedUuids.has(climb.uuid)) continue;
-		if (onlyLiked && !likedUuids.has(climb.uuid)) continue;
-		if (onlyRecentlyLit && !litUuids.has(climb.uuid)) continue;
+		if (excludeTicked && tickedUuids.has(climb.uuid)) continue
+		if (onlyAttempted && !attemptedUuids.has(climb.uuid)) continue
+		if (onlyLiked && !likedUuids.has(climb.uuid)) continue
+		if (onlyRecentlyLit && !litUuids.has(climb.uuid)) continue
 
 		// Text search
 		if (queryLower) {
-			const nameMatch = climb.name.toLowerCase().includes(queryLower);
-			const setterMatch = climb.setter_username.toLowerCase().includes(queryLower);
-			if (!nameMatch && !setterMatch) continue;
+			const nameMatch = climb.name.toLowerCase().includes(queryLower)
+			const setterMatch = climb.setter_username.toLowerCase().includes(queryLower)
+			if (!nameMatch && !setterMatch) continue
 		}
 
-		const stats = statsByClimbUuid.get(climb.uuid) ?? [];
+		const stats = statsByClimbUuid.get(climb.uuid) ?? []
 
 		// Angle filter: match climbs that have stats at the selected angle
 		if (angle !== null) {
 			const hasAngle =
-				stats.some((s) => s.angle === angle) || (climb.angle !== null && climb.angle === angle);
-			if (!hasAngle) continue;
+				stats.some((s) => s.angle === angle) || (climb.angle !== null && climb.angle === angle)
+			if (!hasAngle) continue
 		}
 
 		// Pick the stats record relevant to the selected angle for filtering + display
-		const activeStats = pickActiveStats(stats, angle);
+		const activeStats = pickActiveStats(stats, angle)
 
 		// Grade range filter (applied to difficulty from activeStats)
 		if (hasGradeFilter) {
-			if (!activeStats) continue;
-			const d = activeStats.difficulty_average;
-			if (d < diffMin || d > diffMax) continue;
+			if (!activeStats) continue
+			const d = activeStats.difficulty_average
+			if (d < diffMin || d > diffMax) continue
 		}
 
 		// Quality filter
 		if (minQuality > 0) {
-			if (!activeStats || activeStats.quality_average < minQuality) continue;
+			if (!activeStats || activeStats.quality_average < minQuality) continue
 		}
 
 		// Benchmark filter
 		if (onlyBenchmarks) {
-			if (!activeStats || activeStats.benchmark_difficulty === null) continue;
+			if (!activeStats || activeStats.benchmark_difficulty === null) continue
 		}
 
 		// Campus / route type filters
-		if (onlyCampus && !climb.is_campus) continue;
-		if (onlyRoutes && !climb.is_route) continue;
+		if (onlyCampus && !climb.is_campus) continue
+		if (onlyRoutes && !climb.is_route) continue
 
-		results.push({ climb, stats, activeStats });
+		results.push({ climb, stats, activeStats })
 	}
 
 	// Default sort: quality desc, then difficulty asc
 	results.sort((a, b) => {
-		const qa = a.activeStats?.quality_average ?? 0;
-		const qb = b.activeStats?.quality_average ?? 0;
-		if (qb !== qa) return qb - qa;
-		const da = a.activeStats?.difficulty_average ?? 0;
-		const db = b.activeStats?.difficulty_average ?? 0;
-		return da - db;
-	});
+		const qa = a.activeStats?.quality_average ?? 0
+		const qb = b.activeStats?.quality_average ?? 0
+		if (qb !== qa) return qb - qa
+		const da = a.activeStats?.difficulty_average ?? 0
+		const db = b.activeStats?.difficulty_average ?? 0
+		return da - db
+	})
 
-	return results;
+	return results
 }
 
 /**
@@ -220,9 +219,9 @@ export async function getClimb(
 	uuid: string,
 	angle: number | null = null
 ): Promise<ClimbWithStats | null> {
-	const climb = allClimbs.find((c) => c.uuid === uuid);
-	if (!climb) return null;
-	return joinClimb(climb, angle);
+	const climb = allClimbs.find((c) => c.uuid === uuid)
+	if (!climb) return null
+	return joinClimb(climb, angle)
 }
 
 /**
@@ -230,27 +229,27 @@ export async function getClimb(
  * These are used directly by the BLE module to light up the board.
  */
 export async function resolveHolds(climb: Climb): Promise<ResolvedHold[]> {
-	const tokens = parseFrames(climb.frames);
-	const resolved: ResolvedHold[] = [];
+	const tokens = parseFrames(climb.frames)
+	const resolved: ResolvedHold[] = []
 	for (const token of tokens) {
-		const ledPosition = ledByPlacementId.get(token.placementId);
-		if (ledPosition === undefined) continue; // hold not on this board config
+		const ledPosition = ledByPlacementId.get(token.placementId)
+		if (ledPosition === undefined) continue // hold not on this board config
 		resolved.push({
 			placementId: token.placementId,
 			roleId: token.roleId,
 			ledPosition
-		});
+		})
 	}
-	return resolved;
+	return resolved
 }
 
 /**
  * Returns all unique angles that have climb data.
  */
 export async function getAvailableAngles(): Promise<number[]> {
-	const angles = new Set<number>();
-	for (const s of allStats) angles.add(s.angle);
-	return [...angles].sort((a, b) => a - b);
+	const angles = new Set<number>()
+	for (const s of allStats) angles.add(s.angle)
+	return [...angles].sort((a, b) => a - b)
 }
 
 // ── Real API upgrade path (not implemented yet) ──────────────────────────────

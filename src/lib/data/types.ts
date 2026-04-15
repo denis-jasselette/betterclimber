@@ -7,19 +7,19 @@
 
 /** A physical hole in the board surface. */
 export interface Hole {
-	id: number;
+	id: number
 	/** Pixel x-coordinate on the board image (origin top-left). */
-	x: number;
+	x: number
 	/** Pixel y-coordinate on the board image (origin top-left). */
-	y: number;
+	y: number
 }
 
 /** Maps a hole to an LED strip position address used for BLE commands. */
 export interface Led {
-	id: number;
-	hole_id: number;
+	id: number
+	hole_id: number
 	/** The BLE address sent in the Aurora protocol packet. */
-	position: number;
+	position: number
 }
 
 /**
@@ -27,10 +27,10 @@ export interface Led {
  * The `frames` string in a climb references placement IDs.
  */
 export interface Placement {
-	id: number;
-	hole_id: number;
-	set_id: number;
-	layout_id: number;
+	id: number
+	hole_id: number
+	set_id: number
+	layout_id: number
 }
 
 // ─── Hold roles (colors) ────────────────────────────────────────────────────
@@ -44,9 +44,9 @@ export const ROLE = {
 	HAND: 13,
 	FINISH: 14,
 	FOOT: 15
-} as const;
+} as const
 
-export type RoleId = (typeof ROLE)[keyof typeof ROLE];
+export type RoleId = (typeof ROLE)[keyof typeof ROLE]
 
 /** LED colors (8-bit RGB) for each hold role, matching the real app. */
 export const ROLE_COLORS: Record<RoleId, { r: number; g: number; b: number; hex: string }> = {
@@ -54,7 +54,7 @@ export const ROLE_COLORS: Record<RoleId, { r: number; g: number; b: number; hex:
 	[ROLE.HAND]: { r: 0x00, g: 0xff, b: 0xff, hex: '#00ffff' }, // cyan
 	[ROLE.FINISH]: { r: 0xff, g: 0x00, b: 0xff, hex: '#ff00ff' }, // magenta
 	[ROLE.FOOT]: { r: 0xff, g: 0xaa, b: 0x00, hex: '#ffaa00' } // amber
-};
+}
 
 /** Human-readable label for each role. */
 export const ROLE_LABELS: Record<RoleId, string> = {
@@ -62,7 +62,7 @@ export const ROLE_LABELS: Record<RoleId, string> = {
 	[ROLE.HAND]: 'Hand',
 	[ROLE.FINISH]: 'Finish',
 	[ROLE.FOOT]: 'Foot'
-};
+}
 
 // ─── Climbs ─────────────────────────────────────────────────────────────────
 
@@ -71,32 +71,32 @@ export const ROLE_LABELS: Record<RoleId, string> = {
  * e.g. "p1083r15" → { placementId: 1083, roleId: 15 }
  */
 export interface HoldToken {
-	placementId: number;
-	roleId: RoleId;
+	placementId: number
+	roleId: RoleId
 }
 
 /**
  * Core climb record (mirrors the `climbs` table).
  */
 export interface Climb {
-	uuid: string;
-	layout_id: number;
-	setter_id: number;
-	setter_username: string;
-	name: string;
-	description: string;
+	uuid: string
+	layout_id: number
+	setter_id: number
+	setter_username: string
+	name: string
+	description: string
 	/** Encoded hold string, e.g. "p1083r15p1117r15p1164r12..." */
-	frames: string;
-	frames_count: number;
+	frames: string
+	frames_count: number
 	/** If set, the climb is designed for a specific angle; null = any angle. */
-	angle: number | null;
-	is_draft: boolean;
+	angle: number | null
+	is_draft: boolean
 	/** Whether hand matching on the start holds is allowed. */
-	allow_matches: boolean;
+	allow_matches: boolean
 	/** Campus problem — no feet used. */
-	is_campus: boolean;
+	is_campus: boolean
 	/** Set as a route (top-out style) rather than a boulder. */
-	is_route: boolean;
+	is_route: boolean
 }
 
 /**
@@ -104,17 +104,17 @@ export interface Climb {
  * There may be multiple records per climb (one per voted angle).
  */
 export interface ClimbStats {
-	climb_uuid: string;
+	climb_uuid: string
 	/** Board angle in degrees (e.g. 20, 25, 30, 35, 40, 45). */
-	angle: number;
+	angle: number
 	/** Average community-voted difficulty (numeric). Maps to V-grade via DIFFICULTY_GRADES. */
-	difficulty_average: number;
+	difficulty_average: number
 	/** Official benchmark difficulty (numeric), or null if not benchmarked. */
-	benchmark_difficulty: number | null;
+	benchmark_difficulty: number | null
 	/** Stars 1–3, community average. */
-	quality_average: number;
+	quality_average: number
 	/** Total number of ascents logged at this angle. */
-	ascent_count: number;
+	ascent_count: number
 }
 
 // ─── Grades ─────────────────────────────────────────────────────────────────
@@ -124,9 +124,9 @@ export interface ClimbStats {
  * Mirrors the `difficulty_grades` table.
  */
 export interface DifficultyGrade {
-	difficulty: number;
+	difficulty: number
 	/** e.g. "V0", "V5", "V10" */
-	boulder_name: string;
+	boulder_name: string
 }
 
 /** The canonical grade table for Kilter Board difficulty values. */
@@ -163,32 +163,32 @@ export const DIFFICULTY_GRADES: DifficultyGrade[] = [
 	{ difficulty: 30, boulder_name: 'V15' },
 	{ difficulty: 31, boulder_name: 'V16' },
 	{ difficulty: 32, boulder_name: 'V17' }
-];
+]
 
 /** Lookup: numeric difficulty → V-grade string */
 export function difficultyToGrade(difficulty: number): string {
-	const exact = DIFFICULTY_GRADES.find((g) => g.difficulty === Math.round(difficulty));
-	if (exact) return exact.boulder_name;
+	const exact = DIFFICULTY_GRADES.find((g) => g.difficulty === Math.round(difficulty))
+	if (exact) return exact.boulder_name
 	// Fallback: clamp to nearest
 	const sorted = [...DIFFICULTY_GRADES].sort(
 		(a, b) => Math.abs(a.difficulty - difficulty) - Math.abs(b.difficulty - difficulty)
-	);
-	return sorted[0]?.boulder_name ?? 'V?';
+	)
+	return sorted[0]?.boulder_name ?? 'V?'
 }
 
 /** Lookup: V-grade string → numeric difficulty (midpoint if multiple) */
 export function gradeToDifficulty(grade: string): number {
-	const matches = DIFFICULTY_GRADES.filter((g) => g.boulder_name === grade);
-	if (matches.length === 0) return 0;
-	return matches[Math.floor(matches.length / 2)].difficulty;
+	const matches = DIFFICULTY_GRADES.filter((g) => g.boulder_name === grade)
+	if (matches.length === 0) return 0
+	return matches[Math.floor(matches.length / 2)].difficulty
 }
 
 /** All distinct V-grade labels in order. */
-export const ALL_GRADES: string[] = [...new Set(DIFFICULTY_GRADES.map((g) => g.boulder_name))];
+export const ALL_GRADES: string[] = [...new Set(DIFFICULTY_GRADES.map((g) => g.boulder_name))]
 
 /** All supported board angles for the Kilter Board. */
-export const ALL_ANGLES = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70] as const;
-export type Angle = (typeof ALL_ANGLES)[number];
+export const ALL_ANGLES = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70] as const
+export type Angle = (typeof ALL_ANGLES)[number]
 
 // ─── Search / filter types ───────────────────────────────────────────────────
 
@@ -198,48 +198,48 @@ export interface ClimbFilters {
 	 * null means no bound on that side (open range).
 	 * If both are null, no grade filtering is applied.
 	 */
-	gradeMin: string | null;
-	gradeMax: string | null;
+	gradeMin: string | null
+	gradeMax: string | null
 	/** Minimum quality stars (1–3). 0 = no filter. */
-	minQuality: number;
+	minQuality: number
 	/** Free-text search matched against name and setter_username. */
-	query: string;
+	query: string
 	/** Hide climbs the user has already ticked (sent). */
-	excludeTicked: boolean;
+	excludeTicked: boolean
 	/** Show only climbs the user has logged an attempt on. */
-	onlyAttempted: boolean;
+	onlyAttempted: boolean
 	/** Show only climbs the user has liked. */
-	onlyLiked: boolean;
+	onlyLiked: boolean
 	/** Show only benchmark climbs (those with a benchmark_difficulty set at the active angle). */
-	onlyBenchmarks: boolean;
+	onlyBenchmarks: boolean
 	/** Show only campus problems (no feet). */
-	onlyCampus: boolean;
+	onlyCampus: boolean
 	/** Show only route-style climbs (top-out). */
-	onlyRoutes: boolean;
+	onlyRoutes: boolean
 	/** Show only climbs that have been lit up on the board at least once. */
-	onlyRecentlyLit: boolean;
+	onlyRecentlyLit: boolean
 }
 
 /** A climb enriched with its stats for display, joined across tables. */
 export interface ClimbWithStats {
-	climb: Climb;
+	climb: Climb
 	/** Stats for each angle that has community data. */
-	stats: ClimbStats[];
+	stats: ClimbStats[]
 	/**
 	 * Stats for the currently selected angle, or the best overall record if
 	 * no angle is selected. Used for quality/ascent display on the card.
 	 */
-	activeStats: ClimbStats | null;
+	activeStats: ClimbStats | null
 }
 
 // ─── Parsed hold ─────────────────────────────────────────────────────────────
 
 /** A hold ready for BLE transmission or display, with position resolved. */
 export interface ResolvedHold {
-	placementId: number;
-	roleId: RoleId;
+	placementId: number
+	roleId: RoleId
 	/** LED position address for BLE packet encoding. */
-	ledPosition: number;
+	ledPosition: number
 }
 
 // ─── French grade mapping ────────────────────────────────────────────────────
@@ -269,7 +269,7 @@ export const V_TO_FRENCH: Record<string, string> = {
 	V15: '8C',
 	V16: '8C+',
 	V17: '9A'
-};
+}
 
 /**
  * Format a V-grade string according to the user's grading system preference.
@@ -277,6 +277,6 @@ export const V_TO_FRENCH: Record<string, string> = {
  * @param system  'v-scale' | 'french'
  */
 export function formatGrade(vGrade: string, system: 'v-scale' | 'french'): string {
-	if (system === 'v-scale') return vGrade;
-	return V_TO_FRENCH[vGrade] ?? vGrade;
+	if (system === 'v-scale') return vGrade
+	return V_TO_FRENCH[vGrade] ?? vGrade
 }

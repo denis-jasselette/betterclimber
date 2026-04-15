@@ -1,39 +1,39 @@
 <script lang="ts">
-	import { searchStore } from '$lib/search-store.svelte';
-	import GradeRangeSlider from './GradeRangeSlider.svelte';
+import { searchStore } from '$lib/search-store.svelte'
+import GradeRangeSlider from './GradeRangeSlider.svelte'
 
-	let { resultCount }: { resultCount: number } = $props();
+let { resultCount }: { resultCount: number } = $props()
 
-	const filters = searchStore.filters;
+const filters = searchStore.filters
 
-	const hasActiveFilters = $derived(
-		filters.gradeMin !== null ||
-			filters.gradeMax !== null ||
-			filters.minQuality > 0 ||
-			filters.query.trim().length > 0 ||
-			filters.excludeTicked ||
-			filters.onlyAttempted ||
-			filters.onlyLiked ||
-			filters.onlyRecentlyLit ||
-			filters.onlyBenchmarks ||
-			filters.onlyCampus ||
-			filters.onlyRoutes
-	);
+const hasActiveFilters = $derived(
+	filters.gradeMin !== null ||
+		filters.gradeMax !== null ||
+		filters.minQuality > 0 ||
+		filters.query.trim().length > 0 ||
+		filters.excludeTicked ||
+		filters.onlyAttempted ||
+		filters.onlyLiked ||
+		filters.onlyRecentlyLit ||
+		filters.onlyBenchmarks ||
+		filters.onlyCampus ||
+		filters.onlyRoutes
+)
 
-	const qualityStars = [1, 2, 3] as const;
+const qualityStars = [1, 2, 3] as const
 
-	// Advanced section open state — local so the user can freely toggle it
-	// without it snapping shut when a filter is cleared.
-	// It is forced open (but never forced closed) when an advanced filter becomes active.
-	let advancedOpen = $state(
-		filters.minQuality > 0 || filters.onlyBenchmarks || filters.onlyCampus || filters.onlyRoutes
-	);
-	const hasAdvancedFilter = $derived(
-		filters.minQuality > 0 || filters.onlyBenchmarks || filters.onlyCampus || filters.onlyRoutes
-	);
-	$effect(() => {
-		if (hasAdvancedFilter) advancedOpen = true;
-	});
+// Advanced section open state — local so the user can freely toggle it
+// without it snapping shut when a filter is cleared.
+// It is forced open (but never forced closed) when an advanced filter becomes active.
+let advancedOpen = $state(
+	filters.minQuality > 0 || filters.onlyBenchmarks || filters.onlyCampus || filters.onlyRoutes
+)
+const hasAdvancedFilter = $derived(
+	filters.minQuality > 0 || filters.onlyBenchmarks || filters.onlyCampus || filters.onlyRoutes
+)
+$effect(() => {
+	if (hasAdvancedFilter) advancedOpen = true
+})
 </script>
 
 <div class="space-y-5">

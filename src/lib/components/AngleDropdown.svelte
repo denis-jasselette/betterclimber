@@ -1,37 +1,37 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	import { page } from '$app/state';
-	import { ALL_ANGLES } from '$lib/data/types';
+import { goto } from '$app/navigation'
+import { page } from '$app/state'
+import { ALL_ANGLES } from '$lib/data/types'
 
-	let {
-		angle
-	}: {
-		angle: number | null;
-	} = $props();
+let {
+	angle
+}: {
+	angle: number | null
+} = $props()
 
-	let open = $state(false);
-	let buttonEl = $state<HTMLButtonElement | null>(null);
+let open = $state(false)
+let buttonEl = $state<HTMLButtonElement | null>(null)
 
-	function select(value: number) {
-		open = false;
-		// Update the URL search param — the load function will re-run and
-		// the page component will sync the store from page data.
-		const url = new URL(page.url);
-		url.searchParams.set('angle', String(value));
-		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		goto(url.toString(), { replaceState: true, keepFocus: true, noScroll: true });
+function select(value: number) {
+	open = false
+	// Update the URL search param — the load function will re-run and
+	// the page component will sync the store from page data.
+	const url = new URL(page.url)
+	url.searchParams.set('angle', String(value))
+	// eslint-disable-next-line svelte/no-navigation-without-resolve
+	goto(url.toString(), { replaceState: true, keepFocus: true, noScroll: true })
+}
+
+function onKeydown(e: KeyboardEvent) {
+	if (e.key === 'Escape') open = false
+}
+
+// Close on outside click
+function onOutsideClick(e: MouseEvent) {
+	if (buttonEl && !buttonEl.closest('[data-dropdown]')?.contains(e.target as Node)) {
+		open = false
 	}
-
-	function onKeydown(e: KeyboardEvent) {
-		if (e.key === 'Escape') open = false;
-	}
-
-	// Close on outside click
-	function onOutsideClick(e: MouseEvent) {
-		if (buttonEl && !buttonEl.closest('[data-dropdown]')?.contains(e.target as Node)) {
-			open = false;
-		}
-	}
+}
 </script>
 
 <svelte:window onkeydown={onKeydown} onclick={onOutsideClick} />

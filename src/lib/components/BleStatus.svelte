@@ -1,20 +1,20 @@
 <script lang="ts">
-	import type { BoardConnector } from '$lib/ble/board-connector.svelte';
+import type { BoardConnector } from '$lib/ble/board-connector.svelte'
 
-	let { connector }: { connector: BoardConnector } = $props();
+let { connector }: { connector: BoardConnector } = $props()
 
-	// Status dot colour
-	const dotClass = $derived(
-		connector.status === 'connected'
-			? 'bg-green-500'
-			: connector.status === 'connecting'
-				? 'bg-yellow-400 animate-pulse'
-				: connector.status === 'error'
-					? 'bg-red-500'
-					: 'bg-zinc-500'
-	);
+// Status dot colour
+const dotClass = $derived(
+	connector.status === 'connected'
+		? 'bg-green-500'
+		: connector.status === 'connecting'
+			? 'bg-yellow-400 animate-pulse'
+			: connector.status === 'error'
+				? 'bg-red-500'
+				: 'bg-zinc-500'
+)
 
-	const connectedLabel = $derived(connector.deviceName ?? 'Connected');
+const connectedLabel = $derived(connector.deviceName ?? 'Connected')
 </script>
 
 <!-- Compact BLE status widget for top bar -->

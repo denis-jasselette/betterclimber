@@ -1,0 +1,78 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.4.12/schema.json",
+	"vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+	"files": { "ignoreUnknown": true, "includes": ["**", "!.claude", "!src/routes/layout.css"] },
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab",
+		"indentWidth": 2,
+		"lineEnding": "lf",
+		"lineWidth": 100,
+		"includes": ["**", "!**/package-lock.json", "!**/pnpm-lock.yaml", "!**/yarn.lock"]
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"suspicious": {
+				"noUnusedExpressions": "off"
+			}
+		},
+		"includes": [
+			"**",
+			"!**/node_modules",
+			"!.svelte-kit",
+			"!build",
+			"!**/.env",
+			"!**/.env.*",
+			"**/.env.example",
+			"**/.env.test",
+			"!src/routes/layout.css"
+		]
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "single",
+			"trailingCommas": "none",
+			"semicolons": "asNeeded",
+			"arrowParentheses": "always"
+		},
+		"globals": []
+	},
+	"html": {
+		"formatter": { "indentScriptAndStyle": false }
+	},
+	"overrides": [
+		{
+			"includes": ["**/*.ts", "**/*.tsx", "**/*.svelte.ts"],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noUndeclaredVariables": "off",
+						"noUnreachable": "off"
+					},
+					"suspicious": {
+						"noVar": "error"
+					},
+					"style": {
+						"useConst": "error"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["**/*.svelte", "**/*.svelte.ts", "**/*.svelte.js"],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noInnerDeclarations": "off",
+						"noSelfAssign": "off",
+						"noUnusedImports": "off",
+						"noUnusedVariables": "off"
+					}
+				}
+			}
+		}
+	],
+	"assist": { "enabled": true, "actions": { "source": { "organizeImports": "on" } } }
+}

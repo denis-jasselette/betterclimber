@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-netlify';
+import adapter from '@sveltejs/adapter-netlify'
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -9,6 +9,6 @@ const config = {
 			output: 'build'
 		})
 	}
-};
+}
 
-export default config;
+export default config

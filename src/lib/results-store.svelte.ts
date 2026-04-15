@@ -5,33 +5,33 @@
  * Set by +page.svelte whenever results change; read by /climb/[uuid]/+page.svelte.
  */
 
-import type { ClimbWithStats } from '$lib/data/types';
+import type { ClimbWithStats } from '$lib/data/types'
 
 function createResultsStore() {
-	let list = $state<ClimbWithStats[]>([]);
+	let list = $state<ClimbWithStats[]>([])
 
 	return {
 		get list() {
-			return list;
+			return list
 		},
 		set list(v: ClimbWithStats[]) {
-			list = v;
+			list = v
 		},
 
 		indexOf(uuid: string): number {
-			return list.findIndex((r) => r.climb.uuid === uuid);
+			return list.findIndex((r) => r.climb.uuid === uuid)
 		},
 
 		prev(uuid: string): ClimbWithStats | null {
-			const i = list.findIndex((r) => r.climb.uuid === uuid);
-			return i > 0 ? list[i - 1] : null;
+			const i = list.findIndex((r) => r.climb.uuid === uuid)
+			return i > 0 ? list[i - 1] : null
 		},
 
 		next(uuid: string): ClimbWithStats | null {
-			const i = list.findIndex((r) => r.climb.uuid === uuid);
-			return i !== -1 && i < list.length - 1 ? list[i + 1] : null;
+			const i = list.findIndex((r) => r.climb.uuid === uuid)
+			return i !== -1 && i < list.length - 1 ? list[i + 1] : null
 		}
-	};
+	}
 }
 
-export const resultsStore = createResultsStore();
+export const resultsStore = createResultsStore()

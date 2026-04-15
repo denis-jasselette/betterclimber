@@ -11,6 +11,6 @@
  * for Web Bluetooth (requestDevice() must be called directly from a click handler).
  */
 
-import { BoardConnector } from '$lib/ble/board-connector.svelte';
+import { BoardConnector } from '$lib/ble/board-connector.svelte'
 
-export const connector = new BoardConnector();
+export const connector = new BoardConnector()

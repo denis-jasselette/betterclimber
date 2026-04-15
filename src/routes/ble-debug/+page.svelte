@@ -1,106 +1,100 @@
 <script lang="ts">
-	import { connector } from '$lib/connector.svelte';
-	import { resolveHolds } from '$lib/data/repository';
-	import { resolve } from '$app/paths';
-	import type { Climb } from '$lib/data/types';
+import { resolve } from '$app/paths'
+import { connector } from '$lib/connector.svelte'
+import { resolveHolds } from '$lib/data/repository'
+import type { Climb } from '$lib/data/types'
 
-	type TestPattern = 'row1' | 'row2' | 'diagonal' | 'custom';
+type TestPattern = 'row1' | 'row2' | 'diagonal' | 'custom'
 
-	let selectedPattern: TestPattern = $state('row1');
-	let customFrames = $state('');
-	let sending = $state(false);
+let selectedPattern: TestPattern = $state('row1')
+let customFrames = $state('')
+let sending = $state(false)
 
-	const patternPresets: Record<
-		Exclude<TestPattern, 'custom'>,
-		{ label: string; frames: string }
-	> = {
-		row1: { label: 'Row 1 (bottom)', frames: 'p1447r13p1073r13p1448r13p1074r13' },
-		row2: { label: 'Row 2', frames: 'p1454r13p1080r13p1455r13p1081r13' },
-		diagonal: { label: 'Diagonal', frames: 'p1447r13p1455r13p1463r13p1519r13' }
-	};
+const patternPresets: Record<Exclude<TestPattern, 'custom'>, { label: string; frames: string }> = {
+	row1: { label: 'Row 1 (bottom)', frames: 'p1447r13p1073r13p1448r13p1074r13' },
+	row2: { label: 'Row 2', frames: 'p1454r13p1080r13p1455r13p1081r13' },
+	diagonal: { label: 'Diagonal', frames: 'p1447r13p1455r13p1463r13p1519r13' }
+}
 
-	async function sendTestPattern() {
-		if (!connector.isConnected || sending) return;
-		sending = true;
+async function sendTestPattern() {
+	if (!connector.isConnected || sending) return
+	sending = true
 
-		try {
-			let frames: string;
-			if (selectedPattern === 'custom') {
-				frames = customFrames.trim();
-				if (!frames) {
-					connector.log('warn', 'Please enter frames string');
-					return;
-				}
-			} else {
-				frames = patternPresets[selectedPattern].frames;
+	try {
+		let frames: string
+		if (selectedPattern === 'custom') {
+			frames = customFrames.trim()
+			if (!frames) {
+				connector.log('warn', 'Please enter frames string')
+				return
 			}
-
-			connector.log('info', `Sending test pattern: ${frames}`);
-
-			const climb: Climb = {
-				uuid: 'test-pattern',
-				layout_id: 1,
-				setter_id: 0,
-				setter_username: 'debug',
-				name: 'Test Pattern',
-				description: '',
-				frames,
-				frames_count: 1,
-				angle: null,
-				is_draft: false,
-				allow_matches: true,
-				is_campus: false,
-				is_route: false
-			};
-
-			const holds = await resolveHolds(climb);
-			connector.log('debug', `Resolved ${holds.length} hold(s)`);
-			if (holds.length === 0) {
-				connector.log('warn', 'No holds resolved — check placement IDs');
-				return;
-			}
-			await connector.lightUpClimb(holds);
-		} catch (err) {
-			connector.log('error', `Failed to send: ${err instanceof Error ? err.message : String(err)}`);
-		} finally {
-			sending = false;
+		} else {
+			frames = patternPresets[selectedPattern].frames
 		}
-	}
 
-	async function sendClear() {
-		if (!connector.isConnected) return;
-		try {
-			await connector.clear();
-		} catch (err) {
-			connector.log(
-				'error',
-				`Failed to clear: ${err instanceof Error ? err.message : String(err)}`
-			);
+		connector.log('info', `Sending test pattern: ${frames}`)
+
+		const climb: Climb = {
+			uuid: 'test-pattern',
+			layout_id: 1,
+			setter_id: 0,
+			setter_username: 'debug',
+			name: 'Test Pattern',
+			description: '',
+			frames,
+			frames_count: 1,
+			angle: null,
+			is_draft: false,
+			allow_matches: true,
+			is_campus: false,
+			is_route: false
 		}
-	}
 
-	function formatTime(ts: number): string {
-		const date = new Date(ts);
-		return date.toLocaleTimeString('en-US', {
-			hour12: false,
-			hour: '2-digit',
-			minute: '2-digit',
-			second: '2-digit'
-		});
-	}
-
-	function getLevelClass(level: string): string {
-		switch (level) {
-			case 'error':
-				return 'text-red-400';
-			case 'warn':
-				return 'text-amber-400';
-			case 'debug':
-				return 'text-muted';
-			default:
-				return 'text-text';
+		const holds = await resolveHolds(climb)
+		connector.log('debug', `Resolved ${holds.length} hold(s)`)
+		if (holds.length === 0) {
+			connector.log('warn', 'No holds resolved — check placement IDs')
+			return
 		}
+		await connector.lightUpClimb(holds)
+	} catch (err) {
+		connector.log('error', `Failed to send: ${err instanceof Error ? err.message : String(err)}`)
+	} finally {
+		sending = false
 	}
+}
+
+async function sendClear() {
+	if (!connector.isConnected) return
+	try {
+		await connector.clear()
+	} catch (err) {
+		connector.log('error', `Failed to clear: ${err instanceof Error ? err.message : String(err)}`)
+	}
+}
+
+function formatTime(ts: number): string {
+	const date = new Date(ts)
+	return date.toLocaleTimeString('en-US', {
+		hour12: false,
+		hour: '2-digit',
+		minute: '2-digit',
+		second: '2-digit'
+	})
+}
+
+function getLevelClass(level: string): string {
+	switch (level) {
+		case 'error':
+			return 'text-red-400'
+		case 'warn':
+			return 'text-amber-400'
+		case 'debug':
+			return 'text-muted'
+		default:
+			return 'text-text'
+	}
+}
 </script>
 
 <svelte:head>

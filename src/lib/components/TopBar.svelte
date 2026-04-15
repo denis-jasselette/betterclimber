@@ -1,25 +1,25 @@
 <script lang="ts">
-	import { connector } from '$lib/connector.svelte';
-	import { searchStore } from '$lib/search-store.svelte';
-	import BleStatus from './BleStatus.svelte';
-	import AngleDropdown from './AngleDropdown.svelte';
-	import SettingsButton from './SettingsButton.svelte';
+import { connector } from '$lib/connector.svelte'
+import { searchStore } from '$lib/search-store.svelte'
+import AngleDropdown from './AngleDropdown.svelte'
+import BleStatus from './BleStatus.svelte'
+import SettingsButton from './SettingsButton.svelte'
 
-	interface Props {
-		/** Override the angle shown in the dropdown (e.g. pass `data.angle` from
-		 *  the load function so the correct value is present on SSR/hard-refresh
-		 *  before the store has been hydrated from the URL). Falls back to the
-		 *  store value when not provided. */
-		angle?: number | null;
-		children?: import('svelte').Snippet;
-	}
+interface Props {
+	/** Override the angle shown in the dropdown (e.g. pass `data.angle` from
+	 *  the load function so the correct value is present on SSR/hard-refresh
+	 *  before the store has been hydrated from the URL). Falls back to the
+	 *  store value when not provided. */
+	angle?: number | null
+	children?: import('svelte').Snippet
+}
 
-	const { children, angle: angleProp = undefined }: Props = $props();
+const { children, angle: angleProp = undefined }: Props = $props()
 
-	// Use the prop value when available (covers SSR + hard-refresh), otherwise
-	// fall back to the reactive store value (covers client-side navigation where
-	// the prop is not passed).
-	const displayAngle = $derived(angleProp !== undefined ? angleProp : searchStore.angle);
+// Use the prop value when available (covers SSR + hard-refresh), otherwise
+// fall back to the reactive store value (covers client-side navigation where
+// the prop is not passed).
+const displayAngle = $derived(angleProp !== undefined ? angleProp : searchStore.angle)
 </script>
 
 <header

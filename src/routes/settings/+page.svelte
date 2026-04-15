@@ -1,20 +1,20 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
-	import { settings } from '$lib/settings-store.svelte';
-	import type { GradingSystem, ThemePreference } from '$lib/settings-store.svelte';
+import { resolve } from '$app/paths'
+import type { GradingSystem, ThemePreference } from '$lib/settings-store.svelte'
+import { settings } from '$lib/settings-store.svelte'
 
-	type OptionDef<T> = { value: T; label: string; description: string };
+type OptionDef<T> = { value: T; label: string; description: string }
 
-	const gradingOptions: OptionDef<GradingSystem>[] = [
-		{ value: 'v-scale', label: 'V Scale', description: 'V0 – V17  (Hueco / American)' },
-		{ value: 'french', label: 'French', description: '4 – 9A  (Fontainebleau)' }
-	];
+const gradingOptions: OptionDef<GradingSystem>[] = [
+	{ value: 'v-scale', label: 'V Scale', description: 'V0 – V17  (Hueco / American)' },
+	{ value: 'french', label: 'French', description: '4 – 9A  (Fontainebleau)' }
+]
 
-	const themeOptions: OptionDef<ThemePreference>[] = [
-		{ value: 'system', label: 'System', description: 'Follow device setting' },
-		{ value: 'dark', label: 'Dark', description: 'Always dark' },
-		{ value: 'light', label: 'Light', description: 'Always light' }
-	];
+const themeOptions: OptionDef<ThemePreference>[] = [
+	{ value: 'system', label: 'System', description: 'Follow device setting' },
+	{ value: 'dark', label: 'Dark', description: 'Always dark' },
+	{ value: 'light', label: 'Light', description: 'Always light' }
+]
 </script>
 
 <svelte:head>

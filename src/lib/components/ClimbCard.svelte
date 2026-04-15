@@ -1,118 +1,118 @@
 <script lang="ts">
-	import type { ClimbWithStats } from '$lib/data/types';
-	import { difficultyToGrade, formatGrade } from '$lib/data/types';
-	import { settings } from '$lib/settings-store.svelte';
-	import type { BoardConnector } from '$lib/ble/board-connector.svelte';
-	import { resolveHolds } from '$lib/data/repository';
-	import {
-		getEntry,
-		setTicked,
-		incrementAttempts,
-		resetAttempts,
-		setLiked,
-		recordLitUp
-	} from '$lib/data/log-service';
+import type { BoardConnector } from '$lib/ble/board-connector.svelte'
+import {
+	getEntry,
+	incrementAttempts,
+	recordLitUp,
+	resetAttempts,
+	setLiked,
+	setTicked
+} from '$lib/data/log-service'
+import { resolveHolds } from '$lib/data/repository'
+import type { ClimbWithStats } from '$lib/data/types'
+import { difficultyToGrade, formatGrade } from '$lib/data/types'
+import { settings } from '$lib/settings-store.svelte'
 
-	let {
-		item,
-		connector,
-		href
-	}: {
-		item: ClimbWithStats;
-		connector: BoardConnector;
-		href?: string;
-	} = $props();
+let {
+	item,
+	connector,
+	href
+}: {
+	item: ClimbWithStats
+	connector: BoardConnector
+	href?: string
+} = $props()
 
-	const { climb, activeStats } = $derived(item);
+const { climb, activeStats } = $derived(item)
 
-	const grade = $derived(
-		activeStats
-			? formatGrade(difficultyToGrade(activeStats.difficulty_average), settings.gradingSystem)
-			: '?'
-	);
+const grade = $derived(
+	activeStats
+		? formatGrade(difficultyToGrade(activeStats.difficulty_average), settings.gradingSystem)
+		: '?'
+)
 
-	// Quality display (1–3 stars)
-	const qualityFilled = $derived(activeStats ? Math.round(activeStats.quality_average) : 0);
+// Quality display (1–3 stars)
+const qualityFilled = $derived(activeStats ? Math.round(activeStats.quality_average) : 0)
 
-	// User log state — re-derived whenever the climb uuid changes, re-read after mutations.
-	// logOverride is null until a local mutation fires; once set it takes precedence over the
-	// derived value until the next uuid change, avoiding the state_referenced_locally warning.
-	let logOverride = $state<ReturnType<typeof getEntry> | null>(null);
-	let logDerived = $derived(getEntry(item.climb.uuid));
-	// Reset override when the climb changes
-	$effect(() => {
-		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-		item.climb.uuid; // track
-		logOverride = null;
-	});
-	const logSnapshot = $derived(logOverride ?? logDerived);
+// User log state — re-derived whenever the climb uuid changes, re-read after mutations.
+// logOverride is null until a local mutation fires; once set it takes precedence over the
+// derived value until the next uuid change, avoiding the state_referenced_locally warning.
+let logOverride = $state<ReturnType<typeof getEntry> | null>(null)
+let logDerived = $derived(getEntry(item.climb.uuid))
+// Reset override when the climb changes
+$effect(() => {
+	// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+	item.climb.uuid // track
+	logOverride = null
+})
+const logSnapshot = $derived(logOverride ?? logDerived)
 
-	function refreshLog() {
-		logOverride = getEntry(item.climb.uuid);
+function refreshLog() {
+	logOverride = getEntry(item.climb.uuid)
+}
+
+function toggleTick() {
+	setTicked(item.climb.uuid, !logSnapshot.ticked)
+	refreshLog()
+}
+
+// Attempt: tap = increment, long-press = reset to 0
+let attemptPressTimer: ReturnType<typeof setTimeout> | null = null
+
+function onAttemptPointerDown() {
+	attemptPressTimer = setTimeout(() => {
+		attemptPressTimer = null
+		resetAttempts(item.climb.uuid)
+		refreshLog()
+	}, 600)
+}
+
+function onAttemptPointerUp() {
+	if (attemptPressTimer !== null) {
+		clearTimeout(attemptPressTimer)
+		attemptPressTimer = null
+		incrementAttempts(item.climb.uuid)
+		refreshLog()
 	}
+}
 
-	function toggleTick() {
-		setTicked(item.climb.uuid, !logSnapshot.ticked);
-		refreshLog();
+function onAttemptPointerLeave() {
+	if (attemptPressTimer !== null) {
+		clearTimeout(attemptPressTimer)
+		attemptPressTimer = null
 	}
+}
 
-	// Attempt: tap = increment, long-press = reset to 0
-	let attemptPressTimer: ReturnType<typeof setTimeout> | null = null;
+function toggleLike() {
+	setLiked(item.climb.uuid, !logSnapshot.liked)
+	refreshLog()
+}
 
-	function onAttemptPointerDown() {
-		attemptPressTimer = setTimeout(() => {
-			attemptPressTimer = null;
-			resetAttempts(item.climb.uuid);
-			refreshLog();
-		}, 600);
-	}
+// BLE state
+let lighting = $state(false)
+let lightError = $state<string | null>(null)
 
-	function onAttemptPointerUp() {
-		if (attemptPressTimer !== null) {
-			clearTimeout(attemptPressTimer);
-			attemptPressTimer = null;
-			incrementAttempts(item.climb.uuid);
-			refreshLog();
+async function lightUp() {
+	if (lighting) return
+	lighting = true
+	lightError = null
+	try {
+		// Connect first if not already connected
+		if (!connector.isConnected) {
+			await connector.connect()
+			// User may have cancelled the picker
+			if (!connector.isConnected) return
 		}
+		const holds = await resolveHolds(climb)
+		await connector.lightUpClimb(holds)
+		recordLitUp(climb.uuid)
+		refreshLog()
+	} catch (err) {
+		lightError = err instanceof Error ? err.message : 'Failed to send to board.'
+	} finally {
+		lighting = false
 	}
-
-	function onAttemptPointerLeave() {
-		if (attemptPressTimer !== null) {
-			clearTimeout(attemptPressTimer);
-			attemptPressTimer = null;
-		}
-	}
-
-	function toggleLike() {
-		setLiked(item.climb.uuid, !logSnapshot.liked);
-		refreshLog();
-	}
-
-	// BLE state
-	let lighting = $state(false);
-	let lightError = $state<string | null>(null);
-
-	async function lightUp() {
-		if (lighting) return;
-		lighting = true;
-		lightError = null;
-		try {
-			// Connect first if not already connected
-			if (!connector.isConnected) {
-				await connector.connect();
-				// User may have cancelled the picker
-				if (!connector.isConnected) return;
-			}
-			const holds = await resolveHolds(climb);
-			await connector.lightUpClimb(holds);
-			recordLitUp(climb.uuid);
-			refreshLog();
-		} catch (err) {
-			lightError = err instanceof Error ? err.message : 'Failed to send to board.';
-		} finally {
-			lighting = false;
-		}
-	}
+}
 </script>
 
 <article

@@ -1,42 +1,43 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/environment'
 
-export type GradingSystem = 'v-scale' | 'french';
-export type ThemePreference = 'dark' | 'light' | 'system';
+export type GradingSystem = 'v-scale' | 'french'
+export type ThemePreference = 'dark' | 'light' | 'system'
 
 export interface AppSettings {
-	gradingSystem: GradingSystem;
-	theme: ThemePreference;
+	gradingSystem: GradingSystem
+	theme: ThemePreference
 }
 
-const STORAGE_KEY = 'kilter-settings';
+const STORAGE_KEY = 'kilter-settings'
 // Cookie is read server-side so SSR always has the correct values.
 // Max-age: 1 year; SameSite=Lax is fine (no cross-site posting needed).
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
 const DEFAULTS: AppSettings = {
 	gradingSystem: 'v-scale',
 	theme: 'system'
-};
+}
 
 function loadFromLocalStorage(): AppSettings {
-	if (!browser) return { ...DEFAULTS };
+	if (!browser) return { ...DEFAULTS }
 	try {
-		const raw = localStorage.getItem(STORAGE_KEY);
-		if (!raw) return { ...DEFAULTS };
-		return { ...DEFAULTS, ...JSON.parse(raw) };
+		const raw = localStorage.getItem(STORAGE_KEY)
+		if (!raw) return { ...DEFAULTS }
+		return { ...DEFAULTS, ...JSON.parse(raw) }
 	} catch {
-		return { ...DEFAULTS };
+		return { ...DEFAULTS }
 	}
 }
 
 function persist(s: AppSettings) {
-	if (!browser) return;
-	const json = JSON.stringify(s);
+	if (!browser) return
+	const json = JSON.stringify(s)
 	// localStorage — for offline / PWA use
-	localStorage.setItem(STORAGE_KEY, json);
+	localStorage.setItem(STORAGE_KEY, json)
 	// Cookie — so the next SSR request (hard refresh, first visit on new tab)
 	// can read the value before JavaScript runs.
-	document.cookie = `kilter-settings=${encodeURIComponent(json)}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
+	// biome-ignore lint/suspicious/noDocumentCookie: intentional SSR cookie sync
+	document.cookie = `kilter-settings=${encodeURIComponent(json)}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`
 }
 
 // ── Reactive singleton ────────────────────────────────────────────────────────
@@ -46,7 +47,7 @@ function persist(s: AppSettings) {
 function createSettings() {
 	// Start from localStorage (or defaults on server). The layout will call
 	// `init()` synchronously with the server value before any component renders.
-	const data = $state<AppSettings>(loadFromLocalStorage());
+	const data = $state<AppSettings>(loadFromLocalStorage())
 
 	return {
 		/**
@@ -55,26 +56,26 @@ function createSettings() {
 		 * and the initial client render are always in agreement.
 		 */
 		init(serverSettings: AppSettings) {
-			data.gradingSystem = serverSettings.gradingSystem;
-			data.theme = serverSettings.theme;
+			data.gradingSystem = serverSettings.gradingSystem
+			data.theme = serverSettings.theme
 		},
 
 		get gradingSystem() {
-			return data.gradingSystem;
+			return data.gradingSystem
 		},
 		set gradingSystem(v: GradingSystem) {
-			data.gradingSystem = v;
-			persist(data);
+			data.gradingSystem = v
+			persist(data)
 		},
 
 		get theme() {
-			return data.theme;
+			return data.theme
 		},
 		set theme(v: ThemePreference) {
-			data.theme = v;
-			persist(data);
+			data.theme = v
+			persist(data)
 		}
-	};
+	}
 }
 
-export const settings = createSettings();
+export const settings = createSettings()

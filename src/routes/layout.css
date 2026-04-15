@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
 
@@ -16,7 +16,7 @@
 /* ── Default (dark) theme ─────────────────────────────────────────────────── */
 @layer base {
 	:root,
-	[data-theme='dark'] {
+	[data-theme="dark"] {
 		color-scheme: dark;
 		--color-bg: #09090b; /* zinc-950 */
 		--color-surface: #18181b; /* zinc-900 */
@@ -28,7 +28,7 @@
 
 	/* ── Light theme ────────────────────────────────────────────────────────── */
 	/* Warm stone palette — clear depth hierarchy, good accent contrast.       */
-	[data-theme='light'] {
+	[data-theme="light"] {
 		color-scheme: light;
 		--color-bg: #f6f5f3; /* warm off-white page wash */
 		--color-surface: #ffffff; /* card / panel surface     */
@@ -58,7 +58,7 @@
 	}
 
 	button,
-	[role='button'] {
+	[role="button"] {
 		cursor: pointer;
 	}
 }

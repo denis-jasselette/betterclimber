@@ -1,98 +1,98 @@
 <script lang="ts">
-	import { onMount, untrack } from 'svelte';
-	import type { ClimbWithStats } from '$lib/data/types';
-	import { searchClimbs } from '$lib/data/repository';
-	import { searchStore } from '$lib/search-store.svelte';
-	import { resultsStore } from '$lib/results-store.svelte';
-	import { connector } from '$lib/connector.svelte';
-	import SearchFilters from '$lib/components/SearchFilters.svelte';
-	import ClimbCard from '$lib/components/ClimbCard.svelte';
-	import VirtualList from '$lib/components/VirtualList.svelte';
-	import TopBar from '$lib/components/TopBar.svelte';
+import { onMount, untrack } from 'svelte'
+import ClimbCard from '$lib/components/ClimbCard.svelte'
+import SearchFilters from '$lib/components/SearchFilters.svelte'
+import TopBar from '$lib/components/TopBar.svelte'
+import VirtualList from '$lib/components/VirtualList.svelte'
+import { connector } from '$lib/connector.svelte'
+import { searchClimbs } from '$lib/data/repository'
+import type { ClimbWithStats } from '$lib/data/types'
+import { resultsStore } from '$lib/results-store.svelte'
+import { searchStore } from '$lib/search-store.svelte'
 
-	let { data } = $props();
+let { data } = $props()
 
-	// ── Sync angle from URL / page data into the store ────────────────────────
-	// untrack() for the initial seed so it doesn't form a reactive dependency
-	// that fights the search $effect. A separate $effect handles subsequent
-	// client-side navigations where data.angle changes reactively.
-	untrack(() => {
-		if (data.angle !== null) searchStore.angle = data.angle;
-	});
-	$effect(() => {
-		const a = data.angle;
-		if (a !== null && a !== searchStore.angle) searchStore.angle = a;
-	});
+// ── Sync angle from URL / page data into the store ────────────────────────
+// untrack() for the initial seed so it doesn't form a reactive dependency
+// that fights the search $effect. A separate $effect handles subsequent
+// client-side navigations where data.angle changes reactively.
+untrack(() => {
+	if (data.angle !== null) searchStore.angle = data.angle
+})
+$effect(() => {
+	const a = data.angle
+	if (a !== null && a !== searchStore.angle) searchStore.angle = a
+})
 
-	// The "effective" angle for rendering: prefer the load-function value on
-	// initial paint (before the store $effect has fired) so nothing flashes.
-	const effectiveAngle = $derived(data.angle !== null ? data.angle : searchStore.angle);
+// The "effective" angle for rendering: prefer the load-function value on
+// initial paint (before the store $effect has fired) so nothing flashes.
+const effectiveAngle = $derived(data.angle !== null ? data.angle : searchStore.angle)
 
-	// ── Results ──────────────────────────────────────────────────────────────
-	// Seed directly from SSR data at declaration time — no $effect needed.
-	// untrack() suppresses the state_referenced_locally warning; this is
-	// intentionally a one-shot initialisation, not a reactive dependency.
-	let results = $state<ClimbWithStats[]>(untrack(() => data.results ?? []));
-	let loading = $state(false);
+// ── Results ──────────────────────────────────────────────────────────────
+// Seed directly from SSR data at declaration time — no $effect needed.
+// untrack() suppresses the state_referenced_locally warning; this is
+// intentionally a one-shot initialisation, not a reactive dependency.
+let results = $state<ClimbWithStats[]>(untrack(() => data.results ?? []))
+let loading = $state(false)
 
-	// Seed the shared results store so the detail page can resolve prev/next.
-	untrack(() => {
-		resultsStore.list = data.results ?? [];
-	});
+// Seed the shared results store so the detail page can resolve prev/next.
+untrack(() => {
+	resultsStore.list = data.results ?? []
+})
 
-	// ── Mobile filter drawer ─────────────────────────────────────────────────
-	let filterDrawerOpen = $state(false);
+// ── Mobile filter drawer ─────────────────────────────────────────────────
+let filterDrawerOpen = $state(false)
 
-	// ── Search (re-runs whenever store angle or filters change) ──────────────
-	$effect(() => {
-		const angle = searchStore.angle;
+// ── Search (re-runs whenever store angle or filters change) ──────────────
+$effect(() => {
+	const angle = searchStore.angle
 
-		// No angle selected → nothing to search
-		if (angle === null) {
-			results = [];
-			loading = false;
-			return;
-		}
-
-		// Access each filter field to register reactivity
-		const snapshot = {
-			gradeMin: searchStore.filters.gradeMin,
-			gradeMax: searchStore.filters.gradeMax,
-			minQuality: searchStore.filters.minQuality,
-			query: searchStore.filters.query,
-			excludeTicked: searchStore.filters.excludeTicked,
-			onlyAttempted: searchStore.filters.onlyAttempted,
-			onlyLiked: searchStore.filters.onlyLiked,
-			onlyBenchmarks: searchStore.filters.onlyBenchmarks,
-			onlyCampus: searchStore.filters.onlyCampus,
-			onlyRoutes: searchStore.filters.onlyRoutes,
-			onlyRecentlyLit: searchStore.filters.onlyRecentlyLit
-		};
-
-		loading = true;
-		searchClimbs(snapshot, angle).then((r) => {
-			results = r;
-			resultsStore.list = r;
-			loading = false;
-		});
-	});
-
-	// ── PWA update notification ──────────────────────────────────────────────
-	let updateAvailable = $state(false);
-	onMount(async () => {
-		if ('serviceWorker' in navigator) {
-			const { registerSW } = await import('virtual:pwa-register');
-			registerSW({
-				onNeedRefresh() {
-					updateAvailable = true;
-				}
-			});
-		}
-	});
-
-	function reloadForUpdate() {
-		window.location.reload();
+	// No angle selected → nothing to search
+	if (angle === null) {
+		results = []
+		loading = false
+		return
 	}
+
+	// Access each filter field to register reactivity
+	const snapshot = {
+		gradeMin: searchStore.filters.gradeMin,
+		gradeMax: searchStore.filters.gradeMax,
+		minQuality: searchStore.filters.minQuality,
+		query: searchStore.filters.query,
+		excludeTicked: searchStore.filters.excludeTicked,
+		onlyAttempted: searchStore.filters.onlyAttempted,
+		onlyLiked: searchStore.filters.onlyLiked,
+		onlyBenchmarks: searchStore.filters.onlyBenchmarks,
+		onlyCampus: searchStore.filters.onlyCampus,
+		onlyRoutes: searchStore.filters.onlyRoutes,
+		onlyRecentlyLit: searchStore.filters.onlyRecentlyLit
+	}
+
+	loading = true
+	searchClimbs(snapshot, angle).then((r) => {
+		results = r
+		resultsStore.list = r
+		loading = false
+	})
+})
+
+// ── PWA update notification ──────────────────────────────────────────────
+let updateAvailable = $state(false)
+onMount(async () => {
+	if ('serviceWorker' in navigator) {
+		const { registerSW } = await import('virtual:pwa-register')
+		registerSW({
+			onNeedRefresh() {
+				updateAvailable = true
+			}
+		})
+	}
+})
+
+function reloadForUpdate() {
+	window.location.reload()
+}
 </script>
 
 <svelte:head>
