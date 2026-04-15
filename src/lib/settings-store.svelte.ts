@@ -46,7 +46,7 @@ function persist(s: AppSettings) {
 function createSettings() {
 	// Start from localStorage (or defaults on server). The layout will call
 	// `init()` synchronously with the server value before any component renders.
-	let data = $state<AppSettings>(loadFromLocalStorage());
+	const data = $state<AppSettings>(loadFromLocalStorage());
 
 	return {
 		/**
@@ -59,11 +59,21 @@ function createSettings() {
 			data.theme = serverSettings.theme;
 		},
 
-		get gradingSystem() { return data.gradingSystem; },
-		set gradingSystem(v: GradingSystem) { data.gradingSystem = v; persist(data); },
+		get gradingSystem() {
+			return data.gradingSystem;
+		},
+		set gradingSystem(v: GradingSystem) {
+			data.gradingSystem = v;
+			persist(data);
+		},
 
-		get theme() { return data.theme; },
-		set theme(v: ThemePreference) { data.theme = v; persist(data); },
+		get theme() {
+			return data.theme;
+		},
+		set theme(v: ThemePreference) {
+			data.theme = v;
+			persist(data);
+		}
 	};
 }
 

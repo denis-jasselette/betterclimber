@@ -60,7 +60,7 @@ function encodeColor(r: number, g: number, b: number): number {
 function checksum(payload: Uint8Array): number {
 	let sum = 0;
 	for (const b of payload) sum = (sum + b) & 0xff;
-	return (~sum) & 0xff;
+	return ~sum & 0xff;
 }
 
 // ── Packet framing ────────────────────────────────────────────────────────────

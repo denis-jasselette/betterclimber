@@ -18,6 +18,7 @@
 		// the page component will sync the store from page data.
 		const url = new URL(page.url);
 		url.searchParams.set('angle', String(value));
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		goto(url.toString(), { replaceState: true, keepFocus: true, noScroll: true });
 	}
 
@@ -75,7 +76,7 @@
 		<div
 			class="absolute top-full right-0 z-50 mt-1.5 min-w-[7rem] overflow-hidden rounded-xl border border-border bg-surface shadow-2xl"
 		>
-			{#each ALL_ANGLES as a}
+			{#each ALL_ANGLES as a (a)}
 				<button
 					onclick={() => select(a)}
 					class="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-sm transition hover:bg-surface-raised

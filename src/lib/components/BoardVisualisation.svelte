@@ -122,7 +122,15 @@
 		/>
 
 		{#each activeHolds as hold (hold.cx + '_' + hold.cy)}
-			<circle cx={hold.cx} cy={hold.cy} r={HOLD_R} stroke={hold.color} stroke-width="8" fill="transparent" opacity="0.68" />
+			<circle
+				cx={hold.cx}
+				cy={hold.cy}
+				r={HOLD_R}
+				stroke={hold.color}
+				stroke-width="8"
+				fill="transparent"
+				opacity="0.68"
+			/>
 		{/each}
 	</svg>
 </div>

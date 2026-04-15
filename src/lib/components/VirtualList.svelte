@@ -80,9 +80,5 @@
 
 {#if hasMore}
 	<!-- Sentinel: triggers next page load when it scrolls near the viewport -->
-	<div
-		bind:this={sentinel}
-		aria-hidden="true"
-		class="h-4 w-full"
-	></div>
+	<div bind:this={sentinel} aria-hidden="true" class="h-4 w-full"></div>
 {/if}

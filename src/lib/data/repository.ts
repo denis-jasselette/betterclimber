@@ -17,13 +17,13 @@
 import { parseFrames } from './frames-parser';
 import { getUuidsWhere } from './log-service';
 import type {
-    Climb,
-    ClimbFilters,
-    ClimbStats,
-    ClimbWithStats,
-    Led,
-    Placement,
-    ResolvedHold
+	Climb,
+	ClimbFilters,
+	ClimbStats,
+	ClimbWithStats,
+	Led,
+	Placement,
+	ResolvedHold
 } from './types';
 import { DIFFICULTY_GRADES } from './types';
 
@@ -135,7 +135,9 @@ export async function searchClimbs(
 
 	// Pre-load user log sets (sync, from localStorage)
 	const tickedUuids = excludeTicked ? getUuidsWhere((e) => e.ticked) : new Set<string>();
-	const attemptedUuids = onlyAttempted ? getUuidsWhere((e) => e.attemptCount > 0) : new Set<string>();
+	const attemptedUuids = onlyAttempted
+		? getUuidsWhere((e) => e.attemptCount > 0)
+		: new Set<string>();
 	const likedUuids = onlyLiked ? getUuidsWhere((e) => e.liked) : new Set<string>();
 	const litUuids = onlyRecentlyLit ? getUuidsWhere((e) => !!e.lastLitAt) : new Set<string>();
 
@@ -167,8 +169,7 @@ export async function searchClimbs(
 		// Angle filter: match climbs that have stats at the selected angle
 		if (angle !== null) {
 			const hasAngle =
-				stats.some((s) => s.angle === angle) ||
-				(climb.angle !== null && climb.angle === angle);
+				stats.some((s) => s.angle === angle) || (climb.angle !== null && climb.angle === angle);
 			if (!hasAngle) continue;
 		}
 
@@ -215,7 +216,10 @@ export async function searchClimbs(
 /**
  * Fetch a single climb by UUID.
  */
-export async function getClimb(uuid: string, angle: number | null = null): Promise<ClimbWithStats | null> {
+export async function getClimb(
+	uuid: string,
+	angle: number | null = null
+): Promise<ClimbWithStats | null> {
 	const climb = allClimbs.find((c) => c.uuid === uuid);
 	if (!climb) return null;
 	return joinClimb(climb, angle);

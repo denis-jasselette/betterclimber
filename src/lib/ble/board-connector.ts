@@ -157,7 +157,7 @@ export class BoardConnector {
 		}
 
 		for (let i = 0; i < packets.length; i++) {
-			await this.rxCharacteristic.writeValueWithoutResponse(packets[i]);
+			await this.rxCharacteristic.writeValueWithoutResponse(packets[i] as Uint8Array<ArrayBuffer>);
 			if (i < packets.length - 1) {
 				await sleep(WRITE_DELAY_MS);
 			}

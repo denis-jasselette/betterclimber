@@ -184,9 +184,7 @@ export function gradeToDifficulty(grade: string): number {
 }
 
 /** All distinct V-grade labels in order. */
-export const ALL_GRADES: string[] = [
-	...new Set(DIFFICULTY_GRADES.map((g) => g.boulder_name))
-];
+export const ALL_GRADES: string[] = [...new Set(DIFFICULTY_GRADES.map((g) => g.boulder_name))];
 
 /** All supported board angles for the Kilter Board. */
 export const ALL_ANGLES = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70] as const;
@@ -253,16 +251,16 @@ export interface ResolvedHold {
  * Conversion reference: widely-used community consensus mapping.
  */
 export const V_TO_FRENCH: Record<string, string> = {
-	V0:  '4',
-	V1:  '5',
-	V2:  '5+',
-	V3:  '6A',
-	V4:  '6B+',
-	V5:  '6C',
-	V6:  '7A',
-	V7:  '7A+',
-	V8:  '7B+',
-	V9:  '7C',
+	V0: '4',
+	V1: '5',
+	V2: '5+',
+	V3: '6A',
+	V4: '6B+',
+	V5: '6C',
+	V6: '7A',
+	V7: '7A+',
+	V8: '7B+',
+	V9: '7C',
 	V10: '7C+',
 	V11: '8A',
 	V12: '8A+',
@@ -270,7 +268,7 @@ export const V_TO_FRENCH: Record<string, string> = {
 	V14: '8B+',
 	V15: '8C',
 	V16: '8C+',
-	V17: '9A',
+	V17: '9A'
 };
 
 /**

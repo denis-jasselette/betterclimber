@@ -235,7 +235,7 @@ export class BoardConnector {
 				.map((b) => b.toString(16).padStart(2, '0'))
 				.join(' ');
 			this.log('debug', `Packet ${i + 1}/${packets.length}: ${hex}`);
-			await this.rxCharacteristic.writeValueWithoutResponse(packets[i]);
+			await this.rxCharacteristic.writeValueWithoutResponse(packets[i] as Uint8Array<ArrayBuffer>);
 			if (i < packets.length - 1) {
 				await sleep(WRITE_DELAY_MS);
 			}

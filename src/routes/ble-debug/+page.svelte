@@ -14,9 +14,9 @@
 		Exclude<TestPattern, 'custom'>,
 		{ label: string; frames: string }
 	> = {
-		row1: { label: 'Row 1 (left)', frames: 'p1000r13p1001r13p1002r13p1003r13' },
-		row2: { label: 'Row 2', frames: 'p1004r13p1005r13p1006r13p1007r13' },
-		diagonal: { label: 'Diagonal', frames: 'p1000r13p1006r13p1012r13p1018r13' }
+		row1: { label: 'Row 1 (bottom)', frames: 'p1447r13p1073r13p1448r13p1074r13' },
+		row2: { label: 'Row 2', frames: 'p1454r13p1080r13p1455r13p1081r13' },
+		diagonal: { label: 'Diagonal', frames: 'p1447r13p1455r13p1463r13p1519r13' }
 	};
 
 	async function sendTestPattern() {
@@ -54,6 +54,11 @@
 			};
 
 			const holds = await resolveHolds(climb);
+			connector.log('debug', `Resolved ${holds.length} hold(s)`);
+			if (holds.length === 0) {
+				connector.log('warn', 'No holds resolved — check placement IDs');
+				return;
+			}
 			await connector.lightUpClimb(holds);
 		} catch (err) {
 			connector.log('error', `Failed to send: ${err instanceof Error ? err.message : String(err)}`);

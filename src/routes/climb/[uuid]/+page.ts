@@ -1,5 +1,6 @@
 import { getClimb } from '$lib/data/repository';
 import { ALL_ANGLES } from '$lib/data/types';
+import type { Angle } from '$lib/data/types';
 import type { PageLoad } from './$types';
 
 // Disable SSR — the page reads from localStorage (log-service) and the
@@ -10,7 +11,11 @@ export const ssr = false;
 
 export const load: PageLoad = async ({ params, url }) => {
 	const raw = url.searchParams.get('angle');
-	const angle = raw !== null && ALL_ANGLES.includes(Number(raw)) ? Number(raw) : null;
+	const parsed = Number(raw);
+	const angle =
+		raw !== null && (ALL_ANGLES as ReadonlyArray<number>).includes(parsed)
+			? (parsed as Angle)
+			: null;
 
 	// Pre-fetch the climb with the correct angle so stats are angle-aware
 	// on first render (before the in-memory resultsStore is populated).

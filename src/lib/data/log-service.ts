@@ -93,5 +93,9 @@ export function recordLitUp(uuid: string) {
 /** Returns the set of UUIDs matching the given predicate. */
 export function getUuidsWhere(pred: (e: LogEntry) => boolean): Set<string> {
 	const log = load();
-	return new Set(Object.entries(log).filter(([, e]) => pred(e)).map(([uuid]) => uuid));
+	return new Set(
+		Object.entries(log)
+			.filter(([, e]) => pred(e))
+			.map(([uuid]) => uuid)
+	);
 }

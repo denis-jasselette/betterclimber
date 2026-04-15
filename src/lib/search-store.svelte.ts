@@ -45,7 +45,7 @@ function createSearchStore() {
 	const initial = loadState();
 
 	let angle = $state<number | null>(initial.angle);
-	let filters = $state<ClimbFilters>(initial.filters);
+	const filters = $state<ClimbFilters>(initial.filters);
 
 	// Persist whenever angle or any filter field changes.
 	// $effect.root() creates an effect outside any component context — required
@@ -58,22 +58,50 @@ function createSearchStore() {
 	});
 
 	return {
-		get angle() { return angle; },
-		set angle(v: number | null) { angle = v; },
+		get angle() {
+			return angle;
+		},
+		set angle(v: number | null) {
+			angle = v;
+		},
 
-		get filters() { return filters; },
+		get filters() {
+			return filters;
+		},
 
-		setGradeMin(v: string | null)  { filters.gradeMin = v; },
-		setGradeMax(v: string | null)  { filters.gradeMax = v; },
-		setMinQuality(v: number)       { filters.minQuality = v; },
-		setQuery(v: string)            { filters.query = v; },
-		setExcludeTicked(v: boolean)   { filters.excludeTicked = v; },
-		setOnlyAttempted(v: boolean)   { filters.onlyAttempted = v; },
-		setOnlyLiked(v: boolean)       { filters.onlyLiked = v; },
-		setOnlyBenchmarks(v: boolean)  { filters.onlyBenchmarks = v; },
-		setOnlyCampus(v: boolean)      { filters.onlyCampus = v; },
-		setOnlyRoutes(v: boolean)      { filters.onlyRoutes = v; },
-		setOnlyRecentlyLit(v: boolean) { filters.onlyRecentlyLit = v; },
+		setGradeMin(v: string | null) {
+			filters.gradeMin = v;
+		},
+		setGradeMax(v: string | null) {
+			filters.gradeMax = v;
+		},
+		setMinQuality(v: number) {
+			filters.minQuality = v;
+		},
+		setQuery(v: string) {
+			filters.query = v;
+		},
+		setExcludeTicked(v: boolean) {
+			filters.excludeTicked = v;
+		},
+		setOnlyAttempted(v: boolean) {
+			filters.onlyAttempted = v;
+		},
+		setOnlyLiked(v: boolean) {
+			filters.onlyLiked = v;
+		},
+		setOnlyBenchmarks(v: boolean) {
+			filters.onlyBenchmarks = v;
+		},
+		setOnlyCampus(v: boolean) {
+			filters.onlyCampus = v;
+		},
+		setOnlyRoutes(v: boolean) {
+			filters.onlyRoutes = v;
+		},
+		setOnlyRecentlyLit(v: boolean) {
+			filters.onlyRecentlyLit = v;
+		},
 
 		clearFilters() {
 			filters.gradeMin = null;

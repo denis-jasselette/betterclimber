@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { difficultyToGrade, formatGrade, ROLE, ROLE_COLORS, ROLE_LABELS } from '$lib/data/types';
+	import { difficultyToGrade, formatGrade, ROLE_COLORS, ROLE_LABELS } from '$lib/data/types';
 	import type { ClimbWithStats } from '$lib/data/types';
 	import { getClimb } from '$lib/data/repository';
 	import { resultsStore } from '$lib/results-store.svelte';
@@ -20,10 +20,10 @@
 	import BoardVisualisation from '$lib/components/BoardVisualisation.svelte';
 	import TopBar from '$lib/components/TopBar.svelte';
 
-	// ── Route param ───────────────────────────────────────────────────────────
-	const uuid = $derived(page.params.uuid);
-
 	let { data } = $props();
+
+	// uuid is always defined for this route; $derived keeps it reactive for navigations
+	const uuid = $derived(page.params.uuid ?? '');
 
 	// ── Sync angle from URL / page data into the store ────────────────────────
 	$effect(() => {
@@ -42,17 +42,16 @@
 	let item = $state<ClimbWithStats | null>(null);
 
 	$effect(() => {
-		const currentUuid = page.params.uuid;
 		// Try the in-memory results list first (client-side navigation)
-		const fromStore = resultsStore.list.find((r) => r.climb.uuid === currentUuid) ?? null;
+		const fromStore = resultsStore.list.find((r) => r.climb.uuid === uuid) ?? null;
 		if (fromStore) {
 			item = fromStore;
-		} else if (data.item && data.item.climb.uuid === currentUuid) {
+		} else if (data.item && data.item.climb.uuid === uuid) {
 			// Use the angle-aware item from the load function
 			item = data.item;
 		} else {
 			// Last resort: fetch from repository with angle
-			getClimb(currentUuid, data.angle).then((r) => {
+			getClimb(uuid, data.angle).then((r) => {
 				item = r;
 			});
 		}
@@ -70,17 +69,18 @@
 	);
 
 	// ── Prev / Next navigation ─────────────────────────────────────────────────
-	const currentUuidDerived = $derived(page.params.uuid);
-	const prevItem = $derived(resultsStore.prev(currentUuidDerived));
-	const nextItem = $derived(resultsStore.next(currentUuidDerived));
-	const listIndex = $derived(resultsStore.indexOf(currentUuidDerived));
+	const prevItem = $derived(resultsStore.prev(uuid));
+	const nextItem = $derived(resultsStore.next(uuid));
+	const listIndex = $derived(resultsStore.indexOf(uuid));
 	const listTotal = $derived(resultsStore.list.length);
 
 	function goTo(target: ClimbWithStats) {
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		goto(`/climb/${target.climb.uuid}${angleParam}`, { replaceState: true });
 	}
 
 	function goBack() {
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		goto(`/${angleParam ? angleParam : ''}`);
 	}
 
@@ -106,18 +106,21 @@
 	}
 
 	// ── User log ──────────────────────────────────────────────────────────────
+	// $state + $effect is intentional: logSnapshot must be writable (refreshLog mutates it
+	// after localStorage writes that $derived cannot detect).
+	// eslint-disable-next-line svelte/prefer-writable-derived
 	let logSnapshot = $state(getEntry(''));
 
 	$effect(() => {
-		logSnapshot = getEntry(page.params.uuid);
+		logSnapshot = getEntry(uuid);
 	});
 
 	function refreshLog() {
-		logSnapshot = getEntry(page.params.uuid);
+		logSnapshot = getEntry(uuid);
 	}
 
 	function toggleTick() {
-		setTicked(page.params.uuid, !logSnapshot.ticked);
+		setTicked(uuid, !logSnapshot.ticked);
 		refreshLog();
 	}
 
@@ -127,7 +130,7 @@
 	function onAttemptPointerDown() {
 		attemptPressTimer = setTimeout(() => {
 			attemptPressTimer = null;
-			resetAttempts(page.params.uuid);
+			resetAttempts(uuid);
 			refreshLog();
 		}, 600);
 	}
@@ -136,7 +139,7 @@
 		if (attemptPressTimer !== null) {
 			clearTimeout(attemptPressTimer);
 			attemptPressTimer = null;
-			incrementAttempts(page.params.uuid);
+			incrementAttempts(uuid);
 			refreshLog();
 		}
 	}
@@ -149,7 +152,7 @@
 	}
 
 	function toggleLike() {
-		setLiked(page.params.uuid, !logSnapshot.liked);
+		setLiked(uuid, !logSnapshot.liked);
 		refreshLog();
 	}
 
@@ -184,7 +187,6 @@
 	<title>{item?.climb.name ?? 'Climb'} — Kilterboard</title>
 </svelte:head>
 
-<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div
 	class="min-h-screen bg-bg text-text"
 	role="main"
@@ -284,7 +286,7 @@
 				<div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted">
 					<!-- Quality -->
 					<div class="flex items-center gap-1">
-						{#each [1, 2, 3] as star}
+						{#each [1, 2, 3] as star (star)}
 							<svg
 								class="size-4 {star <= qualityFilled ? 'text-yellow-400' : 'text-border'}"
 								xmlns="http://www.w3.org/2000/svg"
@@ -488,7 +490,7 @@
 			<div class="mt-4 space-y-3 rounded-2xl border border-border bg-surface p-4">
 				<h2 class="text-xs font-semibold tracking-wider text-muted uppercase">Hold Legend</h2>
 				<div class="flex flex-wrap gap-3">
-					{#each Object.entries(ROLE_LABELS) as [roleIdStr, label]}
+					{#each Object.entries(ROLE_LABELS) as [roleIdStr, label] (roleIdStr)}
 						{@const roleId = Number(roleIdStr)}
 						{@const color = ROLE_COLORS[roleId as keyof typeof ROLE_COLORS]}
 						<div class="flex items-center gap-2">
@@ -505,7 +507,7 @@
 				<div class="mt-4 space-y-3 rounded-2xl border border-border bg-surface p-4">
 					<h2 class="text-xs font-semibold tracking-wider text-muted uppercase">Stats by angle</h2>
 					<div class="space-y-2">
-						{#each item.stats as s}
+						{#each item.stats as s (s.angle)}
 							<div class="flex items-center justify-between text-sm">
 								<span class="text-muted">{s.angle}°</span>
 								<div class="flex items-center gap-4 text-xs text-muted">

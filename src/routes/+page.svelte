@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
-	import { page } from '$app/state';
 	import type { ClimbWithStats } from '$lib/data/types';
 	import { searchClimbs } from '$lib/data/repository';
 	import { searchStore } from '$lib/search-store.svelte';
@@ -226,7 +225,7 @@
 			{:else if loading}
 				<!-- Skeleton cards -->
 				<div class="space-y-3">
-					{#each [1, 2, 3, 4, 5] as _}
+					{#each [1, 2, 3, 4, 5] as i (i)}
 						<div class="h-36 animate-pulse rounded-2xl border border-border bg-surface"></div>
 					{/each}
 				</div>

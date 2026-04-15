@@ -11,8 +11,12 @@ function createResultsStore() {
 	let list = $state<ClimbWithStats[]>([]);
 
 	return {
-		get list() { return list; },
-		set list(v: ClimbWithStats[]) { list = v; },
+		get list() {
+			return list;
+		},
+		set list(v: ClimbWithStats[]) {
+			list = v;
+		},
 
 		indexOf(uuid: string): number {
 			return list.findIndex((r) => r.climb.uuid === uuid);

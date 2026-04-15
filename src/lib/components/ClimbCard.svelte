@@ -4,7 +4,14 @@
 	import { settings } from '$lib/settings-store.svelte';
 	import type { BoardConnector } from '$lib/ble/board-connector.svelte';
 	import { resolveHolds } from '$lib/data/repository';
-	import { getEntry, setTicked, incrementAttempts, resetAttempts, setLiked, recordLitUp } from '$lib/data/log-service';
+	import {
+		getEntry,
+		setTicked,
+		incrementAttempts,
+		resetAttempts,
+		setLiked,
+		recordLitUp
+	} from '$lib/data/log-service';
 
 	let {
 		item,
@@ -24,7 +31,6 @@
 			: '?'
 	);
 
-
 	// Quality display (1–3 stars)
 	const qualityFilled = $derived(activeStats ? Math.round(activeStats.quality_average) : 0);
 
@@ -35,6 +41,7 @@
 	let logDerived = $derived(getEntry(item.climb.uuid));
 	// Reset override when the climb changes
 	$effect(() => {
+		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 		item.climb.uuid; // track
 		logOverride = null;
 	});
@@ -115,8 +122,11 @@
 	<div class="flex items-start justify-between gap-3">
 		<div class="min-w-0 flex-1">
 			{#if href}
+				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 				<a {href} class="group block">
-					<h2 class="truncate font-semibold text-text group-hover:text-cyan-300 transition-colors">{climb.name}</h2>
+					<h2 class="truncate font-semibold text-text transition-colors group-hover:text-cyan-300">
+						{climb.name}
+					</h2>
 					<p class="mt-0.5 text-xs text-muted">by {climb.setter_username}</p>
 				</a>
 			{:else}
@@ -126,7 +136,9 @@
 		</div>
 
 		<!-- Grade badge -->
-		<span class="shrink-0 rounded-lg border border-border bg-surface-raised px-2.5 py-0.5 text-sm font-bold text-text">
+		<span
+			class="shrink-0 rounded-lg border border-border bg-surface-raised px-2.5 py-0.5 text-sm font-bold text-text"
+		>
 			{grade}
 		</span>
 	</div>
@@ -136,7 +148,7 @@
 		<!-- Quality stars -->
 		{#if activeStats}
 			<div class="flex items-center gap-0.5">
-				{#each [1, 2, 3] as star}
+				{#each [1, 2, 3] as star (star)}
 					<svg
 						class="size-3 {star <= qualityFilled ? 'text-yellow-400' : 'text-border'}"
 						xmlns="http://www.w3.org/2000/svg"
@@ -174,12 +186,16 @@
 
 		<!-- Tag pills -->
 		{#if activeStats?.benchmark_difficulty !== null && activeStats?.benchmark_difficulty !== undefined}
-			<span class="rounded-md bg-yellow-500/10 px-2 py-0.5 text-[11px] font-semibold text-yellow-400">
+			<span
+				class="rounded-md bg-yellow-500/10 px-2 py-0.5 text-[11px] font-semibold text-yellow-400"
+			>
 				Benchmark
 			</span>
 		{/if}
 		{#if climb.is_campus}
-			<span class="rounded-md bg-purple-500/10 px-2 py-0.5 text-[11px] font-semibold text-purple-400">
+			<span
+				class="rounded-md bg-purple-500/10 px-2 py-0.5 text-[11px] font-semibold text-purple-400"
+			>
 				Campus
 			</span>
 		{/if}
@@ -201,11 +217,17 @@
 		<button
 			onclick={toggleTick}
 			title={logSnapshot.ticked ? 'Remove tick' : 'Mark as ticked'}
-		class="flex items-center gap-1 rounded-xl border px-2.5 py-2 text-xs font-semibold transition active:scale-95 {logSnapshot.ticked
-			? 'border-green-600 bg-green-600/10 text-green-400'
-			: 'border-border bg-surface-raised text-muted hover:border-border hover:text-text'}"
+			class="flex items-center gap-1 rounded-xl border px-2.5 py-2 text-xs font-semibold transition active:scale-95 {logSnapshot.ticked
+				? 'border-green-600 bg-green-600/10 text-green-400'
+				: 'border-border bg-surface-raised text-muted hover:border-border hover:text-text'}"
 		>
-			<svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+			<svg
+				class="size-3.5"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2.5"
+			>
 				<path d="M5 13l4 4L19 7" />
 			</svg>
 		</button>
@@ -216,7 +238,8 @@
 			onpointerup={onAttemptPointerUp}
 			onpointerleave={onAttemptPointerLeave}
 			title="Tap to log attempt · Hold to reset"
-			class="relative flex items-center gap-1 rounded-xl border px-2.5 py-2 text-xs font-semibold transition active:scale-95 select-none {logSnapshot.attemptCount > 0
+			class="relative flex items-center gap-1 rounded-xl border px-2.5 py-2 text-xs font-semibold transition select-none active:scale-95 {logSnapshot.attemptCount >
+			0
 				? 'border-amber-600 bg-amber-600/10 text-amber-400'
 				: 'border-border bg-surface-raised text-muted hover:border-border hover:text-text'}"
 		>
@@ -224,7 +247,9 @@
 				<path d="M12 5v14M5 12l7-7 7 7" />
 			</svg>
 			{#if logSnapshot.attemptCount > 0}
-				<span class="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white leading-none">
+				<span
+					class="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-amber-500 text-[10px] leading-none font-bold text-white"
+				>
 					{logSnapshot.attemptCount > 99 ? '99+' : logSnapshot.attemptCount}
 				</span>
 			{/if}
@@ -234,12 +259,20 @@
 		<button
 			onclick={toggleLike}
 			title={logSnapshot.liked ? 'Unlike' : 'Like'}
-		class="flex items-center gap-1 rounded-xl border px-2.5 py-2 text-xs font-semibold transition active:scale-95 {logSnapshot.liked
-			? 'border-pink-600 bg-pink-600/10 text-pink-400'
-			: 'border-border bg-surface-raised text-muted hover:border-border hover:text-text'}"
+			class="flex items-center gap-1 rounded-xl border px-2.5 py-2 text-xs font-semibold transition active:scale-95 {logSnapshot.liked
+				? 'border-pink-600 bg-pink-600/10 text-pink-400'
+				: 'border-border bg-surface-raised text-muted hover:border-border hover:text-text'}"
 		>
-			<svg class="size-3.5" viewBox="0 0 24 24" fill={logSnapshot.liked ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="2">
-				<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+			<svg
+				class="size-3.5"
+				viewBox="0 0 24 24"
+				fill={logSnapshot.liked ? 'currentColor' : 'none'}
+				stroke="currentColor"
+				stroke-width="2"
+			>
+				<path
+					d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+				/>
 			</svg>
 		</button>
 
@@ -250,13 +283,30 @@
 			class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-surface-raised py-2 text-xs font-semibold text-text transition hover:border-cyan-600 hover:bg-cyan-600/10 hover:text-cyan-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
 		>
 			{#if lighting}
-				<svg class="size-3.5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-					<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+				<svg
+					class="size-3.5 animate-spin"
+					xmlns="http://www.w3.org/2000/svg"
+					fill="none"
+					viewBox="0 0 24 24"
+				>
+					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
+					></circle>
+					<path
+						class="opacity-75"
+						fill="currentColor"
+						d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+					></path>
 				</svg>
 				Sending…
 			{:else}
-				<svg class="size-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+				<svg
+					class="size-3.5"
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+				>
 					<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
 				</svg>
 				Light Up
