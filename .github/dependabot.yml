@@ -1,0 +1,27 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      svelte:
+        patterns:
+          - svelte
+          - '@sveltejs/*'
+      tailwind:
+        patterns:
+          - tailwindcss
+          - '@tailwindcss/*'
+      dev-tooling:
+        patterns:
+          - '@biomejs/*'
+          - typescript
+          - vite
+          - vite-plugin-pwa
+          - workbox-*
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
