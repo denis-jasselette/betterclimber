@@ -105,18 +105,18 @@ function onTouchEnd(e: TouchEvent) {
 // $state + $effect is intentional: logSnapshot must be writable (refreshLog mutates it
 // after localStorage writes that $derived cannot detect).
 // eslint-disable-next-line svelte/prefer-writable-derived
-let logSnapshot = $state(getEntry(''))
+let logSnapshot = $state(getEntry('', null))
 
 $effect(() => {
-	logSnapshot = getEntry(uuid)
+	logSnapshot = getEntry(uuid, data.angle)
 })
 
 function refreshLog() {
-	logSnapshot = getEntry(uuid)
+	logSnapshot = getEntry(uuid, data.angle)
 }
 
 function toggleTick() {
-	setTicked(uuid, !logSnapshot.ticked)
+	setTicked(uuid, data.angle, !logSnapshot.ticked)
 	refreshLog()
 }
 
@@ -126,7 +126,7 @@ let attemptPressTimer: ReturnType<typeof setTimeout> | null = null
 function onAttemptPointerDown() {
 	attemptPressTimer = setTimeout(() => {
 		attemptPressTimer = null
-		resetAttempts(uuid)
+		resetAttempts(uuid, data.angle)
 		refreshLog()
 	}, 600)
 }
@@ -135,7 +135,7 @@ function onAttemptPointerUp() {
 	if (attemptPressTimer !== null) {
 		clearTimeout(attemptPressTimer)
 		attemptPressTimer = null
-		incrementAttempts(uuid)
+		incrementAttempts(uuid, data.angle)
 		refreshLog()
 	}
 }
@@ -148,7 +148,7 @@ function onAttemptPointerLeave() {
 }
 
 function toggleLike() {
-	setLiked(uuid, !logSnapshot.liked)
+	setLiked(uuid, data.angle, !logSnapshot.liked)
 	refreshLog()
 }
 
@@ -169,7 +169,7 @@ async function lightUp() {
 		}
 		const holds = await resolveHolds(item.climb)
 		await connector.lightUpClimb(holds)
-		recordLitUp(item.climb.uuid)
+		recordLitUp(item.climb.uuid, data.angle)
 		refreshLog()
 	} catch (err) {
 		lightError = err instanceof Error ? err.message : 'Failed to send to board.'

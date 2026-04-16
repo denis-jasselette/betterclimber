@@ -103,12 +103,12 @@ export async function searchClimbs(
 	const { climbs: rawClimbs } = (await res.json()) as { climbs: ClimbWithStats[] }
 
 	// Apply log-service filters client-side (localStorage — server can't see these)
-	const tickedUuids = excludeTicked ? getUuidsWhere((e) => e.ticked) : new Set<string>()
+	const tickedUuids = excludeTicked ? getUuidsWhere(angle, (e) => e.ticked) : new Set<string>()
 	const attemptedUuids = onlyAttempted
-		? getUuidsWhere((e) => e.attemptCount > 0)
+		? getUuidsWhere(angle, (e) => e.attemptCount > 0)
 		: new Set<string>()
-	const likedUuids = onlyLiked ? getUuidsWhere((e) => e.liked) : new Set<string>()
-	const litUuids = onlyRecentlyLit ? getUuidsWhere((e) => !!e.lastLitAt) : new Set<string>()
+	const likedUuids = onlyLiked ? getUuidsWhere(angle, (e) => e.liked) : new Set<string>()
+	const litUuids = onlyRecentlyLit ? getUuidsWhere(angle, (e) => !!e.lastLitAt) : new Set<string>()
 
 	return rawClimbs.filter((item) => {
 		const uuid = item.climb.uuid
