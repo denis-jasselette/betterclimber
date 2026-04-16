@@ -430,47 +430,71 @@ async function lightUp() {
 				</div>
 
 				<!-- Row 2: Light Up — full width -->
-				<button
-					onclick={lightUp}
-					disabled={lighting}
-					class="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface-raised px-4 py-2.5 text-sm font-semibold text-text transition hover:border-cyan-600 hover:bg-cyan-600/10 hover:text-cyan-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
-				>
-					{#if lighting}
+				{#if !connector.isSupported}
+					<div
+						class="flex w-full items-center gap-3 rounded-xl border border-amber-600/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300"
+					>
 						<svg
-							class="size-4 animate-spin"
-							xmlns="http://www.w3.org/2000/svg"
-							fill="none"
-							viewBox="0 0 24 24"
-						>
-							<circle
-								class="opacity-25"
-								cx="12"
-								cy="12"
-								r="10"
-								stroke="currentColor"
-								stroke-width="4"
-							></circle>
-							<path
-								class="opacity-75"
-								fill="currentColor"
-								d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-							></path>
-						</svg>
-						Sending…
-					{:else}
-						<svg
-							class="size-4"
+							class="size-5 shrink-0"
 							xmlns="http://www.w3.org/2000/svg"
 							viewBox="0 0 24 24"
 							fill="none"
 							stroke="currentColor"
 							stroke-width="2"
+							aria-hidden="true"
 						>
-							<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+							<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+							<line x1="12" y1="9" x2="12" y2="13" />
+							<line x1="12" y1="17" x2="12.01" y2="17" />
 						</svg>
-						Light Up
-					{/if}
-				</button>
+						<span
+							>Web Bluetooth is not supported in this browser. Use <strong>Chrome</strong> or
+							<strong>Edge</strong> on desktop or Android to light up the board.</span
+						>
+					</div>
+				{:else}
+					<button
+						onclick={lightUp}
+						disabled={lighting}
+						class="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface-raised px-4 py-2.5 text-sm font-semibold text-text transition hover:border-cyan-600 hover:bg-cyan-600/10 hover:text-cyan-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+					>
+						{#if lighting}
+							<svg
+								class="size-4 animate-spin"
+								xmlns="http://www.w3.org/2000/svg"
+								fill="none"
+								viewBox="0 0 24 24"
+							>
+								<circle
+									class="opacity-25"
+									cx="12"
+									cy="12"
+									r="10"
+									stroke="currentColor"
+									stroke-width="4"
+								></circle>
+								<path
+									class="opacity-75"
+									fill="currentColor"
+									d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+								></path>
+							</svg>
+							Sending…
+						{:else}
+							<svg
+								class="size-4"
+								xmlns="http://www.w3.org/2000/svg"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+							</svg>
+							Light Up
+						{/if}
+					</button>
+				{/if}
 			</div>
 
 			{#if lightError}
