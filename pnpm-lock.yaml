@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       svelte-range-slider-pips:
-        specifier: ^4.1.0
-        version: 4.1.0(svelte@5.55.4)
+        specifier: ^4.1.1
+        version: 4.1.1(svelte@5.55.4)
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.4.12
@@ -2218,8 +2218,8 @@ packages:
       svelte: ^4.0.0 || ^5.0.0-next.0
       typescript: '>=5.0.0'
 
-  svelte-range-slider-pips@4.1.0:
-    resolution: {integrity: sha512-2Zw7MngIuPeqdyJ3ueEp7jPSx0hce+Sx8r1eteCeUPxEWlNavKhBtqJyuoAdpvh5csPPFVZJ4TJ4MX9s4G70uw==}
+  svelte-range-slider-pips@4.1.1:
+    resolution: {integrity: sha512-PWOZh1QYeQoCDloO2l4xmb9gttooMjk6Sbb4skDMzNH33UlRUHnc1tVwNmEC1IAzGiQVBxjUmNXlNEA6bKLugQ==}
     peerDependencies:
       svelte: ^4.2.7 || ^5.0.0
 
@@ -4656,7 +4656,7 @@ snapshots:
     transitivePeerDependencies:
       - picomatch
 
-  svelte-range-slider-pips@4.1.0(svelte@5.55.4):
+  svelte-range-slider-pips@4.1.1(svelte@5.55.4):
     dependencies:
       svelte: 5.55.4
 
