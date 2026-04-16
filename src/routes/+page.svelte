@@ -172,7 +172,7 @@ function reloadForUpdate() {
 
 		<!-- Filter panel -->
 		<aside
-			class="fixed right-0 bottom-0 left-0 z-40 max-h-[85vh] overflow-y-auto rounded-t-2xl border-t border-border bg-bg p-5 transition-transform duration-300 md:sticky md:top-20 md:block md:max-h-none md:w-72 md:shrink-0 md:translate-y-0 md:rounded-none md:border-none md:p-0 {filterDrawerOpen
+			class="fixed right-0 bottom-0 left-0 z-40 max-h-[85vh] overflow-x-hidden overflow-y-auto rounded-t-2xl border-t border-border bg-bg p-5 transition-transform duration-300 md:sticky md:top-20 md:block md:max-h-none md:w-72 md:shrink-0 md:translate-y-0 md:rounded-none md:border-none md:p-0 {filterDrawerOpen
 				? 'translate-y-0'
 				: 'translate-y-full md:translate-y-0'}"
 		>
