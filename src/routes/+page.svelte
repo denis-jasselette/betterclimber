@@ -1,5 +1,6 @@
 <script lang="ts">
 import { onMount, untrack } from 'svelte'
+import { afterNavigate, beforeNavigate, replaceState } from '$app/navigation'
 import ClimbCard from '$lib/components/ClimbCard.svelte'
 import SearchFilters from '$lib/components/SearchFilters.svelte'
 import TopBar from '$lib/components/TopBar.svelte'
@@ -9,15 +10,23 @@ import { searchClimbs } from '$lib/data/repository'
 import type { ClimbWithStats } from '$lib/data/types'
 import { resultsStore } from '$lib/results-store.svelte'
 import { searchStore } from '$lib/search-store.svelte'
+import { filtersToParams } from './+page'
 
 let { data } = $props()
 
-// ── Sync angle from URL / page data into the store ────────────────────────
-// untrack() for the initial seed so it doesn't form a reactive dependency
-// that fights the search $effect. A separate $effect handles subsequent
-// client-side navigations where data.angle changes reactively.
+// ── Init store from URL filters (bookmarks / shared links / refresh) ──────
+// URL filter params take precedence over stale localStorage state when the
+// URL carries explicit values (i.e. user arrived via a bookmark or shared URL).
 untrack(() => {
 	if (data.angle !== null) searchStore.angle = data.angle
+	const f = data.filters ?? {}
+	if (f.query !== undefined) searchStore.setQuery(f.query)
+	if (f.gradeMin !== undefined) searchStore.setGradeMin(f.gradeMin ?? null)
+	if (f.gradeMax !== undefined) searchStore.setGradeMax(f.gradeMax ?? null)
+	if (f.minQuality !== undefined) searchStore.setMinQuality(f.minQuality)
+	if (f.onlyBenchmarks !== undefined) searchStore.setOnlyBenchmarks(f.onlyBenchmarks)
+	if (f.onlyCampus !== undefined) searchStore.setOnlyCampus(f.onlyCampus)
+	if (f.onlyRoutes !== undefined) searchStore.setOnlyRoutes(f.onlyRoutes)
 })
 $effect(() => {
 	const a = data.angle
@@ -28,14 +37,17 @@ $effect(() => {
 // initial paint (before the store $effect has fired) so nothing flashes.
 const effectiveAngle = $derived(data.angle !== null ? data.angle : searchStore.angle)
 
+// ── Sync shareable filters to URL (replaceState — no history entry) ───────
+$effect(() => {
+	const params = filtersToParams(searchStore.angle, searchStore.filters)
+	const qs = params.toString()
+	replaceState(qs ? `?${qs}` : '?', {})
+})
+
 // ── Results ──────────────────────────────────────────────────────────────
-// Seed directly from SSR data at declaration time — no $effect needed.
-// untrack() suppresses the state_referenced_locally warning; this is
-// intentionally a one-shot initialisation, not a reactive dependency.
 let results = $state<ClimbWithStats[]>(untrack(() => data.results ?? []))
 let loading = $state(false)
 
-// Seed the shared results store so the detail page can resolve prev/next.
 untrack(() => {
 	resultsStore.list = data.results ?? []
 })
@@ -47,14 +59,12 @@ let filterDrawerOpen = $state(false)
 $effect(() => {
 	const angle = searchStore.angle
 
-	// No angle selected → nothing to search
 	if (angle === null) {
 		results = []
 		loading = false
 		return
 	}
 
-	// Access each filter field to register reactivity
 	const snapshot = {
 		gradeMin: searchStore.filters.gradeMin,
 		gradeMax: searchStore.filters.gradeMax,
@@ -75,6 +85,25 @@ $effect(() => {
 		resultsStore.list = r
 		loading = false
 	})
+})
+
+// ── Scroll position save / restore ────────────────────────────────────────
+const SCROLL_KEY = 'kilter-scroll'
+
+beforeNavigate(({ to }) => {
+	// Save scroll position when navigating to a climb detail page.
+	if (to?.url.pathname.startsWith('/climb/')) {
+		sessionStorage.setItem(SCROLL_KEY, String(window.scrollY))
+	}
+})
+
+afterNavigate(({ from }) => {
+	// Restore scroll position when returning from a climb detail page.
+	if (from?.url.pathname.startsWith('/climb/')) {
+		const y = Number(sessionStorage.getItem(SCROLL_KEY) ?? '0')
+		// rAF ensures the list has rendered before scrolling.
+		requestAnimationFrame(() => window.scrollTo({ top: y, behavior: 'instant' }))
+	}
 })
 
 // ── PWA update notification ──────────────────────────────────────────────
