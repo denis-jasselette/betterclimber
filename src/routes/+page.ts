@@ -1,19 +1,21 @@
-import { redirect } from '@sveltejs/kit'
 import { browser } from '$app/environment'
-import type { ClimbWithStats } from '$lib/data/types'
+import type { Angle, ClimbWithStats } from '$lib/data/types'
+import { ALL_ANGLES } from '$lib/data/types'
 import { resultsStore } from '$lib/results-store.svelte'
 import { parseFiltersFromUrl } from '$lib/url-filters'
 import type { PageLoad } from './$types'
 
-export const load: PageLoad = async ({ url, fetch }) => {
-	const { angle, filters } = parseFiltersFromUrl(url)
+const DEFAULT_ANGLE: Angle = 45
 
-	// Default to angle 45 when none is set — grade/quality/ascents are angle-specific.
-	if (angle === null) {
-		const params = new URLSearchParams(url.searchParams)
-		params.set('angle', '45')
-		redirect(302, `/?${params}`)
-	}
+export const load: PageLoad = async ({ url, fetch }) => {
+	const { angle: parsedAngle, filters } = parseFiltersFromUrl(url)
+
+	// Default to 45 when no valid angle is in the URL.
+	// The replaceState effect in +page.svelte will update the URL to reflect it.
+	const angle: Angle =
+		parsedAngle !== null && (ALL_ANGLES as ReadonlyArray<number>).includes(parsedAngle)
+			? parsedAngle
+			: DEFAULT_ANGLE
 
 	// On the client, if the store already has results (back navigation or
 	// returning from detail page), return them instantly — no API round-trip.
