@@ -17,7 +17,7 @@
  */
 
 import { json } from '@sveltejs/kit'
-import { and, desc, eq, gte, ilike, isNotNull, lte, or, sql } from 'drizzle-orm'
+import { and, desc, eq, gt, gte, ilike, isNotNull, lte, or, sql } from 'drizzle-orm'
 import type { Climb, ClimbStats, ClimbWithStats } from '$lib/data/types'
 import { db } from '$lib/server/db'
 import { climbStats, climbs } from '$lib/server/db/schema'
@@ -53,6 +53,8 @@ export const GET: RequestHandler = async ({ url }) => {
 	const minQuality = p.has('minQuality') ? Number(p.get('minQuality')) : 0
 	const query = p.get('query')?.trim() ?? ''
 	const onlyBenchmarks = p.get('onlyBenchmarks') === '1'
+	const onlyCampus = p.get('onlyCampus') === '1'
+	const onlyRoutes = p.get('onlyRoutes') === '1'
 	const limit = Math.min(Number(p.get('limit') ?? DEFAULT_LIMIT), MAX_LIMIT)
 	const cursorStr = p.get('cursor')
 	const cursor = cursorStr ? decodeCursor(cursorStr) : null
@@ -77,6 +79,8 @@ export const GET: RequestHandler = async ({ url }) => {
 		// biome-ignore lint/style/noNonNullAssertion: or() with 2 args always returns a value
 		climbConditions.push(textFilter!)
 	}
+	if (onlyCampus) climbConditions.push(eq(climbs.allow_matches, false))
+	if (onlyRoutes) climbConditions.push(gt(climbs.frames_count, 1))
 
 	// Cursor-based pagination (WHERE quality < prev OR (quality = prev AND ascents < prev) OR ...)
 	if (cursor) {
@@ -143,9 +147,8 @@ export const GET: RequestHandler = async ({ url }) => {
 			angle: row.angle,
 			is_draft: row.is_draft,
 			allow_matches: row.allow_matches,
-			// Not in real DB — always false
-			is_campus: false,
-			is_route: false
+			is_campus: !row.allow_matches,
+			is_route: (row.frames_count ?? 0) > 1
 		}
 
 		const activeStats: ClimbStats = {

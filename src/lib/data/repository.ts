@@ -64,13 +64,15 @@ function buildSearchParams(filters: Partial<ClimbFilters>, angle: number | null)
 	const p = new URLSearchParams()
 	if (angle !== null) p.set('angle', String(angle))
 
-	const { gradeMin, gradeMax, minQuality, query, onlyBenchmarks } = filters
+	const { gradeMin, gradeMax, minQuality, query, onlyBenchmarks, onlyCampus, onlyRoutes } = filters
 
 	if (gradeMin != null) p.set('gradeMin', String(gradeToMinDifficulty(gradeMin)))
 	if (gradeMax != null) p.set('gradeMax', String(gradeToMaxDifficulty(gradeMax)))
 	if (minQuality && minQuality > 0) p.set('minQuality', String(minQuality))
 	if (query?.trim()) p.set('query', query.trim())
 	if (onlyBenchmarks) p.set('onlyBenchmarks', '1')
+	if (onlyCampus) p.set('onlyCampus', '1')
+	if (onlyRoutes) p.set('onlyRoutes', '1')
 
 	p.set('limit', '200')
 

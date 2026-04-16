@@ -45,8 +45,8 @@ export const GET: RequestHandler = async ({ params, url }) => {
 		angle: climbRow.angle,
 		is_draft: climbRow.is_draft,
 		allow_matches: climbRow.allow_matches,
-		is_campus: false,
-		is_route: false
+		is_campus: !climbRow.allow_matches,
+		is_route: (climbRow.frames_count ?? 0) > 1
 	}
 
 	const stats: ClimbStats[] = statsRows.map((s) => ({
