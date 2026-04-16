@@ -72,7 +72,26 @@ frames string → parseFrames() → [{placementId, roleId}]
 Valid placement IDs start at 1073. IDs below this don't exist in the mock data and produce an empty hold array (which sends a clear packet).
 
 ### Mock Data Limitation
-Only 399 climbs (subset). Full Kilter database has thousands. See TODO: investigate syncing from proprietary DB file.
+Only 399 climbs (subset). Full Kilter database has thousands.
+
+To get the full dataset, extract from the Aurora SQLite database (see `scripts/extract-kilter-db.js`):
+
+1. Get the DB file from an Android device:
+   ```bash
+   adb backup -noapk com.auroraclimbing.kilterboard
+   npx ab-to-tar backup.ab | tar xvf -
+   # file: apps/com.auroraclimbing.kilterboard/db/aurora.db
+   ```
+2. Install the extraction dependency:
+   ```bash
+   pnpm add -D better-sqlite3
+   ```
+3. Run:
+   ```bash
+   pnpm extract-db /path/to/aurora.db
+   ```
+
+This replaces all five JSON files in `src/lib/data/mock/` with full data. No other code changes needed (`repository.ts` is the only consumer).
 
 ### Angle Type
 `Angle` is a union of numeric literals (all valid board angles). Use `(ALL_ANGLES as ReadonlyArray<number>).includes(parsed)` for runtime narrowing.
