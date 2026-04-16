@@ -10,7 +10,7 @@ import { searchClimbs } from '$lib/data/repository'
 import type { ClimbWithStats } from '$lib/data/types'
 import { resultsStore } from '$lib/results-store.svelte'
 import { searchStore } from '$lib/search-store.svelte'
-import { filtersToParams } from './+page'
+import { filtersToParams } from '$lib/url-filters'
 
 let { data } = $props()
 

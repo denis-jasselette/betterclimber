@@ -28,7 +28,6 @@
 		"@tailwindcss/vite": "^4.2.2",
 		"@types/node": "^25",
 		"@types/web-bluetooth": "^0.0.21",
-		"better-sqlite3": "^12.9.0",
 		"drizzle-kit": "^0.31.10",
 		"svelte": "^5.55.4",
 		"svelte-check": "^4.4.2",
@@ -45,7 +44,6 @@
 	},
 	"pnpm": {
 		"onlyBuiltDependencies": [
-			"better-sqlite3",
 			"esbuild"
 		]
 	}
