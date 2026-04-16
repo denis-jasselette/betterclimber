@@ -22,9 +22,8 @@ const { children, angle: angleProp = undefined }: Props = $props()
 const displayAngle = $derived(angleProp !== undefined ? angleProp : searchStore.angle)
 </script>
 
-<header
-	class="sticky top-0 z-50 flex items-center gap-3 border-b border-border bg-bg/90 px-4 py-3 backdrop-blur-sm"
->
+<header class="sticky top-0 z-50 border-b border-border bg-bg/90 backdrop-blur-sm">
+	<div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
 	<!-- Logo + title -->
 	<div class="flex items-center gap-2">
 		<svg
@@ -62,4 +61,5 @@ const displayAngle = $derived(angleProp !== undefined ? angleProp : searchStore.
 
 	<!-- Settings -->
 	<SettingsButton />
+	</div>
 </header>
