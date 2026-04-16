@@ -30,7 +30,7 @@
 		"@types/web-bluetooth": "^0.0.21",
 		"drizzle-kit": "^0.31.10",
 		"svelte": "^5.55.4",
-		"svelte-check": "^4.4.2",
+		"svelte-check": "^4.4.6",
 		"tailwindcss": "^4.2.2",
 		"typescript": "^6.0.2",
 		"vite": "^8.0.8",
