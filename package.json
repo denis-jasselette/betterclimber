@@ -37,6 +37,8 @@
 		"svelte-range-slider-pips": "^4.1.0"
 	},
 	"pnpm": {
-		"onlyBuiltDependencies": ["esbuild"]
+		"onlyBuiltDependencies": [
+			"esbuild"
+		]
 	}
 }
