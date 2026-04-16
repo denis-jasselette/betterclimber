@@ -1,13 +1,13 @@
+import { preloadData } from '$app/navigation'
 import { getClimb } from '$lib/data/repository'
 import type { Angle } from '$lib/data/types'
 import { ALL_ANGLES } from '$lib/data/types'
+import { resultsStore } from '$lib/results-store.svelte'
 import type { PageLoad } from './$types'
 
-// Disable SSR — the page reads from localStorage (log-service) and the
-// in-memory resultsStore, both of which are browser-only.
-// The load function still runs on the client for every navigation, so
-// the angle param is available immediately after hydration.
 export const ssr = false
+
+const PREFETCH_RADIUS = 10
 
 export const load: PageLoad = async ({ params, url }) => {
 	const raw = url.searchParams.get('angle')
@@ -17,9 +17,27 @@ export const load: PageLoad = async ({ params, url }) => {
 			? (parsed as Angle)
 			: null
 
-	// Pre-fetch the climb with the correct angle so stats are angle-aware
-	// on first render (before the in-memory resultsStore is populated).
-	const item = await getClimb(params.uuid, angle)
+	// If the item is already in the results store (client-side swipe navigation),
+	// return it immediately — no API round-trip needed.
+	const fromStore = resultsStore.list.find((r) => r.climb.uuid === params.uuid) ?? null
+	const item = fromStore ?? (await getClimb(params.uuid, angle))
+
+	// Prefetch neighboring pages so subsequent swipes are instant.
+	// Fire-and-forget: we don't await these — they populate SvelteKit's data cache.
+	const currentIndex = resultsStore.indexOf(params.uuid)
+	if (currentIndex !== -1) {
+		const list = resultsStore.list
+		const angleQuery = angle !== null ? `?angle=${angle}` : ''
+		const start = Math.max(0, currentIndex - PREFETCH_RADIUS)
+		const end = Math.min(list.length - 1, currentIndex + PREFETCH_RADIUS)
+
+		for (let i = start; i <= end; i++) {
+			if (i === currentIndex) continue
+			const neighbor = list[i]
+			// preloadData caches the load function result; goto() uses the cache.
+			preloadData(`/climb/${neighbor.climb.uuid}${angleQuery}`)
+		}
+	}
 
 	return { item, angle }
 }

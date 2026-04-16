@@ -7,8 +7,29 @@
 
 import type { ClimbWithStats } from '$lib/data/types'
 
+const STORAGE_KEY = 'kilter-results'
+
+function loadFromSession(): ClimbWithStats[] {
+	if (typeof sessionStorage === 'undefined') return []
+	try {
+		const raw = sessionStorage.getItem(STORAGE_KEY)
+		return raw ? (JSON.parse(raw) as ClimbWithStats[]) : []
+	} catch {
+		return []
+	}
+}
+
+function saveToSession(list: ClimbWithStats[]) {
+	if (typeof sessionStorage === 'undefined') return
+	try {
+		sessionStorage.setItem(STORAGE_KEY, JSON.stringify(list))
+	} catch {
+		// Quota exceeded — silently ignore; prev/next just won't work after refresh
+	}
+}
+
 function createResultsStore() {
-	let list = $state<ClimbWithStats[]>([])
+	let list = $state<ClimbWithStats[]>(loadFromSession())
 
 	return {
 		get list() {
@@ -16,6 +37,7 @@ function createResultsStore() {
 		},
 		set list(v: ClimbWithStats[]) {
 			list = v
+			saveToSession(v)
 		},
 
 		indexOf(uuid: string): number {
