@@ -71,14 +71,13 @@ const nextItem = $derived(resultsStore.next(uuid))
 const listIndex = $derived(resultsStore.indexOf(uuid))
 const listTotal = $derived(resultsStore.list.length)
 
-function goTo(target: ClimbWithStats) {
-	// eslint-disable-next-line svelte/no-navigation-without-resolve
-	goto(`/climb/${target.climb.uuid}${angleParam}`, { replaceState: true })
-}
+const prevHref = $derived(prevItem ? `/climb/${prevItem.climb.uuid}${angleParam}` : null)
+const nextHref = $derived(nextItem ? `/climb/${nextItem.climb.uuid}${angleParam}` : null)
+const backHref = $derived(`/${angleParam}`)
 
-function goBack() {
-	// eslint-disable-next-line svelte/no-navigation-without-resolve
-	goto(`/${angleParam ? angleParam : ''}`)
+// Used for touch swipe (programmatic navigation)
+function goTo(target: ClimbWithStats) {
+	goto(`/climb/${target.climb.uuid}${angleParam}`, { replaceState: true })
 }
 
 // ── Touch swipe ───────────────────────────────────────────────────────────
@@ -208,8 +207,8 @@ async function lightUp() {
 		<div class="mx-auto max-w-2xl px-4 py-4">
 			<!-- Nav row: back link + prev/next -->
 			<div class="flex items-center justify-between">
-				<button
-					onclick={goBack}
+				<a
+					href={backHref}
 					class="inline-flex items-center gap-1.5 text-sm text-muted transition hover:text-text"
 				>
 					<svg
@@ -222,46 +221,78 @@ async function lightUp() {
 						<path d="M19 12H5M12 5l-7 7 7 7" />
 					</svg>
 					Back
-				</button>
+				</a>
 
 				<div class="flex items-center gap-2">
 					{#if listTotal > 0 && listIndex !== -1}
 						<span class="text-xs text-muted">{listIndex + 1} of {listTotal}</span>
 					{/if}
-					<button
-						onclick={() => prevItem && goTo(prevItem)}
-						disabled={!prevItem}
-						aria-label="Previous climb"
-						class="flex items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-3 py-2 text-sm font-semibold text-muted transition hover:text-text disabled:cursor-not-allowed disabled:opacity-30"
-					>
-						<svg
-							class="size-5"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
+					{#if prevHref}
+						<a
+							href={prevHref}
+							aria-label="Previous climb"
+							class="flex items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-3 py-2 text-sm font-semibold text-muted transition hover:text-text"
 						>
-							<path d="M15 18l-6-6 6-6" />
-						</svg>
-						Prev
-					</button>
-					<button
-						onclick={() => nextItem && goTo(nextItem)}
-						disabled={!nextItem}
-						aria-label="Next climb"
-						class="flex items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-3 py-2 text-sm font-semibold text-muted transition hover:text-text disabled:cursor-not-allowed disabled:opacity-30"
-					>
-						Next
-						<svg
-							class="size-5"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
+							<svg
+								class="size-5"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<path d="M15 18l-6-6 6-6" />
+							</svg>
+							Prev
+						</a>
+					{:else}
+						<span
+							class="flex cursor-not-allowed items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-3 py-2 text-sm font-semibold text-muted opacity-30"
 						>
-							<path d="M9 18l6-6-6-6" />
-						</svg>
-					</button>
+							<svg
+								class="size-5"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<path d="M15 18l-6-6 6-6" />
+							</svg>
+							Prev
+						</span>
+					{/if}
+					{#if nextHref}
+						<a
+							href={nextHref}
+							aria-label="Next climb"
+							class="flex items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-3 py-2 text-sm font-semibold text-muted transition hover:text-text"
+						>
+							Next
+							<svg
+								class="size-5"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<path d="M9 18l6-6-6-6" />
+							</svg>
+						</a>
+					{:else}
+						<span
+							class="flex cursor-not-allowed items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-3 py-2 text-sm font-semibold text-muted opacity-30"
+						>
+							Next
+							<svg
+								class="size-5"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<path d="M9 18l6-6-6-6" />
+							</svg>
+						</span>
+					{/if}
 				</div>
 			</div>
 
