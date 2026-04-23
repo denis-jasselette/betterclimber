@@ -40,7 +40,7 @@
 		"workbox-window": "^7.4.0"
 	},
 	"dependencies": {
-		"@neondatabase/serverless": "^1.0.2",
+		"@neondatabase/serverless": "^1.1.0",
 		"drizzle-orm": "^0.45.2",
 		"svelte-range-slider-pips": "^4.1.1"
 	},
