@@ -1,37 +1,27 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.4.12/schema.json",
-	"vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
-	"files": {
-		"ignoreUnknown": true,
-		"includes": ["**", "!.claude", "!.playwright-cli", "!src/routes/layout.css"]
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true
+	},
+	"assist": {
+		"enabled": true,
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
 	},
 	"formatter": {
 		"enabled": true,
-		"indentStyle": "tab",
-		"indentWidth": 2,
-		"lineEnding": "lf",
-		"lineWidth": 100,
-		"includes": ["**", "!**/package-lock.json", "!**/pnpm-lock.yaml", "!**/yarn.lock"]
+		"lineWidth": 100
 	},
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true,
-			"suspicious": {
-				"noUnusedExpressions": "off"
-			}
-		},
-		"includes": [
-			"**",
-			"!**/node_modules",
-			"!.svelte-kit",
-			"!build",
-			"!**/.env",
-			"!**/.env.*",
-			"**/.env.example",
-			"**/.env.test",
-			"!src/routes/layout.css"
-		]
+			"recommended": true
+		}
 	},
 	"javascript": {
 		"formatter": {
@@ -39,43 +29,31 @@
 			"trailingCommas": "none",
 			"semicolons": "asNeeded",
 			"arrowParentheses": "always"
-		},
-		"globals": []
+		}
+	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
 	},
 	"html": {
 		"formatter": { "indentScriptAndStyle": false }
 	},
 	"overrides": [
 		{
-			"includes": ["**/*.ts", "**/*.tsx", "**/*.svelte.ts"],
+			"includes": ["**/*.svelte"],
 			"linter": {
 				"rules": {
-					"correctness": {
-						"noUndeclaredVariables": "off",
-						"noUnreachable": "off"
-					},
-					"suspicious": {
-						"noVar": "error"
-					},
 					"style": {
-						"useConst": "error"
-					}
-				}
-			}
-		},
-		{
-			"includes": ["**/*.svelte", "**/*.svelte.ts", "**/*.svelte.js"],
-			"linter": {
-				"rules": {
+						"useConst": "off",
+						"useImportType": "off"
+					},
 					"correctness": {
-						"noInnerDeclarations": "off",
-						"noSelfAssign": "off",
-						"noUnusedImports": "off",
-						"noUnusedVariables": "off"
+						"noUnusedVariables": "off",
+						"noUnusedImports": "off"
 					}
 				}
 			}
 		}
-	],
-	"assist": { "enabled": true, "actions": { "source": { "organizeImports": "on" } } }
+	]
 }

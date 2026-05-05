@@ -1,6 +1,6 @@
 @import "tailwindcss";
-@plugin '@tailwindcss/forms';
-@plugin '@tailwindcss/typography';
+@plugin "@tailwindcss/forms";
+@plugin "@tailwindcss/typography";
 
 /* ── Map CSS vars to Tailwind v4 theme tokens ─────────────────────────────── */
 @theme inline {
