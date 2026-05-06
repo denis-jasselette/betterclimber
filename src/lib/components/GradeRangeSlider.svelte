@@ -1,37 +1,40 @@
 <script lang="ts">
+	import { untrack } from 'svelte'
 	import { browser } from '$app/environment'
 	import { ALL_GRADES, formatGrade } from '$lib/data/types'
 	import { settings } from '$lib/settings-store.svelte'
 
-	let {
-		gradeMin = $bindable(),
-		gradeMax = $bindable()
-	}: {
+	interface Props {
 		gradeMin: string | null
 		gradeMax: string | null
-	} = $props()
+		onchange: (gradeMin: string | null, gradeMax: string | null) => void
+	}
+
+	let { gradeMin, gradeMax, onchange }: Props = $props()
 
 	const grades = ALL_GRADES
 	const max = grades.length - 1
 
-	// Work in index-space: 0..max
-	let values = $state([
-		gradeMin !== null ? grades.indexOf(gradeMin) : 0,
-		gradeMax !== null ? grades.indexOf(gradeMax) : max
-	])
+	// Work in index-space: 0..max. untrack: props are intentionally read only once here;
+	// the $effect below handles subsequent prop changes.
+	let values = $state(
+		untrack(() => [
+			gradeMin !== null ? grades.indexOf(gradeMin) : 0,
+			gradeMax !== null ? grades.indexOf(gradeMax) : max
+		])
+	)
 
 	let updatingFromSlider = false
 
-	// Propagate slider changes back to the bindable props
+	// Propagate slider changes out via the callback
 	function onSliderChange(e: CustomEvent<{ values: number[] }>) {
 		updatingFromSlider = true
 		const [lo, hi] = e.detail.values
-		gradeMin = lo === 0 ? null : grades[lo]
-		gradeMax = hi === max ? null : grades[hi]
+		onchange(lo === 0 ? null : grades[lo], hi === max ? null : grades[hi])
 		updatingFromSlider = false
 	}
 
-	// Sync inward when props are reset externally (e.g. "Clear filters")
+	// Sync inward when props change externally (e.g. "Clear filters", URL navigation)
 	$effect(() => {
 		if (updatingFromSlider) return
 		const lo = gradeMin !== null ? grades.indexOf(gradeMin) : 0
@@ -41,7 +44,7 @@
 		}
 	})
 
-	const label = $derived(() => {
+	const label = $derived.by(() => {
 		const lo = formatGrade(grades[values[0]], settings.gradingSystem)
 		const hi = formatGrade(grades[values[1]], settings.gradingSystem)
 		if (values[0] === 0 && values[1] === max) return 'Any grade'
@@ -67,7 +70,7 @@
 <div class="space-y-2">
 	<div class="flex items-center justify-between">
 		<p class="text-xs font-semibold tracking-wider text-muted uppercase">Grade</p>
-		<span class="text-xs font-semibold text-text/80">{label()}</span>
+		<span class="text-xs font-semibold text-text/80">{label}</span>
 	</div>
 
 	<div class="grade-slider">
