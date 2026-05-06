@@ -48,6 +48,10 @@ export const ROLE = {
 
 export type RoleId = (typeof ROLE)[keyof typeof ROLE]
 
+export function isRoleId(n: number): n is RoleId {
+	return Object.values(ROLE).includes(n as RoleId)
+}
+
 /** LED colors (8-bit RGB) for each hold role, matching the real app. */
 export const ROLE_COLORS: Record<RoleId, { r: number; g: number; b: number; hex: string }> = {
 	[ROLE.START]: { r: 0x00, g: 0xff, b: 0x00, hex: '#00ff00' }, // green
@@ -62,6 +66,27 @@ export const ROLE_LABELS: Record<RoleId, string> = {
 	[ROLE.HAND]: 'Hand',
 	[ROLE.FINISH]: 'Finish',
 	[ROLE.FOOT]: 'Foot'
+}
+
+export const SET = {
+	BOLT_ON: 1,
+	SCREW_ON: 20
+} as const
+
+export type SetId = (typeof SET)[keyof typeof SET]
+
+export function isSetId(n: number): n is SetId {
+	return Object.values(SET).includes(n as SetId)
+}
+
+export const SET_RADII: Record<SetId, number> = {
+	[SET.BOLT_ON]: 32,
+	[SET.SCREW_ON]: 20
+}
+
+export const SET_LABELS: Record<SetId, string> = {
+	[SET.BOLT_ON]: 'Bolt-on',
+	[SET.SCREW_ON]: 'Screw-on'
 }
 
 // ─── Climbs ─────────────────────────────────────────────────────────────────
