@@ -1,36 +1,38 @@
 import type { Angle, ClimbFilters } from '$lib/data/types'
-import { ALL_ANGLES } from '$lib/data/types'
+import { isAngle } from '$lib/data/types'
 
 // ── URL ↔ filter serialisation ────────────────────────────────────────────────
-// Only shareable filters go in the URL. Personal filters (ticked, attempted,
-// liked, recentlyLit) stay in localStorage only.
 
 export function filtersToParams(
 	angle: number | null,
-	filters: Partial<ClimbFilters>
+	filters: Partial<ClimbFilters> = {},
+	cursor: number | null = null
 ): URLSearchParams {
 	const p = new URLSearchParams()
 	if (angle !== null) p.set('angle', String(angle))
-	if (filters.query?.trim()) p.set('q', filters.query.trim())
+	if (filters.query?.trim()) p.set('q', filters.query)
 	if (filters.gradeMin) p.set('gmin', filters.gradeMin)
 	if (filters.gradeMax) p.set('gmax', filters.gradeMax)
 	if (filters.minQuality && filters.minQuality > 0) p.set('qual', String(filters.minQuality))
 	if (filters.onlyBenchmarks) p.set('bench', '1')
 	if (filters.onlyCampus) p.set('campus', '1')
 	if (filters.onlyRoutes) p.set('routes', '1')
+	if (filters.excludeTicked) p.set('noticked', '1')
+	if (filters.onlyAttempted) p.set('attempted', '1')
+	if (filters.onlyLiked) p.set('liked', '1')
+	if (filters.onlyRecentlyLit) p.set('recent', '1')
+	if (cursor !== null) p.set('cursor', String(cursor))
 	return p
 }
 
 export function parseFiltersFromUrl(url: URL): {
 	angle: Angle | null
 	filters: Partial<ClimbFilters>
+	cursor: number | null
 } {
 	const rawAngle = url.searchParams.get('angle')
 	const parsedAngle = Number(rawAngle)
-	const angle =
-		rawAngle !== null && (ALL_ANGLES as ReadonlyArray<number>).includes(parsedAngle)
-			? (parsedAngle as Angle)
-			: null
+	const angle = rawAngle !== null && isAngle(parsedAngle) ? parsedAngle : null
 
 	const filters: Partial<ClimbFilters> = {}
 	const q = url.searchParams.get('q')
@@ -45,6 +47,13 @@ export function parseFiltersFromUrl(url: URL): {
 	if (url.searchParams.get('bench') === '1') filters.onlyBenchmarks = true
 	if (url.searchParams.get('campus') === '1') filters.onlyCampus = true
 	if (url.searchParams.get('routes') === '1') filters.onlyRoutes = true
+	if (url.searchParams.get('noticked') === '1') filters.excludeTicked = true
+	if (url.searchParams.get('attempted') === '1') filters.onlyAttempted = true
+	if (url.searchParams.get('liked') === '1') filters.onlyLiked = true
+	if (url.searchParams.get('recent') === '1') filters.onlyRecentlyLit = true
 
-	return { angle, filters }
+	const rawCursor = url.searchParams.get('cursor')
+	const cursor = rawCursor !== null ? Number(rawCursor) : null
+
+	return { angle, filters, cursor }
 }

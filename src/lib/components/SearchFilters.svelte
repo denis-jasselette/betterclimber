@@ -1,16 +1,25 @@
 <script lang="ts">
-import { searchStore } from '$lib/search-store.svelte'
+import type { ClimbFilters } from '$lib/data/types'
 import GradeRangeSlider from './GradeRangeSlider.svelte'
 
-let { resultCount }: { resultCount: number } = $props()
+interface Props {
+	resultCount?: number
+	filters: Partial<ClimbFilters>
+	handleUpdateFilters: (newFilters: Partial<ClimbFilters>) => void
+	handleClearFilters: () => void
+}
 
-const filters = searchStore.filters
+let { resultCount, filters, handleUpdateFilters, handleClearFilters }: Props = $props()
 
-const hasActiveFilters = $derived(
+const qualityStars = [1, 2, 3] as const
+
+let advancedOpen = $state(false)
+
+let hasActiveFilters = $derived(
 	filters.gradeMin !== null ||
 		filters.gradeMax !== null ||
-		filters.minQuality > 0 ||
-		filters.query.trim().length > 0 ||
+		filters.minQuality ||
+		filters.query?.trim() ||
 		filters.excludeTicked ||
 		filters.onlyAttempted ||
 		filters.onlyLiked ||
@@ -20,20 +29,9 @@ const hasActiveFilters = $derived(
 		filters.onlyRoutes
 )
 
-const qualityStars = [1, 2, 3] as const
-
-// Advanced section open state — local so the user can freely toggle it
-// without it snapping shut when a filter is cleared.
-// It is forced open (but never forced closed) when an advanced filter becomes active.
-let advancedOpen = $state(
-	filters.minQuality > 0 || filters.onlyBenchmarks || filters.onlyCampus || filters.onlyRoutes
+let hasActiveAdvancedFilter = $derived(
+	filters.minQuality || filters.onlyBenchmarks || filters.onlyCampus || filters.onlyRoutes
 )
-const hasAdvancedFilter = $derived(
-	filters.minQuality > 0 || filters.onlyBenchmarks || filters.onlyCampus || filters.onlyRoutes
-)
-$effect(() => {
-	if (hasAdvancedFilter) advancedOpen = true
-})
 </script>
 
 <div class="space-y-5 p-1">
@@ -52,13 +50,14 @@ $effect(() => {
 		<input
 			type="search"
 			placeholder="Search by name or setter…"
-			bind:value={filters.query}
+			value={filters.query}
+			oninput={(e) => handleUpdateFilters({ ...filters, query: e.currentTarget.value })}
 			class="w-full rounded-xl border border-border bg-surface-raised/60 py-2.5 pr-4 pl-9 text-sm text-text placeholder:text-muted focus:ring-cyan-500 "
 		/>
 	</div>
 
 	<!-- Grade range slider -->
-	<GradeRangeSlider bind:gradeMin={filters.gradeMin} bind:gradeMax={filters.gradeMax} />
+	<!-- <GradeRangeSlider bind:gradeMin={filters.gradeMin} bind:gradeMax={filters.gradeMax} /> -->
 
 	<!-- User log filters -->
 	<div>
@@ -66,6 +65,7 @@ $effect(() => {
 		<div class="space-y-1.5">
 			{#snippet logToggle(active: boolean, toggle: () => void, icon: string, label: string)}
 				<button
+					type="button"
 					onclick={toggle}
 					class="flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-xs font-medium transition active:scale-95 {active
 						? 'border-cyan-600 bg-cyan-600/10 text-cyan-300'
@@ -100,25 +100,29 @@ $effect(() => {
 			{/snippet}
 
 			{@render logToggle(
-				filters.excludeTicked,
-				() => (filters.excludeTicked = !filters.excludeTicked),
+				filters.excludeTicked ?? false,
+				() => {
+					filters.excludeTicked = !(filters.excludeTicked ?? false)
+					handleUpdateFilters(filters)
+				},
 				'M5 13l4 4L19 7',
 				'Hide already ticked'
 			)}
 			{@render logToggle(
-				filters.onlyAttempted,
-				() => (filters.onlyAttempted = !filters.onlyAttempted),
+				filters.onlyAttempted ?? false,
+				() => handleUpdateFilters({ ...filters, onlyAttempted: !filters.onlyAttempted }),
 				'M12 5v14M5 12l7-7 7 7',
 				'Show only attempted'
 			)}
 			{@render logToggle(
-				filters.onlyLiked,
-				() => (filters.onlyLiked = !filters.onlyLiked),
+				filters.onlyLiked ?? false,
+				() => handleUpdateFilters({ ...filters, onlyLiked: !filters.onlyLiked }),
 				'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z',
 				'Show only liked'
 			)}
 			<button
-				onclick={() => (filters.onlyRecentlyLit = !filters.onlyRecentlyLit)}
+				type="button"
+				onclick={() => handleUpdateFilters({ ...filters, onlyRecentlyLit: !filters.onlyRecentlyLit })}
 				class="flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-xs font-medium transition active:scale-95 {filters.onlyRecentlyLit
 					? 'border-cyan-600 bg-cyan-600/10 text-cyan-300'
 					: 'border-border bg-surface-raised/60 text-muted hover:border-border hover:text-text'}"
@@ -159,8 +163,7 @@ $effect(() => {
 
 	<!-- Advanced filters -->
 	<details
-		open={advancedOpen}
-		ontoggle={(e) => (advancedOpen = (e.currentTarget as HTMLDetailsElement).open)}
+		bind:open={advancedOpen}
 		class="group"
 	>
 		<summary
@@ -178,7 +181,7 @@ $effect(() => {
 			</svg>
 			Advanced
 			<!-- dot indicator when a filter inside is active -->
-			{#if filters.minQuality > 0 || filters.onlyBenchmarks || filters.onlyCampus || filters.onlyRoutes}
+			{#if hasActiveAdvancedFilter}
 				<span class="ml-0.5 size-1.5 rounded-full bg-cyan-400"></span>
 			{/if}
 		</summary>
@@ -192,6 +195,7 @@ $effect(() => {
 						<button
 							onclick={() => {
 								filters.minQuality = filters.minQuality === stars ? 0 : stars;
+								handleUpdateFilters(filters)
 							}}
 							class="flex items-center gap-1 rounded-lg border px-3 py-1 text-xs font-semibold transition active:scale-95 {filters.minQuality ===
 							stars
@@ -218,7 +222,7 @@ $effect(() => {
 
 			<!-- Benchmarks only -->
 			<button
-				onclick={() => (filters.onlyBenchmarks = !filters.onlyBenchmarks)}
+				onclick={() => {filters.onlyBenchmarks = !filters.onlyBenchmarks; handleUpdateFilters(filters)}}
 				class="flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-xs font-medium transition active:scale-95 {filters.onlyBenchmarks
 					? 'border-yellow-500 bg-yellow-500/10 text-yellow-300'
 					: 'border-border bg-surface-raised/60 text-muted hover:border-border hover:text-text'}"
@@ -250,7 +254,7 @@ $effect(() => {
 
 			<!-- Campus only -->
 			<button
-				onclick={() => (filters.onlyCampus = !filters.onlyCampus)}
+				onclick={() => {filters.onlyCampus = !filters.onlyCampus; handleUpdateFilters(filters)}}
 				class="flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-xs font-medium transition active:scale-95 {filters.onlyCampus
 					? 'border-purple-500 bg-purple-500/10 text-purple-300'
 					: 'border-border bg-surface-raised/60 text-muted hover:border-border hover:text-text'}"
@@ -293,7 +297,7 @@ $effect(() => {
 
 			<!-- Routes only -->
 			<button
-				onclick={() => (filters.onlyRoutes = !filters.onlyRoutes)}
+				onclick={() => {filters.onlyRoutes = !filters.onlyRoutes; handleUpdateFilters(filters)}}
 				class="flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-xs font-medium transition active:scale-95 {filters.onlyRoutes
 					? 'border-blue-500 bg-blue-500/10 text-blue-300'
 					: 'border-border bg-surface-raised/60 text-muted hover:border-border hover:text-text'}"
@@ -336,13 +340,15 @@ $effect(() => {
 
 	<!-- Result count + clear -->
 	<div class="flex items-center justify-between border-t border-border pt-3">
+		{#if resultCount !== undefined}
 		<p class="text-xs text-muted">
 			<span class="font-semibold text-text/80">{resultCount}</span>
 			{resultCount === 1 ? 'climb' : 'climbs'}
 		</p>
+		{/if}
 		{#if hasActiveFilters}
 			<button
-				onclick={() => searchStore.clearFilters()}
+				onclick={handleClearFilters}
 				class="text-xs text-muted underline underline-offset-2 hover:text-text"
 			>
 				Clear filters

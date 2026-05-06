@@ -11,16 +11,17 @@ import {
 import { resolveHolds } from '$lib/data/repository'
 import type { ClimbWithStats } from '$lib/data/types'
 import { difficultyToGrade, formatGrade } from '$lib/data/types'
-import { searchStore } from '$lib/search-store.svelte'
 import { settings } from '$lib/settings-store.svelte'
 
 let {
 	item,
 	connector,
+	angle,
 	href
 }: {
 	item: ClimbWithStats
 	connector: BoardConnector
+	angle: number
 	href?: string
 } = $props()
 
@@ -39,7 +40,7 @@ const qualityFilled = $derived(activeStats ? Math.round(activeStats.quality_aver
 // logOverride is null until a local mutation fires; once set it takes precedence over the
 // derived value until the next uuid change, avoiding the state_referenced_locally warning.
 let logOverride = $state<ReturnType<typeof getEntry> | null>(null)
-let logDerived = $derived(getEntry(item.climb.uuid, searchStore.angle))
+let logDerived = $derived(getEntry(item.climb.uuid, angle))
 // Reset override when the climb changes
 $effect(() => {
 	// eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -49,11 +50,11 @@ $effect(() => {
 const logSnapshot = $derived(logOverride ?? logDerived)
 
 function refreshLog() {
-	logOverride = getEntry(item.climb.uuid, searchStore.angle)
+	logOverride = getEntry(item.climb.uuid, angle)
 }
 
 function toggleTick() {
-	setTicked(item.climb.uuid, searchStore.angle, !logSnapshot.ticked)
+	setTicked(item.climb.uuid, angle, !logSnapshot.ticked)
 	refreshLog()
 }
 
@@ -63,7 +64,7 @@ let attemptPressTimer: ReturnType<typeof setTimeout> | null = null
 function onAttemptPointerDown() {
 	attemptPressTimer = setTimeout(() => {
 		attemptPressTimer = null
-		resetAttempts(item.climb.uuid, searchStore.angle)
+		resetAttempts(item.climb.uuid, angle)
 		refreshLog()
 	}, 600)
 }
@@ -72,7 +73,7 @@ function onAttemptPointerUp() {
 	if (attemptPressTimer !== null) {
 		clearTimeout(attemptPressTimer)
 		attemptPressTimer = null
-		incrementAttempts(item.climb.uuid, searchStore.angle)
+		incrementAttempts(item.climb.uuid, angle)
 		refreshLog()
 	}
 }
@@ -85,7 +86,7 @@ function onAttemptPointerLeave() {
 }
 
 function toggleLike() {
-	setLiked(item.climb.uuid, searchStore.angle, !logSnapshot.liked)
+	setLiked(item.climb.uuid, angle, !logSnapshot.liked)
 	refreshLog()
 }
 
@@ -106,7 +107,7 @@ async function lightUp() {
 		}
 		const holds = await resolveHolds(climb)
 		await connector.lightUpClimb(holds)
-		recordLitUp(climb.uuid, searchStore.angle)
+		recordLitUp(climb.uuid, angle)
 		refreshLog()
 	} catch (err) {
 		lightError = err instanceof Error ? err.message : 'Failed to send to board.'

@@ -16,21 +16,12 @@ import { getClimb, resolveHolds } from '$lib/data/repository'
 import type { ClimbWithStats } from '$lib/data/types'
 import { difficultyToGrade, formatGrade, ROLE_COLORS, ROLE_LABELS } from '$lib/data/types'
 import { resultsStore } from '$lib/results-store.svelte'
-import { searchStore } from '$lib/search-store.svelte'
 import { settings } from '$lib/settings-store.svelte'
 
 let { data } = $props()
 
 // uuid is always defined for this route; $derived keeps it reactive for navigations
 const uuid = $derived(page.params.uuid ?? '')
-
-// ── Sync angle from URL / page data into the store ────────────────────────
-$effect(() => {
-	const angleFromUrl = data.angle
-	if (angleFromUrl !== null && angleFromUrl !== searchStore.angle) {
-		searchStore.angle = angleFromUrl
-	}
-})
 
 // ── Angle param string for navigation links ────────────────────────────────
 const angleParam = $derived(data.angle !== null ? `?angle=${data.angle}` : '')
@@ -190,7 +181,7 @@ async function lightUp() {
 	ontouchend={onTouchEnd}
 >
 	<!-- Top bar -->
-	<TopBar />
+	<TopBar angle={data.angle} />
 
 	{#if !item}
 		<!-- Loading skeleton -->

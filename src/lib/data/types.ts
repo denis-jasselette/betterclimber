@@ -215,6 +215,10 @@ export const ALL_GRADES: string[] = [...new Set(DIFFICULTY_GRADES.map((g) => g.b
 export const ALL_ANGLES = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70] as const
 export type Angle = (typeof ALL_ANGLES)[number]
 
+export function isAngle(n: number): n is Angle {
+	return ALL_ANGLES.includes(n as Angle)
+}
+
 // ─── Search / filter types ───────────────────────────────────────────────────
 
 export interface ClimbFilters {
