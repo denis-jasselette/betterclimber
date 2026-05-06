@@ -74,7 +74,7 @@ function onOutsideClick(e: MouseEvent) {
 
 	{#if open}
 		<div
-			class="absolute top-full right-0 z-50 mt-1.5 min-w-[7rem] overflow-hidden rounded-xl border border-border bg-surface shadow-2xl"
+			class="absolute top-full right-0 z-50 mt-1.5 min-w-28 overflow-hidden rounded-xl border border-border bg-surface shadow-2xl"
 		>
 			{#each ALL_ANGLES as a (a)}
 				<button

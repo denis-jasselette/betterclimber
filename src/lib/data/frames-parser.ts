@@ -10,28 +10,41 @@
  * move-sequence deltas used for beta videos.
  */
 
-import type { HoldToken, RoleId } from './types'
-import { ROLE } from './types'
-
-const FRAMES_RE = /p(\d+)r(\d+)/g
+import { getHoleById } from '$lib/data/mock/holes'
+import { getPlacementById } from '$lib/data/mock/placements'
+import type { HoldToken } from './types'
+import { isRoleId } from './types'
 
 /** Parse a frames string into an array of hold tokens (frame 0 only). */
 export function parseFrames(frames: string): HoldToken[] {
 	// Multi-frame climbs separate frames with `,"` — only use frame 0.
-	const frame0 = frames.split(',"')[0]
-	const tokens: HoldToken[] = []
-	FRAMES_RE.lastIndex = 0
-	let match: RegExpExecArray | null
-	// biome-ignore lint/suspicious/noAssignInExpressions: idiomatic regex exec loop
-	while ((match = FRAMES_RE.exec(frame0)) !== null) {
-		const placementId = parseInt(match[1], 10)
-		const roleId = parseInt(match[2], 10) as RoleId
-		tokens.push({ placementId, roleId })
-	}
-	return tokens
+	return parseFrame(frames.split(',"')[0])
 }
 
-/** Returns true if the given roleId is a known role. */
-export function isValidRole(roleId: number): roleId is RoleId {
-	return Object.values(ROLE).includes(roleId as RoleId)
+export function parseFrame(frame: string): HoldToken[] {
+	const re = /p(?<placement>\d+)r(?<role>\d+)/g
+	return [...frame.matchAll(re)].map(({ groups }) => {
+		if (!groups) throw new Error('Unreachable case')
+		const placementId = Number(groups.placement)
+		const roleId = Number(groups.role)
+
+		if (!isRoleId(roleId)) throw new Error(`Invalid roleId: ${roleId}`)
+
+		return { placementId, roleId }
+	})
+}
+
+export function resolveFrames(frames: string) {
+	return parseFrames(frames).map((token) => {
+		const placement = getPlacementById(token.placementId)
+		if (!placement) throw new Error(`Unknown placement ${token.placementId}`)
+		const hole = getHoleById(placement.hole_id)
+		if (!hole) throw new Error(`Unknown hole ${placement.hole_id}`)
+
+		return {
+			placement,
+			hole,
+			roleId: token.roleId
+		}
+	})
 }

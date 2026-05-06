@@ -48,7 +48,7 @@ const connectedLabel = $derived(connector.deviceName ?? 'Connected')
 
 		{#if connector.status === 'connected'}
 			<!-- Device name: hidden on mobile, visible sm+ -->
-			<span class="hidden max-w-[120px] truncate text-xs font-medium text-text sm:inline"
+			<span class="hidden max-w-30 truncate text-xs font-medium text-text sm:inline"
 				>{connectedLabel}</span
 			>
 			<!-- Disconnect button: icon-only on mobile, text on sm+ -->
