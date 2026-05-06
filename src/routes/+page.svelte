@@ -232,7 +232,7 @@ function reloadForUpdate() {
 		</aside>
 
 		<!-- Climb list -->
-		<main class="min-w-0 flex-1">
+		<main class="min-w-0 flex-1 p-1">
 			{#if effectiveAngle === null}
 				<!-- No angle selected yet -->
 				<div class="flex flex-col items-center gap-4 py-24 text-center">
