@@ -36,7 +36,7 @@ $effect(() => {
 })
 </script>
 
-<div class="space-y-5">
+<div class="space-y-5 p-1">
 	<!-- Search box -->
 	<div class="relative">
 		<svg
@@ -53,7 +53,7 @@ $effect(() => {
 			type="search"
 			placeholder="Search by name or setter…"
 			bind:value={filters.query}
-			class="w-full rounded-xl border border-border bg-surface-raised/60 py-2.5 pr-4 pl-9 text-sm text-text placeholder:text-muted focus:border-cyan-500 focus:outline focus:outline-1 focus:outline-cyan-500"
+			class="w-full rounded-xl border border-border bg-surface-raised/60 py-2.5 pr-4 pl-9 text-sm text-text placeholder:text-muted focus:ring-cyan-500 "
 		/>
 	</div>
 
