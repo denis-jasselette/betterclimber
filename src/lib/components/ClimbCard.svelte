@@ -43,8 +43,7 @@
 	let logDerived = $derived(getEntry(item.climb.uuid, angle))
 	// Reset override when the climb changes
 	$effect(() => {
-		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-		item.climb.uuid // track
+		item.climb.uuid // track — triggers $effect when uuid changes
 		logOverride = null
 	})
 	const logSnapshot = $derived(logOverride ?? logDerived)

@@ -33,7 +33,7 @@
 		// Access both to register as dependencies
 		const _items = items
 		const _ps = pageSize
-		_items // eslint-disable-line @typescript-eslint/no-unused-expressions
+		_items // track — re-run effect when items change
 		visibleCount = _ps
 	})
 
