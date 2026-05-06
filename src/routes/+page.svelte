@@ -1,88 +1,88 @@
 <script lang="ts">
-import { onMount } from 'svelte'
-import { browser } from '$app/environment'
-import { goto } from '$app/navigation'
-import ClimbCard from '$lib/components/ClimbCard.svelte'
-import SearchFilters from '$lib/components/SearchFilters.svelte'
-import TopBar from '$lib/components/TopBar.svelte'
-import VirtualList from '$lib/components/VirtualList.svelte'
-import { connector } from '$lib/connector.svelte'
-import { getEntry } from '$lib/data/log-service'
-import type { ClimbFilters, ClimbWithStats } from '$lib/data/types'
-import { resultsStore } from '$lib/results-store.svelte'
-import { filtersToParams } from '$lib/url-filters'
+	import { onMount } from 'svelte'
+	import { browser } from '$app/environment'
+	import { goto } from '$app/navigation'
+	import ClimbCard from '$lib/components/ClimbCard.svelte'
+	import SearchFilters from '$lib/components/SearchFilters.svelte'
+	import TopBar from '$lib/components/TopBar.svelte'
+	import VirtualList from '$lib/components/VirtualList.svelte'
+	import { connector } from '$lib/connector.svelte'
+	import { getEntry } from '$lib/data/log-service'
+	import type { ClimbFilters, ClimbWithStats } from '$lib/data/types'
+	import { resultsStore } from '$lib/results-store.svelte'
+	import { filtersToParams } from '$lib/url-filters'
 
-let { data } = $props()
+	let { data } = $props()
 
-let filterDrawerOpen = $state(false)
+	let filterDrawerOpen = $state(false)
 
-function toggleFilterDrawerOpen() {
-	filterDrawerOpen = !filterDrawerOpen
-}
+	function toggleFilterDrawerOpen() {
+		filterDrawerOpen = !filterDrawerOpen
+	}
 
-function closeFilterDrawer() {
-	filterDrawerOpen = false
-}
+	function closeFilterDrawer() {
+		filterDrawerOpen = false
+	}
 
-let activeFilterCount = $derived(
-	[
-		data.filters.gradeMin !== null || data.filters.gradeMax !== null,
-		data.filters.minQuality,
-		data.filters.excludeTicked,
-		data.filters.onlyAttempted,
-		data.filters.onlyLiked
-	].filter(Boolean).length
-)
-
-function handleUpdateFilters(newFilters: Partial<ClimbFilters> = {}) {
-	const params = filtersToParams(data.angle, newFilters)
-	goto(`?${params}`, { replaceState: true, keepFocus: true, noScroll: true })
-}
-
-function handleClearFilters() {
-	handleUpdateFilters({})
-}
-
-// ── Personal filter (client-side, localStorage) ───────────────────────────
-function applyPersonalFilters(
-	climbs: ClimbWithStats[],
-	filters: Partial<ClimbFilters>,
-	angle: number
-): ClimbWithStats[] {
-	if (!browser) return climbs
-	if (
-		!filters.excludeTicked &&
-		!filters.onlyAttempted &&
-		!filters.onlyLiked &&
-		!filters.onlyRecentlyLit
+	let activeFilterCount = $derived(
+		[
+			data.filters.gradeMin !== null || data.filters.gradeMax !== null,
+			data.filters.minQuality,
+			data.filters.excludeTicked,
+			data.filters.onlyAttempted,
+			data.filters.onlyLiked
+		].filter(Boolean).length
 	)
-		return climbs
-	return climbs.filter(({ climb }) => {
-		const entry = getEntry(climb.uuid, angle)
-		if (filters.excludeTicked && entry.ticked) return false
-		if (filters.onlyAttempted && entry.attemptCount === 0) return false
-		if (filters.onlyLiked && !entry.liked) return false
-		if (filters.onlyRecentlyLit && !entry.lastLitAt) return false
-		return true
-	})
-}
 
-// ── PWA update notification ──────────────────────────────────────────────
-let updateAvailable = $state(false)
-onMount(async () => {
-	if ('serviceWorker' in navigator) {
-		const { registerSW } = await import('virtual:pwa-register')
-		registerSW({
-			onNeedRefresh() {
-				updateAvailable = true
-			}
+	function handleUpdateFilters(newFilters: Partial<ClimbFilters> = {}) {
+		const params = filtersToParams(data.angle, newFilters)
+		goto(`?${params}`, { replaceState: true, keepFocus: true, noScroll: true })
+	}
+
+	function handleClearFilters() {
+		handleUpdateFilters({})
+	}
+
+	// ── Personal filter (client-side, localStorage) ───────────────────────────
+	function applyPersonalFilters(
+		climbs: ClimbWithStats[],
+		filters: Partial<ClimbFilters>,
+		angle: number
+	): ClimbWithStats[] {
+		if (!browser) return climbs
+		if (
+			!filters.excludeTicked &&
+			!filters.onlyAttempted &&
+			!filters.onlyLiked &&
+			!filters.onlyRecentlyLit
+		)
+			return climbs
+		return climbs.filter(({ climb }) => {
+			const entry = getEntry(climb.uuid, angle)
+			if (filters.excludeTicked && entry.ticked) return false
+			if (filters.onlyAttempted && entry.attemptCount === 0) return false
+			if (filters.onlyLiked && !entry.liked) return false
+			if (filters.onlyRecentlyLit && !entry.lastLitAt) return false
+			return true
 		})
 	}
-})
 
-function reloadForUpdate() {
-	window.location.reload()
-}
+	// ── PWA update notification ──────────────────────────────────────────────
+	let updateAvailable = $state(false)
+	onMount(async () => {
+		if ('serviceWorker' in navigator) {
+			const { registerSW } = await import('virtual:pwa-register')
+			registerSW({
+				onNeedRefresh() {
+					updateAvailable = true
+				}
+			})
+		}
+	})
+
+	function reloadForUpdate() {
+		window.location.reload()
+	}
 </script>
 
 <svelte:head>

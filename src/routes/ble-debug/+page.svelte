@@ -1,115 +1,115 @@
 <script lang="ts">
-import { resolve } from '$app/paths'
-import { connector } from '$lib/connector.svelte'
-import { resolveHolds } from '$lib/data/repository'
-import type { Climb } from '$lib/data/types'
+	import { resolve } from '$app/paths'
+	import { connector } from '$lib/connector.svelte'
+	import { resolveHolds } from '$lib/data/repository'
+	import type { Climb } from '$lib/data/types'
 
-const patternPresets = {
-	bottom: {
-		label: 'Bottom row',
-		frames:
-			'p4719r12p4700r13p4681r13p1089r13p1088r13p1087r13p1086r13p1085r13p1084r13p1083r13p1082r13p1081r13p1080r13p1079r13p1078r13p1077r13p1076r13p1075r13p1074r13p1073r13p4738r13p4757r13p4776r14'
-	},
-	top: {
-		label: 'Top row',
-		frames:
-			'p4737r12p4718r13p4699r13p1379r13p1380r13p1381r13p1382r13p1383r13p1384r13p1385r13p1386r13p1387r13p1388r13p1389r13p1390r13p1391r13p1392r13p1393r13p1394r13p1395r13p4756r13p4775r13p4794r14'
-	},
-	diagonal: {
-		label: 'Diagonal',
-		frames:
-			'p1464r15p1089r15p1091r12p1466r12p1109r13p1475r13p1127r13p1485r13p1145r13p1494r13p1163r13p1504r13p1181r13p1513r13p1199r13p1523r13p1217r13p1532r13p1235r13p1542r13p1253r13p1551r13p1271r13p1561r13p1289r13p1570r13p1307r13p1580r13p1325r13p1589r13p1343r13p1599r13p1361r13p4755r13p4775r14'
-	},
-	narasaki_bounce: {
-		label: 'Narasaki Bounce',
-		frames: 'p1083r15p1117r15p1164r12p1185r12p1233r13p1282r13p1303r13p1372r13p1392r14p1505r15'
+	const patternPresets = {
+		bottom: {
+			label: 'Bottom row',
+			frames:
+				'p4719r12p4700r13p4681r13p1089r13p1088r13p1087r13p1086r13p1085r13p1084r13p1083r13p1082r13p1081r13p1080r13p1079r13p1078r13p1077r13p1076r13p1075r13p1074r13p1073r13p4738r13p4757r13p4776r14'
+		},
+		top: {
+			label: 'Top row',
+			frames:
+				'p4737r12p4718r13p4699r13p1379r13p1380r13p1381r13p1382r13p1383r13p1384r13p1385r13p1386r13p1387r13p1388r13p1389r13p1390r13p1391r13p1392r13p1393r13p1394r13p1395r13p4756r13p4775r13p4794r14'
+		},
+		diagonal: {
+			label: 'Diagonal',
+			frames:
+				'p1464r15p1089r15p1091r12p1466r12p1109r13p1475r13p1127r13p1485r13p1145r13p1494r13p1163r13p1504r13p1181r13p1513r13p1199r13p1523r13p1217r13p1532r13p1235r13p1542r13p1253r13p1551r13p1271r13p1561r13p1289r13p1570r13p1307r13p1580r13p1325r13p1589r13p1343r13p1599r13p1361r13p4755r13p4775r14'
+		},
+		narasaki_bounce: {
+			label: 'Narasaki Bounce',
+			frames: 'p1083r15p1117r15p1164r12p1185r12p1233r13p1282r13p1303r13p1372r13p1392r14p1505r15'
+		}
 	}
-}
-type TestPattern = keyof typeof patternPresets | 'custom'
+	type TestPattern = keyof typeof patternPresets | 'custom'
 
-let selectedPattern: TestPattern = $state('bottom')
-let customFrames = $state('')
-let sending = $state(false)
+	let selectedPattern: TestPattern = $state('bottom')
+	let customFrames = $state('')
+	let sending = $state(false)
 
-async function sendTestPattern() {
-	if (!connector.isConnected || sending) return
-	sending = true
+	async function sendTestPattern() {
+		if (!connector.isConnected || sending) return
+		sending = true
 
-	try {
-		let frames: string
-		if (selectedPattern === 'custom') {
-			frames = customFrames.trim()
-			if (!frames) {
-				connector.log('warn', 'Please enter frames string')
+		try {
+			let frames: string
+			if (selectedPattern === 'custom') {
+				frames = customFrames.trim()
+				if (!frames) {
+					connector.log('warn', 'Please enter frames string')
+					return
+				}
+			} else {
+				frames = patternPresets[selectedPattern].frames
+			}
+
+			connector.log('info', `Sending test pattern: ${frames}`)
+
+			const climb: Climb = {
+				uuid: 'test-pattern',
+				layout_id: 1,
+				setter_id: 0,
+				setter_username: 'debug',
+				name: 'Test Pattern',
+				description: '',
+				frames,
+				frames_count: 1,
+				angle: null,
+				is_draft: false,
+				allow_matches: true,
+				is_campus: false,
+				is_route: false
+			}
+
+			const holds = await resolveHolds(climb)
+			connector.log('debug', `Resolved ${holds.length} hold(s)`)
+			if (holds.length === 0) {
+				connector.log('warn', 'No holds resolved — check placement IDs')
 				return
 			}
-		} else {
-			frames = patternPresets[selectedPattern].frames
+			await connector.lightUpClimb(holds)
+		} catch (err) {
+			connector.log('error', `Failed to send: ${err instanceof Error ? err.message : String(err)}`)
+		} finally {
+			sending = false
 		}
+	}
 
-		connector.log('info', `Sending test pattern: ${frames}`)
-
-		const climb: Climb = {
-			uuid: 'test-pattern',
-			layout_id: 1,
-			setter_id: 0,
-			setter_username: 'debug',
-			name: 'Test Pattern',
-			description: '',
-			frames,
-			frames_count: 1,
-			angle: null,
-			is_draft: false,
-			allow_matches: true,
-			is_campus: false,
-			is_route: false
+	async function sendClear() {
+		if (!connector.isConnected) return
+		try {
+			await connector.clear()
+		} catch (err) {
+			connector.log('error', `Failed to clear: ${err instanceof Error ? err.message : String(err)}`)
 		}
+	}
 
-		const holds = await resolveHolds(climb)
-		connector.log('debug', `Resolved ${holds.length} hold(s)`)
-		if (holds.length === 0) {
-			connector.log('warn', 'No holds resolved — check placement IDs')
-			return
+	function formatTime(ts: number): string {
+		const date = new Date(ts)
+		return date.toLocaleTimeString('en-US', {
+			hour12: false,
+			hour: '2-digit',
+			minute: '2-digit',
+			second: '2-digit'
+		})
+	}
+
+	function getLevelClass(level: string): string {
+		switch (level) {
+			case 'error':
+				return 'text-red-400'
+			case 'warn':
+				return 'text-amber-400'
+			case 'debug':
+				return 'text-muted'
+			default:
+				return 'text-text'
 		}
-		await connector.lightUpClimb(holds)
-	} catch (err) {
-		connector.log('error', `Failed to send: ${err instanceof Error ? err.message : String(err)}`)
-	} finally {
-		sending = false
 	}
-}
-
-async function sendClear() {
-	if (!connector.isConnected) return
-	try {
-		await connector.clear()
-	} catch (err) {
-		connector.log('error', `Failed to clear: ${err instanceof Error ? err.message : String(err)}`)
-	}
-}
-
-function formatTime(ts: number): string {
-	const date = new Date(ts)
-	return date.toLocaleTimeString('en-US', {
-		hour12: false,
-		hour: '2-digit',
-		minute: '2-digit',
-		second: '2-digit'
-	})
-}
-
-function getLevelClass(level: string): string {
-	switch (level) {
-		case 'error':
-			return 'text-red-400'
-		case 'warn':
-			return 'text-amber-400'
-		case 'debug':
-			return 'text-muted'
-		default:
-			return 'text-text'
-	}
-}
 </script>
 
 <svelte:head>

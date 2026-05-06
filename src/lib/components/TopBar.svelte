@@ -1,15 +1,15 @@
 <script lang="ts">
-import { connector } from '$lib/connector.svelte'
-import AngleDropdown from './AngleDropdown.svelte'
-import BleStatus from './BleStatus.svelte'
-import SettingsButton from './SettingsButton.svelte'
+	import { connector } from '$lib/connector.svelte'
+	import AngleDropdown from './AngleDropdown.svelte'
+	import BleStatus from './BleStatus.svelte'
+	import SettingsButton from './SettingsButton.svelte'
 
-interface Props {
-	angle?: number | null
-	children?: import('svelte').Snippet
-}
+	interface Props {
+		angle?: number | null
+		children?: import('svelte').Snippet
+	}
 
-const { children, angle = null }: Props = $props()
+	const { children, angle = null }: Props = $props()
 </script>
 
 <header class="sticky top-0 z-50 border-b border-border bg-bg/90 backdrop-blur-sm">

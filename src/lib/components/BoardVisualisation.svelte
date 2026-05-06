@@ -1,45 +1,45 @@
 <script lang="ts">
-/**
- * BoardVisualisation
- *
- * Renders the Kilter Board (16×12 Original Full Kit) with the real hold images as
- * the background, then overlays coloured circles on the holds used by a climb.
- */
+	/**
+	 * BoardVisualisation
+	 *
+	 * Renders the Kilter Board (16×12 Original Full Kit) with the real hold images as
+	 * the background, then overlays coloured circles on the holds used by a climb.
+	 */
 
-import BoardBoltOns from '$lib/assets/board-bolt-ons.png'
-import BoardScrewOns from '$lib/assets/board-screw-ons.png'
-import { resolveFrames } from '$lib/data/frames-parser'
-import { isRoleId, isSetId, ROLE_COLORS, SET_RADII } from '$lib/data/types'
+	import BoardBoltOns from '$lib/assets/board-bolt-ons.png'
+	import BoardScrewOns from '$lib/assets/board-screw-ons.png'
+	import { resolveFrames } from '$lib/data/frames-parser'
+	import { isRoleId, isSetId, ROLE_COLORS, SET_RADII } from '$lib/data/types'
 
-interface Props {
-	frames: string
-}
+	interface Props {
+		frames: string
+	}
 
-const { frames }: Props = $props()
+	const { frames }: Props = $props()
 
-const IMG_W = 1477 // original image width  (landscape)
-const IMG_H = 1200 // original image height (landscape)
+	const IMG_W = 1477 // original image width  (landscape)
+	const IMG_H = 1200 // original image height (landscape)
 
-function transformX(x: number) {
-	const xScale = 7.6
-	const xOffset = 190.4
-	return x * xScale + xOffset
-}
+	function transformX(x: number) {
+		const xScale = 7.6
+		const xOffset = 190.4
+		return x * xScale + xOffset
+	}
 
-function transformY(y: number) {
-	const yScale = -7.7
-	const yOffset = 1198.5
-	return y * yScale + yOffset
-}
+	function transformY(y: number) {
+		const yScale = -7.7
+		const yOffset = 1198.5
+		return y * yScale + yOffset
+	}
 
-const activeHolds = $derived(
-	resolveFrames(frames).map((hold) => ({
-		cx: transformX(hold.hole.x),
-		cy: transformY(hold.hole.y),
-		radius: isSetId(hold.placement.set_id) ? SET_RADII[hold.placement.set_id] : 32,
-		color: isRoleId(hold.roleId) ? ROLE_COLORS[hold.roleId].hex : '#ffffff'
-	}))
-)
+	const activeHolds = $derived(
+		resolveFrames(frames).map((hold) => ({
+			cx: transformX(hold.hole.x),
+			cy: transformY(hold.hole.y),
+			radius: isSetId(hold.placement.set_id) ? SET_RADII[hold.placement.set_id] : 32,
+			color: isRoleId(hold.roleId) ? ROLE_COLORS[hold.roleId].hex : '#ffffff'
+		}))
+	)
 </script>
 
 <div class="w-full rounded-2xl border border-border bg-zinc-950" aria-label="Board visualisation">

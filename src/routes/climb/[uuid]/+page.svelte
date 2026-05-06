@@ -1,173 +1,175 @@
 <script lang="ts">
-import { goto } from '$app/navigation'
-import { page } from '$app/state'
-import BoardVisualisation from '$lib/components/BoardVisualisation.svelte'
-import TopBar from '$lib/components/TopBar.svelte'
-import { connector } from '$lib/connector.svelte'
-import {
-	getEntry,
-	incrementAttempts,
-	recordLitUp,
-	resetAttempts,
-	setLiked,
-	setTicked
-} from '$lib/data/log-service'
-import { getClimb, resolveHolds } from '$lib/data/repository'
-import type { ClimbWithStats } from '$lib/data/types'
-import { difficultyToGrade, formatGrade, ROLE_COLORS, ROLE_LABELS } from '$lib/data/types'
-import { resultsStore } from '$lib/results-store.svelte'
-import { settings } from '$lib/settings-store.svelte'
+	import { goto } from '$app/navigation'
+	import { page } from '$app/state'
+	import BoardVisualisation from '$lib/components/BoardVisualisation.svelte'
+	import TopBar from '$lib/components/TopBar.svelte'
+	import { connector } from '$lib/connector.svelte'
+	import {
+		getEntry,
+		incrementAttempts,
+		recordLitUp,
+		resetAttempts,
+		setLiked,
+		setTicked
+	} from '$lib/data/log-service'
+	import { getClimb, resolveHolds } from '$lib/data/repository'
+	import type { ClimbWithStats } from '$lib/data/types'
+	import { difficultyToGrade, formatGrade, ROLE_COLORS, ROLE_LABELS } from '$lib/data/types'
+	import { resultsStore } from '$lib/results-store.svelte'
+	import { settings } from '$lib/settings-store.svelte'
 
-let { data } = $props()
+	let { data } = $props()
 
-// uuid is always defined for this route; $derived keeps it reactive for navigations
-const uuid = $derived(page.params.uuid ?? '')
+	// uuid is always defined for this route; $derived keeps it reactive for navigations
+	const uuid = $derived(page.params.uuid ?? '')
 
-// ── Angle param string for navigation links ────────────────────────────────
-const angleParam = $derived(data.angle !== null ? `?angle=${data.angle}` : '')
+	// ── Angle param string for navigation links ────────────────────────────────
+	const angleParam = $derived(data.angle !== null ? `?angle=${data.angle}` : '')
 
-// ── Resolve the item: from load data (direct URL / hard reload) or store ──
-// Null initial value avoids state_referenced_locally warning; populated
-// immediately by the $effect below.
-let item = $state<ClimbWithStats | null>(null)
+	// ── Resolve the item: from load data (direct URL / hard reload) or store ──
+	// Null initial value avoids state_referenced_locally warning; populated
+	// immediately by the $effect below.
+	let item = $state<ClimbWithStats | null>(null)
 
-$effect(() => {
-	// Try the in-memory results list first (client-side navigation)
-	const fromStore = resultsStore.list.find((r) => r.climb.uuid === uuid) ?? null
-	if (fromStore) {
-		item = fromStore
-	} else if (data.item && data.item.climb.uuid === uuid) {
-		// Use the angle-aware item from the load function
-		item = data.item
-	} else {
-		// Last resort: fetch from repository with angle
-		getClimb(uuid, data.angle).then((r) => {
-			item = r
-		})
-	}
-})
-
-// ── Derived display values ─────────────────────────────────────────────────
-const grade = $derived(
-	item?.activeStats
-		? formatGrade(difficultyToGrade(item.activeStats.difficulty_average), settings.gradingSystem)
-		: '?'
-)
-
-const qualityFilled = $derived(item?.activeStats ? Math.round(item.activeStats.quality_average) : 0)
-
-// ── Prev / Next navigation ─────────────────────────────────────────────────
-const prevItem = $derived(resultsStore.prev(uuid))
-const nextItem = $derived(resultsStore.next(uuid))
-const listIndex = $derived(resultsStore.indexOf(uuid))
-const listTotal = $derived(resultsStore.list.length)
-
-const prevHref = $derived(prevItem ? `/climb/${prevItem.climb.uuid}${angleParam}` : null)
-const nextHref = $derived(nextItem ? `/climb/${nextItem.climb.uuid}${angleParam}` : null)
-const backHref = $derived(`/${angleParam}`)
-
-// Used for touch swipe (programmatic navigation)
-function goTo(target: ClimbWithStats) {
-	goto(`/climb/${target.climb.uuid}${angleParam}`, { replaceState: true })
-}
-
-// ── Touch swipe ───────────────────────────────────────────────────────────
-let touchStartX = 0
-let touchStartY = 0
-
-function onTouchStart(e: TouchEvent) {
-	touchStartX = e.touches[0].clientX
-	touchStartY = e.touches[0].clientY
-}
-
-function onTouchEnd(e: TouchEvent) {
-	const dx = e.changedTouches[0].clientX - touchStartX
-	const dy = e.changedTouches[0].clientY - touchStartY
-	// Only trigger swipe if horizontal movement dominates (not a scroll)
-	if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return
-	if (dx < 0 && nextItem) {
-		goTo(nextItem)
-	} else if (dx > 0 && prevItem) {
-		goTo(prevItem)
-	}
-}
-
-// ── User log ──────────────────────────────────────────────────────────────
-// $state + $effect is intentional: logSnapshot must be writable (refreshLog mutates it
-// after localStorage writes that $derived cannot detect).
-// eslint-disable-next-line svelte/prefer-writable-derived
-let logSnapshot = $state(getEntry('', null))
-
-$effect(() => {
-	logSnapshot = getEntry(uuid, data.angle)
-})
-
-function refreshLog() {
-	logSnapshot = getEntry(uuid, data.angle)
-}
-
-function toggleTick() {
-	setTicked(uuid, data.angle, !logSnapshot.ticked)
-	refreshLog()
-}
-
-// Attempt: tap = +1, long-press = reset
-let attemptPressTimer: ReturnType<typeof setTimeout> | null = null
-
-function onAttemptPointerDown() {
-	attemptPressTimer = setTimeout(() => {
-		attemptPressTimer = null
-		resetAttempts(uuid, data.angle)
-		refreshLog()
-	}, 600)
-}
-
-function onAttemptPointerUp() {
-	if (attemptPressTimer !== null) {
-		clearTimeout(attemptPressTimer)
-		attemptPressTimer = null
-		incrementAttempts(uuid, data.angle)
-		refreshLog()
-	}
-}
-
-function onAttemptPointerLeave() {
-	if (attemptPressTimer !== null) {
-		clearTimeout(attemptPressTimer)
-		attemptPressTimer = null
-	}
-}
-
-function toggleLike() {
-	setLiked(uuid, data.angle, !logSnapshot.liked)
-	refreshLog()
-}
-
-// ── BLE ───────────────────────────────────────────────────────────────────
-let lighting = $state(false)
-let lightError = $state<string | null>(null)
-
-async function lightUp() {
-	if (lighting || !item) return
-	lighting = true
-	lightError = null
-	try {
-		// Connect first if not already connected
-		if (!connector.isConnected) {
-			await connector.connect()
-			// User may have cancelled the picker
-			if (!connector.isConnected) return
+	$effect(() => {
+		// Try the in-memory results list first (client-side navigation)
+		const fromStore = resultsStore.list.find((r) => r.climb.uuid === uuid) ?? null
+		if (fromStore) {
+			item = fromStore
+		} else if (data.item && data.item.climb.uuid === uuid) {
+			// Use the angle-aware item from the load function
+			item = data.item
+		} else {
+			// Last resort: fetch from repository with angle
+			getClimb(uuid, data.angle).then((r) => {
+				item = r
+			})
 		}
-		const holds = await resolveHolds(item.climb)
-		await connector.lightUpClimb(holds)
-		recordLitUp(item.climb.uuid, data.angle)
-		refreshLog()
-	} catch (err) {
-		lightError = err instanceof Error ? err.message : 'Failed to send to board.'
-	} finally {
-		lighting = false
+	})
+
+	// ── Derived display values ─────────────────────────────────────────────────
+	const grade = $derived(
+		item?.activeStats
+			? formatGrade(difficultyToGrade(item.activeStats.difficulty_average), settings.gradingSystem)
+			: '?'
+	)
+
+	const qualityFilled = $derived(
+		item?.activeStats ? Math.round(item.activeStats.quality_average) : 0
+	)
+
+	// ── Prev / Next navigation ─────────────────────────────────────────────────
+	const prevItem = $derived(resultsStore.prev(uuid))
+	const nextItem = $derived(resultsStore.next(uuid))
+	const listIndex = $derived(resultsStore.indexOf(uuid))
+	const listTotal = $derived(resultsStore.list.length)
+
+	const prevHref = $derived(prevItem ? `/climb/${prevItem.climb.uuid}${angleParam}` : null)
+	const nextHref = $derived(nextItem ? `/climb/${nextItem.climb.uuid}${angleParam}` : null)
+	const backHref = $derived(`/${angleParam}`)
+
+	// Used for touch swipe (programmatic navigation)
+	function goTo(target: ClimbWithStats) {
+		goto(`/climb/${target.climb.uuid}${angleParam}`, { replaceState: true })
 	}
-}
+
+	// ── Touch swipe ───────────────────────────────────────────────────────────
+	let touchStartX = 0
+	let touchStartY = 0
+
+	function onTouchStart(e: TouchEvent) {
+		touchStartX = e.touches[0].clientX
+		touchStartY = e.touches[0].clientY
+	}
+
+	function onTouchEnd(e: TouchEvent) {
+		const dx = e.changedTouches[0].clientX - touchStartX
+		const dy = e.changedTouches[0].clientY - touchStartY
+		// Only trigger swipe if horizontal movement dominates (not a scroll)
+		if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return
+		if (dx < 0 && nextItem) {
+			goTo(nextItem)
+		} else if (dx > 0 && prevItem) {
+			goTo(prevItem)
+		}
+	}
+
+	// ── User log ──────────────────────────────────────────────────────────────
+	// $state + $effect is intentional: logSnapshot must be writable (refreshLog mutates it
+	// after localStorage writes that $derived cannot detect).
+	// eslint-disable-next-line svelte/prefer-writable-derived
+	let logSnapshot = $state(getEntry('', null))
+
+	$effect(() => {
+		logSnapshot = getEntry(uuid, data.angle)
+	})
+
+	function refreshLog() {
+		logSnapshot = getEntry(uuid, data.angle)
+	}
+
+	function toggleTick() {
+		setTicked(uuid, data.angle, !logSnapshot.ticked)
+		refreshLog()
+	}
+
+	// Attempt: tap = +1, long-press = reset
+	let attemptPressTimer: ReturnType<typeof setTimeout> | null = null
+
+	function onAttemptPointerDown() {
+		attemptPressTimer = setTimeout(() => {
+			attemptPressTimer = null
+			resetAttempts(uuid, data.angle)
+			refreshLog()
+		}, 600)
+	}
+
+	function onAttemptPointerUp() {
+		if (attemptPressTimer !== null) {
+			clearTimeout(attemptPressTimer)
+			attemptPressTimer = null
+			incrementAttempts(uuid, data.angle)
+			refreshLog()
+		}
+	}
+
+	function onAttemptPointerLeave() {
+		if (attemptPressTimer !== null) {
+			clearTimeout(attemptPressTimer)
+			attemptPressTimer = null
+		}
+	}
+
+	function toggleLike() {
+		setLiked(uuid, data.angle, !logSnapshot.liked)
+		refreshLog()
+	}
+
+	// ── BLE ───────────────────────────────────────────────────────────────────
+	let lighting = $state(false)
+	let lightError = $state<string | null>(null)
+
+	async function lightUp() {
+		if (lighting || !item) return
+		lighting = true
+		lightError = null
+		try {
+			// Connect first if not already connected
+			if (!connector.isConnected) {
+				await connector.connect()
+				// User may have cancelled the picker
+				if (!connector.isConnected) return
+			}
+			const holds = await resolveHolds(item.climb)
+			await connector.lightUpClimb(holds)
+			recordLitUp(item.climb.uuid, data.angle)
+			refreshLog()
+		} catch (err) {
+			lightError = err instanceof Error ? err.message : 'Failed to send to board.'
+		} finally {
+			lighting = false
+		}
+	}
 </script>
 
 <svelte:head>
