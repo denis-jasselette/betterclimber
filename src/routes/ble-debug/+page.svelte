@@ -4,17 +4,32 @@ import { connector } from '$lib/connector.svelte'
 import { resolveHolds } from '$lib/data/repository'
 import type { Climb } from '$lib/data/types'
 
-type TestPattern = 'row1' | 'row2' | 'diagonal' | 'custom'
+const patternPresets = {
+	bottom: {
+		label: 'Bottom row',
+		frames:
+			'p4719r12p4700r13p4681r13p1089r13p1088r13p1087r13p1086r13p1085r13p1084r13p1083r13p1082r13p1081r13p1080r13p1079r13p1078r13p1077r13p1076r13p1075r13p1074r13p1073r13p4738r13p4757r13p4776r14'
+	},
+	top: {
+		label: 'Top row',
+		frames:
+			'p4737r12p4718r13p4699r13p1379r13p1380r13p1381r13p1382r13p1383r13p1384r13p1385r13p1386r13p1387r13p1388r13p1389r13p1390r13p1391r13p1392r13p1393r13p1394r13p1395r13p4756r13p4775r13p4794r14'
+	},
+	diagonal: {
+		label: 'Diagonal',
+		frames:
+			'p1464r15p1089r15p1091r12p1466r12p1109r13p1475r13p1127r13p1485r13p1145r13p1494r13p1163r13p1504r13p1181r13p1513r13p1199r13p1523r13p1217r13p1532r13p1235r13p1542r13p1253r13p1551r13p1271r13p1561r13p1289r13p1570r13p1307r13p1580r13p1325r13p1589r13p1343r13p1599r13p1361r13p4755r13p4775r14'
+	},
+	narasaki_bounce: {
+		label: 'Narasaki Bounce',
+		frames: 'p1083r15p1117r15p1164r12p1185r12p1233r13p1282r13p1303r13p1372r13p1392r14p1505r15'
+	}
+}
+type TestPattern = keyof typeof patternPresets | 'custom'
 
-let selectedPattern: TestPattern = $state('row1')
+let selectedPattern: TestPattern = $state('bottom')
 let customFrames = $state('')
 let sending = $state(false)
-
-const patternPresets: Record<Exclude<TestPattern, 'custom'>, { label: string; frames: string }> = {
-	row1: { label: 'Row 1 (bottom)', frames: 'p1447r13p1073r13p1448r13p1074r13' },
-	row2: { label: 'Row 2', frames: 'p1454r13p1080r13p1455r13p1081r13' },
-	diagonal: { label: 'Diagonal', frames: 'p1447r13p1455r13p1463r13p1519r13' }
-}
 
 async function sendTestPattern() {
 	if (!connector.isConnected || sending) return
