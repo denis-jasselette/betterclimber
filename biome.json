@@ -37,7 +37,7 @@
 		}
 	},
 	"html": {
-		"formatter": { "indentScriptAndStyle": false }
+		"formatter": { "indentScriptAndStyle": true }
 	},
 	"overrides": [
 		{

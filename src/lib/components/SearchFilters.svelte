@@ -1,37 +1,37 @@
 <script lang="ts">
-import type { ClimbFilters } from '$lib/data/types'
-import GradeRangeSlider from './GradeRangeSlider.svelte'
+	import type { ClimbFilters } from '$lib/data/types'
+	import GradeRangeSlider from './GradeRangeSlider.svelte'
 
-interface Props {
-	resultCount?: number
-	filters: Partial<ClimbFilters>
-	handleUpdateFilters: (newFilters: Partial<ClimbFilters>) => void
-	handleClearFilters: () => void
-}
+	interface Props {
+		resultCount?: number
+		filters: Partial<ClimbFilters>
+		handleUpdateFilters: (newFilters: Partial<ClimbFilters>) => void
+		handleClearFilters: () => void
+	}
 
-let { resultCount, filters, handleUpdateFilters, handleClearFilters }: Props = $props()
+	let { resultCount, filters, handleUpdateFilters, handleClearFilters }: Props = $props()
 
-const qualityStars = [1, 2, 3] as const
+	const qualityStars = [1, 2, 3] as const
 
-let advancedOpen = $state(false)
+	let advancedOpen = $state(false)
 
-let hasActiveFilters = $derived(
-	filters.gradeMin !== null ||
-		filters.gradeMax !== null ||
-		filters.minQuality ||
-		filters.query?.trim() ||
-		filters.excludeTicked ||
-		filters.onlyAttempted ||
-		filters.onlyLiked ||
-		filters.onlyRecentlyLit ||
-		filters.onlyBenchmarks ||
-		filters.onlyCampus ||
-		filters.onlyRoutes
-)
+	let hasActiveFilters = $derived(
+		filters.gradeMin !== null ||
+			filters.gradeMax !== null ||
+			filters.minQuality ||
+			filters.query?.trim() ||
+			filters.excludeTicked ||
+			filters.onlyAttempted ||
+			filters.onlyLiked ||
+			filters.onlyRecentlyLit ||
+			filters.onlyBenchmarks ||
+			filters.onlyCampus ||
+			filters.onlyRoutes
+	)
 
-let hasActiveAdvancedFilter = $derived(
-	filters.minQuality || filters.onlyBenchmarks || filters.onlyCampus || filters.onlyRoutes
-)
+	let hasActiveAdvancedFilter = $derived(
+		filters.minQuality || filters.onlyBenchmarks || filters.onlyCampus || filters.onlyRoutes
+	)
 </script>
 
 <div class="space-y-5 p-1">
