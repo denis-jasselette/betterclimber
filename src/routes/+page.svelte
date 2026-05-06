@@ -1,110 +1,71 @@
 <script lang="ts">
-import { onMount, untrack } from 'svelte'
-import { afterNavigate, beforeNavigate, replaceState } from '$app/navigation'
+import { onMount } from 'svelte'
+import { browser } from '$app/environment'
+import { goto } from '$app/navigation'
 import ClimbCard from '$lib/components/ClimbCard.svelte'
 import SearchFilters from '$lib/components/SearchFilters.svelte'
 import TopBar from '$lib/components/TopBar.svelte'
 import VirtualList from '$lib/components/VirtualList.svelte'
 import { connector } from '$lib/connector.svelte'
-import { searchClimbs } from '$lib/data/repository'
-import type { ClimbWithStats } from '$lib/data/types'
+import { getEntry } from '$lib/data/log-service'
+import type { ClimbFilters, ClimbWithStats } from '$lib/data/types'
 import { resultsStore } from '$lib/results-store.svelte'
-import { searchStore } from '$lib/search-store.svelte'
 import { filtersToParams } from '$lib/url-filters'
 
 let { data } = $props()
 
-// ── Init store from URL filters (bookmarks / shared links / refresh) ──────
-// URL filter params take precedence over stale localStorage state when the
-// URL carries explicit values (i.e. user arrived via a bookmark or shared URL).
-untrack(() => {
-	if (data.angle !== null) searchStore.angle = data.angle
-	const f = data.filters ?? {}
-	if (f.query !== undefined) searchStore.setQuery(f.query)
-	if (f.gradeMin !== undefined) searchStore.setGradeMin(f.gradeMin ?? null)
-	if (f.gradeMax !== undefined) searchStore.setGradeMax(f.gradeMax ?? null)
-	if (f.minQuality !== undefined) searchStore.setMinQuality(f.minQuality)
-	if (f.onlyBenchmarks !== undefined) searchStore.setOnlyBenchmarks(f.onlyBenchmarks)
-	if (f.onlyCampus !== undefined) searchStore.setOnlyCampus(f.onlyCampus)
-	if (f.onlyRoutes !== undefined) searchStore.setOnlyRoutes(f.onlyRoutes)
-})
-$effect(() => {
-	const a = data.angle
-	if (a !== null && a !== searchStore.angle) searchStore.angle = a
-})
-
-// The "effective" angle for rendering: prefer the load-function value on
-// initial paint (before the store $effect has fired) so nothing flashes.
-const effectiveAngle = $derived(data.angle !== null ? data.angle : searchStore.angle)
-
-// ── Sync shareable filters to URL (replaceState — no history entry) ───────
-$effect(() => {
-	const params = filtersToParams(searchStore.angle, searchStore.filters)
-	const qs = params.toString()
-	replaceState(qs ? `?${qs}` : '?', {})
-})
-
-// ── Results ──────────────────────────────────────────────────────────────
-let results = $state<ClimbWithStats[]>(untrack(() => data.results ?? []))
-let loading = $state(false)
-
-untrack(() => {
-	resultsStore.list = data.results ?? []
-})
-
-// ── Mobile filter drawer ─────────────────────────────────────────────────
 let filterDrawerOpen = $state(false)
 
-// ── Search (re-runs whenever store angle or filters change) ──────────────
-$effect(() => {
-	const angle = searchStore.angle
+function toggleFilterDrawerOpen() {
+	filterDrawerOpen = !filterDrawerOpen
+}
 
-	if (angle === null) {
-		results = []
-		loading = false
-		return
-	}
+function closeFilterDrawer() {
+	filterDrawerOpen = false
+}
 
-	const snapshot = {
-		gradeMin: searchStore.filters.gradeMin,
-		gradeMax: searchStore.filters.gradeMax,
-		minQuality: searchStore.filters.minQuality,
-		query: searchStore.filters.query,
-		excludeTicked: searchStore.filters.excludeTicked,
-		onlyAttempted: searchStore.filters.onlyAttempted,
-		onlyLiked: searchStore.filters.onlyLiked,
-		onlyBenchmarks: searchStore.filters.onlyBenchmarks,
-		onlyCampus: searchStore.filters.onlyCampus,
-		onlyRoutes: searchStore.filters.onlyRoutes,
-		onlyRecentlyLit: searchStore.filters.onlyRecentlyLit
-	}
+let activeFilterCount = $derived(
+	[
+		data.filters.gradeMin !== null || data.filters.gradeMax !== null,
+		data.filters.minQuality,
+		data.filters.excludeTicked,
+		data.filters.onlyAttempted,
+		data.filters.onlyLiked
+	].filter(Boolean).length
+)
 
-	loading = true
-	searchClimbs(snapshot, angle).then((r) => {
-		results = r
-		resultsStore.list = r
-		loading = false
+function handleUpdateFilters(newFilters: Partial<ClimbFilters> = {}) {
+	const params = filtersToParams(data.angle, newFilters)
+	goto(`?${params}`, { replaceState: true, keepFocus: true, noScroll: true })
+}
+
+function handleClearFilters() {
+	handleUpdateFilters({})
+}
+
+// ── Personal filter (client-side, localStorage) ───────────────────────────
+function applyPersonalFilters(
+	climbs: ClimbWithStats[],
+	filters: Partial<ClimbFilters>,
+	angle: number
+): ClimbWithStats[] {
+	if (!browser) return climbs
+	if (
+		!filters.excludeTicked &&
+		!filters.onlyAttempted &&
+		!filters.onlyLiked &&
+		!filters.onlyRecentlyLit
+	)
+		return climbs
+	return climbs.filter(({ climb }) => {
+		const entry = getEntry(climb.uuid, angle)
+		if (filters.excludeTicked && entry.ticked) return false
+		if (filters.onlyAttempted && entry.attemptCount === 0) return false
+		if (filters.onlyLiked && !entry.liked) return false
+		if (filters.onlyRecentlyLit && !entry.lastLitAt) return false
+		return true
 	})
-})
-
-// ── Scroll position save / restore ────────────────────────────────────────
-const SCROLL_KEY = 'kilter-scroll'
-
-beforeNavigate(({ to }) => {
-	// Save scroll position when navigating to a climb detail page.
-	if (to?.url.pathname.startsWith('/climb/')) {
-		sessionStorage.setItem(SCROLL_KEY, String(window.scrollY))
-	}
-})
-
-afterNavigate(({ from }) => {
-	// Restore scroll position when returning from a climb detail page.
-	if (from?.url.pathname.startsWith('/climb/')) {
-		const y = Number(sessionStorage.getItem(SCROLL_KEY) ?? '0')
-		// rAF ensures the list has rendered before scrolling.
-		requestAnimationFrame(() => window.scrollTo({ top: y, behavior: 'instant' }))
-	}
-})
+}
 
 // ── PWA update notification ──────────────────────────────────────────────
 let updateAvailable = $state(false)
@@ -152,7 +113,8 @@ function reloadForUpdate() {
 	<TopBar angle={data.angle}>
 		<!-- Filter toggle (mobile) -->
 		<button
-			onclick={() => (filterDrawerOpen = !filterDrawerOpen)}
+			type="button"
+			onclick={toggleFilterDrawerOpen}
 			aria-label="Toggle filters"
 			class="relative flex h-9 items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-3 text-sm font-semibold text-muted transition hover:border-border hover:text-text md:hidden"
 		>
@@ -169,17 +131,11 @@ function reloadForUpdate() {
 				<line x1="11" y1="18" x2="13" y2="18" />
 			</svg>
 			<span class="hidden sm:inline">Filters</span>
-			{#if searchStore.filters.gradeMin !== null || searchStore.filters.gradeMax !== null || searchStore.filters.minQuality > 0 || searchStore.filters.excludeTicked || searchStore.filters.onlyAttempted || searchStore.filters.onlyLiked}
+			{#if activeFilterCount > 0}
 				<span
 					class="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-cyan-500 text-[10px] font-bold text-white"
 				>
-					{[
-						searchStore.filters.gradeMin !== null || searchStore.filters.gradeMax !== null,
-						searchStore.filters.minQuality > 0,
-						searchStore.filters.excludeTicked,
-						searchStore.filters.onlyAttempted,
-						searchStore.filters.onlyLiked
-					].filter(Boolean).length}
+					{activeFilterCount}
 				</span>
 			{/if}
 		</button>
@@ -194,8 +150,8 @@ function reloadForUpdate() {
 				role="button"
 				tabindex="-1"
 				class="fixed inset-0 z-30 bg-black/60 md:hidden"
-				onclick={() => (filterDrawerOpen = false)}
-				onkeydown={(e) => e.key === 'Escape' && (filterDrawerOpen = false)}
+				onclick={closeFilterDrawer}
+				onkeydown={(e) => e.key === 'Escape' && closeFilterDrawer()}
 			></div>
 		{/if}
 
@@ -209,7 +165,8 @@ function reloadForUpdate() {
 			<div class="mb-4 flex items-center justify-between md:hidden">
 				<span class="text-sm font-semibold text-text">Filters</span>
 				<button
-					onclick={() => (filterDrawerOpen = false)}
+					type="button"
+					onclick={closeFilterDrawer}
 					aria-label="Close filters"
 					class="rounded-lg p-1 text-muted hover:text-text"
 				>
@@ -227,67 +184,51 @@ function reloadForUpdate() {
 
 			<div class="space-y-5">
 				<!-- Filters -->
-				<SearchFilters resultCount={results.length} />
+				<SearchFilters filters={data.filters} {handleUpdateFilters} {handleClearFilters} />
 			</div>
 		</aside>
 
 		<!-- Climb list -->
 		<main class="min-w-0 flex-1 p-1">
-			{#if effectiveAngle === null}
-				<!-- No angle selected yet -->
-				<div class="flex flex-col items-center gap-4 py-24 text-center">
-					<svg
-						class="size-14 text-muted"
-						xmlns="http://www.w3.org/2000/svg"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.5"
-					>
-						<path d="M3 20h18M3 20 12 4l9 16" />
-					</svg>
-					<p class="text-base font-semibold text-muted">Select an angle to get started</p>
-					<p class="text-sm text-muted/70">
-						Use the angle picker in the top bar to choose your board angle.
-					</p>
-				</div>
-			{:else if loading}
+			{#await data.results}
 				<!-- Skeleton cards -->
 				<div class="space-y-3">
 					{#each [1, 2, 3, 4, 5] as i (i)}
 						<div class="h-36 animate-pulse rounded-2xl border border-border bg-surface"></div>
 					{/each}
 				</div>
-			{:else if results.length === 0}
-				<div class="flex flex-col items-center gap-3 py-20 text-center">
-					<svg
-						class="size-12 text-muted"
-						xmlns="http://www.w3.org/2000/svg"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.5"
-					>
-						<circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-					</svg>
-					<p class="text-sm font-medium text-muted">No climbs match your filters.</p>
-					<p class="text-xs text-muted/70">Try broadening your grade range or quality filter.</p>
-				</div>
-			{:else}
-				<div class="space-y-3">
-					<VirtualList items={results} pageSize={20} key={(item) => item.climb.uuid}>
-						{#snippet children(item)}
-							<ClimbCard
-								{item}
-								{connector}
-								href="/climb/{item.climb.uuid}{effectiveAngle !== null
-									? `?angle=${effectiveAngle}`
-									: ''}"
-							/>
-						{/snippet}
-					</VirtualList>
-				</div>
-			{/if}
+			{:then results}
+				{@const filteredClimbs = applyPersonalFilters(results.climbs, data.filters, data.angle)}
+		 		{#if filteredClimbs.length === 0}
+					<div class="flex flex-col items-center gap-3 py-20 text-center">
+						<svg
+							class="size-12 text-muted"
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.5"
+						>
+							<circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+						</svg>
+						<p class="text-sm font-medium text-muted">No climbs match your filters.</p>
+						<p class="text-xs text-muted/70">Try broadening your grade range or quality filter.</p>
+					</div>
+				{:else}
+					<div class="space-y-3">
+						<VirtualList items={filteredClimbs} pageSize={20} key={(item) => item.climb.uuid}>
+							{#snippet children(item)}
+								<ClimbCard
+									{item}
+									{connector}
+									angle={data.angle}
+									href="/climb/{item.climb.uuid}?angle={data.angle}"
+								/>
+							{/snippet}
+						</VirtualList>
+					</div>
+				{/if}
+			{/await}
 		</main>
 	</div>
 </div>
