@@ -67,11 +67,19 @@
 		})
 	}
 
-	// ── Sync results into store for climb detail prev/next navigation ────────
+	// ── Displayed results: keep previous list visible while new results load ──
+	// eslint-disable-next-line svelte/prefer-writable-derived
+	let displayedClimbs = $state<ClimbWithStats[]>([])
+	let loadingResults = $state(true)
+
 	$effect(() => {
+		loadingResults = true
 		const promise = data.results
 		promise.then((results) => {
-			resultsStore.list = applyPersonalFilters(results.climbs, data.filters, data.angle)
+			const filtered = applyPersonalFilters(results.climbs, data.filters, data.angle)
+			displayedClimbs = filtered
+			resultsStore.list = filtered
+			loadingResults = false
 		})
 	})
 
@@ -214,45 +222,42 @@
 
 		<!-- Climb list -->
 		<main class="min-w-0 flex-1 p-1">
-			{#await data.results}
-				<!-- Skeleton cards -->
+			{#if displayedClimbs.length === 0 && loadingResults}
+				<!-- Skeleton cards shown only on first load -->
 				<div class="space-y-3">
 					{#each [1, 2, 3, 4, 5] as i (i)}
 						<div class="h-36 animate-pulse rounded-2xl border border-border bg-surface"></div>
 					{/each}
 				</div>
-			{:then results}
-				{@const filteredClimbs = applyPersonalFilters(results.climbs, data.filters, data.angle)}
-		 		{#if filteredClimbs.length === 0}
-					<div class="flex flex-col items-center gap-3 py-20 text-center">
-						<svg
-							class="size-12 text-muted"
-							xmlns="http://www.w3.org/2000/svg"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.5"
-						>
-							<circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-						</svg>
-						<p class="text-sm font-medium text-muted">No climbs match your filters.</p>
-						<p class="text-xs text-muted/70">Try broadening your grade range or quality filter.</p>
-					</div>
-				{:else}
-					<div class="space-y-3">
-						<VirtualList items={filteredClimbs} pageSize={20} key={(item) => item.climb.uuid}>
-							{#snippet children(item)}
-								<ClimbCard
-									{item}
-									{connector}
-									angle={data.angle}
-									href="/climb/{item.climb.uuid}?{filtersToParams(data.angle, data.filters)}"
-								/>
-							{/snippet}
-						</VirtualList>
-					</div>
-				{/if}
-			{/await}
+			{:else if displayedClimbs.length === 0}
+				<div class="flex flex-col items-center gap-3 py-20 text-center">
+					<svg
+						class="size-12 text-muted"
+						xmlns="http://www.w3.org/2000/svg"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+					>
+						<circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+					</svg>
+					<p class="text-sm font-medium text-muted">No climbs match your filters.</p>
+					<p class="text-xs text-muted/70">Try broadening your grade range or quality filter.</p>
+				</div>
+			{:else}
+				<div class="space-y-3" class:opacity-60={loadingResults}>
+					<VirtualList items={displayedClimbs} pageSize={20} key={(item) => item.climb.uuid}>
+						{#snippet children(item)}
+							<ClimbCard
+								{item}
+								{connector}
+								angle={data.angle}
+								href="/climb/{item.climb.uuid}?{filtersToParams(data.angle, data.filters)}"
+							/>
+						{/snippet}
+					</VirtualList>
+				</div>
+			{/if}
 		</main>
 	</div>
 </div>

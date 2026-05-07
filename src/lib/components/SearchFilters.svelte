@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte'
 	import type { ClimbFilters } from '$lib/data/types'
 	import FilterToggle from './FilterToggle.svelte'
 	import GradeRangeSlider from './GradeRangeSlider.svelte'
@@ -13,6 +14,27 @@
 	let { resultCount, filters, handleUpdateFilters, handleClearFilters }: Props = $props()
 
 	const qualityStars = [1, 2, 3] as const
+
+	// ── Debounced search input ────────────────────────────────────────────────
+	// Keep a local copy so the input stays responsive; only push to the URL
+	// after the user stops typing for 300 ms.
+	// eslint-disable-next-line svelte/prefer-writable-derived
+	let inputValue = $state(untrack(() => filters.query ?? ''))
+	let debounceTimer: ReturnType<typeof setTimeout> | null = null
+
+	$effect(() => {
+		// Sync when filters change externally (e.g. "Clear filters")
+		inputValue = filters.query ?? ''
+	})
+
+	function handleQueryInput(value: string) {
+		inputValue = value
+		if (debounceTimer !== null) clearTimeout(debounceTimer)
+		debounceTimer = setTimeout(() => {
+			debounceTimer = null
+			handleUpdateFilters({ ...filters, query: value })
+		}, 300)
+	}
 
 	let hasActiveFilters = $derived(
 		filters.gradeMin !== null ||
@@ -49,8 +71,8 @@
 		<input
 			type="search"
 			placeholder="Search by name or setter…"
-			value={filters.query}
-			oninput={(e) => handleUpdateFilters({ ...filters, query: e.currentTarget.value })}
+			value={inputValue}
+			oninput={(e) => handleQueryInput(e.currentTarget.value)}
 			class="w-full rounded-xl border border-border bg-surface-raised/60 py-2.5 pr-4 pl-9 text-sm text-text placeholder:text-muted focus:ring-cyan-500 "
 		/>
 	</div>
