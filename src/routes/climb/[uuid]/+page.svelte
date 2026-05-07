@@ -23,8 +23,10 @@
 	// uuid is always defined for this route; $derived keeps it reactive for navigations
 	const uuid = $derived(page.params.uuid ?? '')
 
-	// ── Angle param string for navigation links ────────────────────────────────
-	const angleParam = $derived(data.angle !== null ? `?angle=${data.angle}` : '')
+	// ── Navigation params ─────────────────────────────────────────────────────
+	// All search params (angle, filters) are threaded through the climb URL so
+	// Back returns to the exact search state and prev/next keep everything sticky.
+	const backHref = $derived(`/?${page.url.searchParams.toString()}`)
 
 	// ── Resolve the item: from load data (direct URL / hard reload) or store ──
 	// Null initial value avoids state_referenced_locally warning; populated
@@ -64,13 +66,12 @@
 	const listIndex = $derived(resultsStore.indexOf(uuid))
 	const listTotal = $derived(resultsStore.list.length)
 
-	const prevHref = $derived(prevItem ? `/climb/${prevItem.climb.uuid}${angleParam}` : null)
-	const nextHref = $derived(nextItem ? `/climb/${nextItem.climb.uuid}${angleParam}` : null)
-	const backHref = $derived(`/${angleParam}`)
+	const prevHref = $derived(prevItem ? `/climb/${prevItem.climb.uuid}${page.url.search}` : null)
+	const nextHref = $derived(nextItem ? `/climb/${nextItem.climb.uuid}${page.url.search}` : null)
 
 	// Used for touch swipe (programmatic navigation)
 	function goTo(target: ClimbWithStats) {
-		goto(`/climb/${target.climb.uuid}${angleParam}`, { replaceState: true })
+		goto(`/climb/${target.climb.uuid}${page.url.search}`, { replaceState: true })
 	}
 
 	// ── Touch swipe ───────────────────────────────────────────────────────────
