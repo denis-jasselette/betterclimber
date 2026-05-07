@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths'
+	import { encodeClimbPackets } from '$lib/ble/aurora-protocol'
 	import { connector } from '$lib/connector.svelte'
 	import { resolveHolds } from '$lib/data/repository'
 	import type { Climb } from '$lib/data/types'
@@ -30,6 +31,35 @@
 	let selectedPattern: TestPattern = $state('bottom')
 	let customFrames = $state('')
 	let sending = $state(false)
+
+	async function logTestPattern() {
+		if (selectedPattern === 'custom') throw new Error()
+		const frames = patternPresets[selectedPattern].frames
+
+		const climb: Climb = {
+			uuid: 'test-pattern',
+			layout_id: 1,
+			setter_id: 0,
+			setter_username: 'debug',
+			name: 'Test Pattern',
+			description: '',
+			frames,
+			frames_count: 1,
+			angle: null,
+			is_draft: false,
+			allow_matches: true,
+			is_campus: false,
+			is_route: false
+		}
+
+		const holds = await resolveHolds(climb)
+		console.log(`Resolved ${holds.length} hold(s)`, holds)
+		if (holds.length === 0) {
+			console.warn('No holds resolved — check placement IDs')
+			return
+		}
+		console.log(`Encoded packets`, await encodeClimbPackets(holds))
+	}
 
 	async function sendTestPattern() {
 		if (!connector.isConnected || sending) return
@@ -211,8 +241,11 @@
 		<div class="mb-3 space-y-2">
 			{#each Object.entries(patternPresets) as [key, { label }] (key)}
 				<button
-					onclick={() => (selectedPattern = key as Exclude<TestPattern, 'custom'>)}
-					disabled={!connector.isConnected || sending}
+					onclick={async () => {
+						selectedPattern = key as Exclude<TestPattern, 'custom'>
+						await logTestPattern()
+					}}
+					// disabled={!connector.isConnected || sending}
 					class="w-full rounded-lg border px-3 py-2 text-sm transition active:scale-95 disabled:opacity-50
 						{selectedPattern === key
 						? 'border-cyan-600 bg-cyan-600/10 text-cyan-400'
