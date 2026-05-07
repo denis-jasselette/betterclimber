@@ -1,10 +1,6 @@
-<script lang="ts">
-	import { resolve } from '$app/paths'
-</script>
-
-<!-- Gear icon button that navigates to /settings -->
+<!-- Gear icon button that opens the settings panel -->
 <a
-	href={resolve('/settings')}
+	href="#settings"
 	aria-label="Settings"
 	class="flex size-9 items-center justify-center rounded-xl border border-border bg-surface-raised text-muted transition hover:border-border hover:text-text active:scale-95"
 >

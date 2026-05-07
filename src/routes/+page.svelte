@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
 	import { browser } from '$app/environment'
-	import { goto } from '$app/navigation'
+	import { afterNavigate, beforeNavigate, goto } from '$app/navigation'
 	import ClimbCard from '$lib/components/ClimbCard.svelte'
 	import SearchFilters from '$lib/components/SearchFilters.svelte'
 	import TopBar from '$lib/components/TopBar.svelte'
@@ -36,7 +36,7 @@
 
 	function handleUpdateFilters(newFilters: Partial<ClimbFilters> = {}) {
 		const params = filtersToParams(data.angle, newFilters)
-		goto(`?${params}`, { replaceState: true, keepFocus: true, noScroll: true })
+		goto(`?${params}`, { replaceState: true, keepFocus: true })
 	}
 
 	function handleClearFilters() {
@@ -66,6 +66,30 @@
 			return true
 		})
 	}
+
+	// ── Sync results into store for climb detail prev/next navigation ────────
+	$effect(() => {
+		const promise = data.results
+		promise.then((results) => {
+			resultsStore.list = applyPersonalFilters(results.climbs, data.filters, data.angle)
+		})
+	})
+
+	// ── Scroll position save / restore around climb detail navigation ─────────
+	const SCROLL_KEY = 'kilter-scroll'
+
+	beforeNavigate(({ to }) => {
+		if (to?.url.pathname.startsWith('/climb/')) {
+			sessionStorage.setItem(SCROLL_KEY, String(window.scrollY))
+		}
+	})
+
+	afterNavigate(({ from }) => {
+		if (from?.url.pathname.startsWith('/climb/')) {
+			const y = Number(sessionStorage.getItem(SCROLL_KEY) ?? '0')
+			setTimeout(() => window.scrollTo({ top: y, behavior: 'instant' }), 0)
+		}
+	})
 
 	// ── PWA update notification ──────────────────────────────────────────────
 	let updateAvailable = $state(false)
@@ -222,7 +246,7 @@
 									{item}
 									{connector}
 									angle={data.angle}
-									href="/climb/{item.climb.uuid}?angle={data.angle}"
+									href="/climb/{item.climb.uuid}?{filtersToParams(data.angle, data.filters)}"
 								/>
 							{/snippet}
 						</VirtualList>
