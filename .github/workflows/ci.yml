@@ -36,15 +36,7 @@ jobs:
         run: pnpm build
 
       - name: Unit tests
-        run: pnpm vitest run --reporter=verbose --reporter=junit --outputFile=test-results/junit.xml
-
-      - name: Test report
-        uses: dorny/test-reporter@v1
-        if: always()
-        with:
-          name: Unit Tests
-          path: test-results/junit.xml
-          reporter: java-junit
+        run: pnpm test
 
   e2e:
     needs: ci
