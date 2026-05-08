@@ -29,7 +29,11 @@
 			data.filters.minQuality,
 			data.filters.excludeTicked,
 			data.filters.onlyAttempted,
-			data.filters.onlyLiked
+			data.filters.onlyLiked,
+			data.filters.onlyBenchmarks,
+			data.filters.onlyCampus,
+			data.filters.onlyRoutes,
+			data.filters.onlyRecentlyLit
 		].filter(Boolean).length
 	)
 
