@@ -23,7 +23,9 @@
 	let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
 	$effect(() => {
-		// Sync when filters change externally (e.g. "Clear filters")
+		// Sync when filters change externally (e.g. "Clear filters").
+		// Skip while a debounce is in-flight so in-progress keystrokes aren't clobbered.
+		if (debounceTimer !== null) return
 		inputValue = filters.query ?? ''
 	})
 
