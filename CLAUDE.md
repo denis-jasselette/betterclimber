@@ -25,26 +25,32 @@ Deployed on Netlify (`@sveltejs/adapter-netlify`). PWA via `vite-plugin-pwa`.
 ```
 src/
   routes/
+    +layout.svelte        # Root layout: theme init, settings panel (opens via #settings hash)
+    +layout.server.ts     # Reads settings cookie so SSR renders the correct theme/grade
     +page.svelte          # Home: climb search + filter list
-    +page.ts              # SSR load: parse ?angle param, run initial search
+    +page.server.ts       # SSR load: parse URL params, run initial DB search
     climb/[uuid]/         # Climb detail: board viz, BLE send, log
     ble-debug/            # Developer page: BLE test patterns + log
-    settings/             # Theme + user preferences
+    api/climbs/           # REST search + single-climb endpoints (Neon PostgreSQL)
     layout.css            # Tailwind v4 entry point (excluded from Biome CSS lint)
   lib/
     ble/
       aurora-protocol.ts      # API v3 BLE packet encoder (20-byte chunks)
-      board-connector.ts      # Plain-class BLE state machine
-      board-connector.svelte.ts  # Svelte $state wrapper around board-connector
-      frames-parser.ts        # Parse Kilter frames string → [{placementId, roleId}]
+      board-connector.ts      # Plain-class BLE state machine (dead — superseded, see #36)
+      board-connector.svelte.ts  # Svelte $state wrapper — the active implementation
     data/
-      repository.ts       # ONLY data access point — searchClimbs / getClimb / resolveHolds
+      repository.ts       # Client-side data access — searchClimbs / getClimb / resolveHolds
       types.ts            # All shared types (Climb, ClimbStats, ResolvedHold, Angle, RoleId…)
       log-service.ts      # localStorage tick/attempt/like log
-      mock/               # Static JSON: climbs (399), placements (3773), leds, holes, climb-stats
+      frames-parser.ts    # Parse Kilter frames string → [{placementId, roleId}]
+      climbs.server.ts    # Server-side DB query layer (used by +page.server.ts for SSR)
+      mock/               # Static JSON: placements, leds, holes (board geometry only — never changes)
+    server/db/
+      index.ts            # Drizzle ORM + Neon PostgreSQL connection
+      schema.ts           # Table definitions: climbs (318k rows), climb_stats (323k rows)
     components/           # Svelte UI components
-    connector.svelte.ts   # Singleton connector instance (re-exported)
-    search-store.svelte.ts   # Reactive search state (angle + filters)
+    connector.svelte.ts   # Singleton BoardConnector instance
+    url-filters.ts        # URL ↔ ClimbFilters serialisation / deserialisation
     results-store.svelte.ts  # Shared results list for prev/next navigation
     settings-store.svelte.ts # Theme + cookie sync
 ```
@@ -59,6 +65,8 @@ src/
 - References: `src/lib/ble/aurora-protocol.ts` header comment
 
 ### Data Flow
+
+**BLE (hold lighting):**
 ```
 frames string → parseFrames() → [{placementId, roleId}]
                               → resolveHolds() → [{position, color}]
@@ -66,15 +74,24 @@ frames string → parseFrames() → [{placementId, roleId}]
                               → connector.lightUpClimb()
 ```
 
+**Climb search — two paths:**
+```
+SSR (initial page load):
+  +page.server.ts → climbs.server.ts → Drizzle → Neon PostgreSQL
+
+Client (filter/search changes after hydration):
+  repository.ts → fetch /api/climbs → +server.ts → Drizzle → Neon PostgreSQL
+```
+
 ### Hold Resolution Chain
 `placement.id` → `placement.hole_id` → `led.position` (via `leds.json`)
 
 Valid placement IDs start at 1073. IDs below this don't exist in the mock data and produce an empty hold array (which sends a clear packet).
 
-### Mock Data Limitation
-Only 399 climbs (subset). Full Kilter database has thousands.
+### Refreshing the Dataset
+The live database (Neon) is populated with the full Kilter dataset (318k climbs, 323k stat rows). Board geometry (placements, holes, leds) remains as static JSON in `src/lib/data/mock/` and never needs updating.
 
-To get the full dataset, extract from the Aurora SQLite database (see `scripts/extract-kilter-db.js`):
+If you need to re-extract climb data from a fresh Aurora SQLite dump (see `scripts/extract-kilter-db.js`):
 
 1. Get the DB file from an Android device:
    ```bash
@@ -91,7 +108,7 @@ To get the full dataset, extract from the Aurora SQLite database (see `scripts/e
    pnpm extract-db /path/to/aurora.db
    ```
 
-This replaces all five JSON files in `src/lib/data/mock/` with full data. No other code changes needed (`repository.ts` is the only consumer).
+This outputs SQL or JSON suitable for re-seeding the Neon database.
 
 ### Angle Type
 `Angle` is a union of numeric literals (all valid board angles). Use `(ALL_ANGLES as ReadonlyArray<number>).includes(parsed)` for runtime narrowing.
