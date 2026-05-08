@@ -35,16 +35,18 @@ export function parseFrame(frame: string): HoldToken[] {
 }
 
 export function resolveFrames(frames: string) {
-	return parseFrames(frames).map((token) => {
+	return parseFrames(frames).flatMap((token) => {
 		const placement = getPlacementById(token.placementId)
-		if (!placement) throw new Error(`Unknown placement ${token.placementId}`)
-		const hole = getHoleById(placement.hole_id)
-		if (!hole) throw new Error(`Unknown hole ${placement.hole_id}`)
-
-		return {
-			placement,
-			hole,
-			roleId: token.roleId
+		if (!placement) {
+			console.warn(`Unknown placement ${token.placementId} — skipped`)
+			return []
 		}
+		const hole = getHoleById(placement.hole_id)
+		if (!hole) {
+			console.warn(`Unknown hole ${placement.hole_id} — skipped`)
+			return []
+		}
+
+		return [{ placement, hole, roleId: token.roleId }]
 	})
 }
