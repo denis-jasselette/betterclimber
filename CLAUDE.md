@@ -1,5 +1,16 @@
 # CLAUDE.md — Project Guide
 
+## Worktree Setup
+
+When working in a git worktree (path contains `.claude/worktrees/`), run these once before anything else:
+
+```bash
+pnpm install        # node_modules are not shared with the main tree
+cp .env.example .env         # real values not needed — presence of DATABASE_URL satisfies svelte-check
+```
+
+Without these steps `pnpm check` and `pnpm build` will fail.
+
 ## Quality Gates
 
 Before committing, always run in order:
