@@ -24,7 +24,6 @@ export async function searchClimbs(
 	const statsConditions: Array<SQLWrapper | undefined> = [eq(climbStats.climb_uuid, climbs.uuid)]
 
 	statsConditions.push(eq(climbStats.angle, angle))
-	if (angle !== null) statsConditions.push(eq(climbStats.angle, angle))
 	if (filters.gradeMin)
 		statsConditions.push(gte(climbStats.difficulty_average, gradeToDifficulty(filters.gradeMin)))
 	if (filters.gradeMax)
