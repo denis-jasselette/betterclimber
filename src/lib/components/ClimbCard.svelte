@@ -1,14 +1,6 @@
 <script lang="ts">
 	import type { BoardConnector } from '$lib/ble/board-connector.svelte'
-	import {
-		getEntry,
-		incrementAttempts,
-		recordLitUp,
-		resetAttempts,
-		setLiked,
-		setTicked
-	} from '$lib/data/log-service'
-	import { resolveHolds } from '$lib/data/repository'
+	import { createClimbActions } from '$lib/data/climb-actions.svelte'
 	import type { ClimbWithStats } from '$lib/data/types'
 	import { difficultyToGrade, formatGrade } from '$lib/data/types'
 	import { settings } from '$lib/settings-store.svelte'
@@ -33,87 +25,24 @@
 			: '?'
 	)
 
-	// Quality display (1–3 stars)
 	const qualityFilled = $derived(activeStats ? Math.round(activeStats.quality_average) : 0)
 
-	// User log state — re-derived whenever the climb uuid changes, re-read after mutations.
-	// logOverride is null until a local mutation fires; once set it takes precedence over the
-	// derived value until the next uuid change, avoiding the state_referenced_locally warning.
-	let logOverride = $state<ReturnType<typeof getEntry> | null>(null)
-	let logDerived = $derived(getEntry(item.climb.uuid, angle))
-	// Reset override when the climb changes
-	$effect(() => {
-		item.climb.uuid // track — triggers $effect when uuid changes
-		logOverride = null
-	})
-	const logSnapshot = $derived(logOverride ?? logDerived)
-
-	function refreshLog() {
-		logOverride = getEntry(item.climb.uuid, angle)
-	}
-
-	function toggleTick() {
-		setTicked(item.climb.uuid, angle, !logSnapshot.ticked)
-		refreshLog()
-	}
-
-	// Attempt: tap = increment, long-press = reset to 0
-	let attemptPressTimer: ReturnType<typeof setTimeout> | null = null
-
-	function onAttemptPointerDown() {
-		attemptPressTimer = setTimeout(() => {
-			attemptPressTimer = null
-			resetAttempts(item.climb.uuid, angle)
-			refreshLog()
-		}, 600)
-	}
-
-	function onAttemptPointerUp() {
-		if (attemptPressTimer !== null) {
-			clearTimeout(attemptPressTimer)
-			attemptPressTimer = null
-			incrementAttempts(item.climb.uuid, angle)
-			refreshLog()
-		}
-	}
-
-	function onAttemptPointerLeave() {
-		if (attemptPressTimer !== null) {
-			clearTimeout(attemptPressTimer)
-			attemptPressTimer = null
-		}
-	}
-
-	function toggleLike() {
-		setLiked(item.climb.uuid, angle, !logSnapshot.liked)
-		refreshLog()
-	}
-
-	// BLE state
-	let lighting = $state(false)
-	let lightError = $state<string | null>(null)
-
-	async function lightUp() {
-		if (lighting) return
-		lighting = true
-		lightError = null
-		try {
-			// Connect first if not already connected
-			if (!connector.isConnected) {
-				await connector.connect()
-				// User may have cancelled the picker
-				if (!connector.isConnected) return
-			}
-			const holds = await resolveHolds(climb)
-			await connector.lightUpClimb(holds)
-			recordLitUp(climb.uuid, angle)
-			refreshLog()
-		} catch (err) {
-			lightError = err instanceof Error ? err.message : 'Failed to send to board.'
-		} finally {
-			lighting = false
-		}
-	}
+	const {
+		logSnapshot,
+		lighting,
+		lightError,
+		toggleTick,
+		toggleLike,
+		onAttemptPointerDown,
+		onAttemptPointerUp,
+		onAttemptPointerLeave,
+		lightUp
+	} = createClimbActions(
+		() => item.climb.uuid,
+		() => angle,
+		() => item.climb,
+		() => connector
+	)
 </script>
 
 <article

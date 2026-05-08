@@ -4,16 +4,8 @@
 	import BoardVisualisation from '$lib/components/BoardVisualisation.svelte'
 	import TopBar from '$lib/components/TopBar.svelte'
 	import { connector } from '$lib/connector.svelte'
-	import {
-		getEntry,
-		incrementAttempts,
-		type LogEntry,
-		recordLitUp,
-		resetAttempts,
-		setLiked,
-		setTicked
-	} from '$lib/data/log-service'
-	import { getClimb, resolveHolds } from '$lib/data/repository'
+	import { createClimbActions } from '$lib/data/climb-actions.svelte'
+	import { getClimb } from '$lib/data/repository'
 	import type { ClimbWithStats } from '$lib/data/types'
 	import { difficultyToGrade, formatGrade, ROLE_COLORS, ROLE_LABELS } from '$lib/data/types'
 	import { resultsStore } from '$lib/results-store.svelte'
@@ -96,82 +88,23 @@
 		}
 	}
 
-	// ── User log ──────────────────────────────────────────────────────────────
-	// $state + $effect is intentional: logSnapshot must be writable (refreshLog mutates it
-	// after localStorage writes that $derived cannot detect).
-	// eslint-disable-next-line svelte/prefer-writable-derived
-	let logSnapshot = $state<LogEntry>({ ticked: false, attemptCount: 0, liked: false })
-
-	$effect(() => {
-		logSnapshot = getEntry(uuid, data.angle)
-	})
-
-	function refreshLog() {
-		logSnapshot = getEntry(uuid, data.angle)
-	}
-
-	function toggleTick() {
-		setTicked(uuid, data.angle, !logSnapshot.ticked)
-		refreshLog()
-	}
-
-	// Attempt: tap = +1, long-press = reset
-	let attemptPressTimer: ReturnType<typeof setTimeout> | null = null
-
-	function onAttemptPointerDown() {
-		attemptPressTimer = setTimeout(() => {
-			attemptPressTimer = null
-			resetAttempts(uuid, data.angle)
-			refreshLog()
-		}, 600)
-	}
-
-	function onAttemptPointerUp() {
-		if (attemptPressTimer !== null) {
-			clearTimeout(attemptPressTimer)
-			attemptPressTimer = null
-			incrementAttempts(uuid, data.angle)
-			refreshLog()
-		}
-	}
-
-	function onAttemptPointerLeave() {
-		if (attemptPressTimer !== null) {
-			clearTimeout(attemptPressTimer)
-			attemptPressTimer = null
-		}
-	}
-
-	function toggleLike() {
-		setLiked(uuid, data.angle, !logSnapshot.liked)
-		refreshLog()
-	}
-
-	// ── BLE ───────────────────────────────────────────────────────────────────
-	let lighting = $state(false)
-	let lightError = $state<string | null>(null)
-
-	async function lightUp() {
-		if (lighting || !item) return
-		lighting = true
-		lightError = null
-		try {
-			// Connect first if not already connected
-			if (!connector.isConnected) {
-				await connector.connect()
-				// User may have cancelled the picker
-				if (!connector.isConnected) return
-			}
-			const holds = await resolveHolds(item.climb)
-			await connector.lightUpClimb(holds)
-			recordLitUp(item.climb.uuid, data.angle)
-			refreshLog()
-		} catch (err) {
-			lightError = err instanceof Error ? err.message : 'Failed to send to board.'
-		} finally {
-			lighting = false
-		}
-	}
+	// ── Climb interactions (log + BLE) ───────────────────────────────────────
+	const {
+		logSnapshot,
+		lighting,
+		lightError,
+		toggleTick,
+		toggleLike,
+		onAttemptPointerDown,
+		onAttemptPointerUp,
+		onAttemptPointerLeave,
+		lightUp
+	} = createClimbActions(
+		() => uuid,
+		() => data.angle,
+		() => item?.climb ?? null,
+		() => connector
+	)
 </script>
 
 <svelte:head>
