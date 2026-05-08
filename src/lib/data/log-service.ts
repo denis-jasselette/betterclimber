@@ -46,6 +46,13 @@ function save(log: Record<string, LogEntry>) {
 
 const EMPTY: LogEntry = { ticked: false, attemptCount: 0, liked: false }
 
+function mutateEntry(uuid: string, angle: number, fn: (e: LogEntry) => LogEntry) {
+	const log = load()
+	const key = logKey(uuid, angle)
+	log[key] = fn(log[key] ?? { ...EMPTY })
+	save(log)
+}
+
 export function getEntry(uuid: string, angle: number | null): LogEntry {
 	if (angle === null) return { ...EMPTY }
 	return load()[logKey(uuid, angle)] ?? { ...EMPTY }
@@ -53,48 +60,30 @@ export function getEntry(uuid: string, angle: number | null): LogEntry {
 
 export function setTicked(uuid: string, angle: number | null, value: boolean) {
 	if (angle === null) return
-	const log = load()
-	const key = logKey(uuid, angle)
-	log[key] = { ...EMPTY, ...log[key], ticked: value }
-	save(log)
+	mutateEntry(uuid, angle, (e) => ({ ...e, ticked: value }))
 }
 
 /** Increment the attempt counter by 1. */
 export function incrementAttempts(uuid: string, angle: number | null) {
 	if (angle === null) return
-	const log = load()
-	const key = logKey(uuid, angle)
-	const entry = log[key] ?? { ...EMPTY }
-	log[key] = { ...entry, attemptCount: entry.attemptCount + 1 }
-	save(log)
+	mutateEntry(uuid, angle, (e) => ({ ...e, attemptCount: e.attemptCount + 1 }))
 }
 
 /** Reset the attempt counter to 0. */
 export function resetAttempts(uuid: string, angle: number | null) {
 	if (angle === null) return
-	const log = load()
-	const key = logKey(uuid, angle)
-	const entry = log[key] ?? { ...EMPTY }
-	log[key] = { ...entry, attemptCount: 0 }
-	save(log)
+	mutateEntry(uuid, angle, (e) => ({ ...e, attemptCount: 0 }))
 }
 
 export function setLiked(uuid: string, angle: number | null, value: boolean) {
 	if (angle === null) return
-	const log = load()
-	const key = logKey(uuid, angle)
-	log[key] = { ...EMPTY, ...log[key], liked: value }
-	save(log)
+	mutateEntry(uuid, angle, (e) => ({ ...e, liked: value }))
 }
 
 /** Record that this climb was just lit up on the board at this angle. */
 export function recordLitUp(uuid: string, angle: number | null) {
 	if (angle === null) return
-	const log = load()
-	const key = logKey(uuid, angle)
-	const entry = log[key] ?? { ...EMPTY }
-	log[key] = { ...entry, lastLitAt: new Date().toISOString() }
-	save(log)
+	mutateEntry(uuid, angle, (e) => ({ ...e, lastLitAt: new Date().toISOString() }))
 }
 
 /**
