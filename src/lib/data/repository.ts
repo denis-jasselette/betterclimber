@@ -144,7 +144,3 @@ export function resolveHolds(climb: Climb): ResolvedHold[] {
 	}
 	return resolved
 }
-
-// ── Compatibility re-exports ──────────────────────────────────────────────────
-// These let other modules import shared types from repository without changing imports.
-export type { Climb, ClimbFilters, ClimbWithStats, ResolvedHold }

@@ -73,7 +73,7 @@ const SET = {
 	SCREW_ON: 20
 } as const
 
-export type SetId = (typeof SET)[keyof typeof SET]
+type SetId = (typeof SET)[keyof typeof SET]
 
 export function isSetId(n: number): n is SetId {
 	return Object.values(SET).includes(n as SetId)
@@ -143,7 +143,7 @@ export interface ClimbStats {
  * Maps a numeric difficulty value to a V-grade label.
  * Mirrors the `difficulty_grades` table.
  */
-export interface DifficultyGrade {
+interface DifficultyGrade {
 	difficulty: number
 	/** e.g. "V0", "V5", "V10" */
 	boulder_name: string

@@ -76,9 +76,7 @@ describe('framePacket structure', () => {
 
 	it('clear packet: byte[0]=SOH, byte[3]=STX, last=ETX, cmd=ONLY', () => {
 		const [packet] = encodeClearPacket()
-		expect(packet[0]).toBe(SOH)
-		expect(packet[3]).toBe(STX)
-		expect(packet[packet.length - 1]).toBe(ETX)
+		assertFrame(packet)
 		expect(packet[4]).toBe(CMD_ONLY)
 	})
 

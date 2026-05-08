@@ -12,7 +12,7 @@
  * `user_climb_likes` tables from the /sync endpoint.
  */
 
-export type LogEntry = {
+type LogEntry = {
 	ticked: boolean
 	/** Number of attempts logged (0 = none). */
 	attemptCount: number
