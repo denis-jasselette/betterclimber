@@ -65,10 +65,9 @@ console.log('Tables found:', tables.map((t) => t.name).join(', '))
 //
 // Derived columns (not stored directly in the Aurora DB):
 //   allow_matches — inverted from is_nomatch
-//   is_campus     — no reliable source in the Aurora DB; hardcoded false until a
-//                   better signal is available. "Middle" holds (role 13) are
-//                   ambiguous (hands or feet), so absence of Foot Only holds
-//                   (role 15) is not a safe proxy for campus.
+//   is_campus     — prototype: climb name contains "campus" (case-insensitive).
+//                   Aurora DB has no dedicated flag; hold-role heuristics are
+//                   unreliable because "middle" holds (role 13) are ambiguous.
 //   is_route      — more than one frame (multi-move / top-out style)
 const climbs = db
 	.prepare(
@@ -85,7 +84,7 @@ const climbs = db
       angle,
       is_draft,
       NOT is_nomatch  AS allow_matches,
-      0               AS is_campus,
+      name LIKE '%campus%' AS is_campus,
       frames_count > 1 AS is_route
     FROM climbs
     WHERE layout_id = 1
