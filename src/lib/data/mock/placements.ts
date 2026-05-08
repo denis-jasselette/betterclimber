@@ -1,7 +1,7 @@
 import type { Placement } from '../types'
 import placementsJSON from './placements.json'
 
-export const placements: Placement[] = placementsJSON
+const placements: Placement[] = placementsJSON
 
 const placementsMap = new Map(placements.map((x) => [x.id, x]))
 

@@ -21,7 +21,7 @@ export function parseFrames(frames: string): HoldToken[] {
 	return parseFrame(frames.split(',"')[0])
 }
 
-export function parseFrame(frame: string): HoldToken[] {
+function parseFrame(frame: string): HoldToken[] {
 	const re = /p(?<placement>\d+)r(?<role>\d+)/g
 	return [...frame.matchAll(re)].map(({ groups }) => {
 		if (!groups) throw new Error('Unreachable case')

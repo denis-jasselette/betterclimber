@@ -18,16 +18,8 @@ import { parseFrames } from './frames-parser'
 import { getUuidsWhere } from './log-service'
 import ledsJson from './mock/leds.json'
 import placementsJson from './mock/placements.json'
-import type {
-	Climb,
-	ClimbFilters,
-	ClimbStats,
-	ClimbWithStats,
-	Led,
-	Placement,
-	ResolvedHold
-} from './types'
-import { ALL_ANGLES, DIFFICULTY_GRADES } from './types'
+import type { Climb, ClimbFilters, ClimbWithStats, Led, Placement, ResolvedHold } from './types'
+import { DIFFICULTY_GRADES } from './types'
 
 // ── Static board geometry (used only for BLE hold resolution) ────────────────
 
@@ -153,14 +145,6 @@ export async function resolveHolds(climb: Climb): Promise<ResolvedHold[]> {
 	return resolved
 }
 
-/**
- * Returns available angles.
- * Since we don't have a dedicate endpoint for this yet, use the hardcoded list from types.
- */
-export async function getAvailableAngles(): Promise<number[]> {
-	return [...ALL_ANGLES]
-}
-
 // ── Compatibility re-exports ──────────────────────────────────────────────────
 // These let other modules import shared types from repository without changing imports.
-export type { Climb, ClimbFilters, ClimbStats, ClimbWithStats, ResolvedHold }
+export type { Climb, ClimbFilters, ClimbWithStats, ResolvedHold }

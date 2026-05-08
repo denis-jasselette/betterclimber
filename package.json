@@ -31,6 +31,7 @@
 		"@types/node": "^25",
 		"@types/web-bluetooth": "^0.0.21",
 		"@typescript-eslint/parser": "^8.59.2",
+		"better-sqlite3": "^12.9.0",
 		"drizzle-kit": "^0.31.10",
 		"eslint": "^10.3.0",
 		"eslint-plugin-svelte": "^3.17.1",
