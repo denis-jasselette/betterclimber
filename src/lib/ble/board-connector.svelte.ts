@@ -58,7 +58,7 @@ const NORDIC_UART_RX_UUID = '6e400002-b5a3-f393-e0a9-e50e24dcca9e'
 
 export type LogLevel = 'info' | 'warn' | 'error' | 'debug'
 
-export interface LogEntry {
+export interface BleLogEntry {
 	id: string
 	ts: number
 	level: LogLevel
@@ -99,13 +99,13 @@ export class BoardConnector {
 	deviceName: string | null = $state(null)
 	error: string | null = $state(null)
 	recentBoards: string[] = $state(loadRecentBoards())
-	logEntries: LogEntry[] = $state([])
+	logEntries: BleLogEntry[] = $state([])
 
 	/**
 	 * Add a log entry to the debug log.
 	 */
 	log(level: LogLevel, message: string): void {
-		const entry: LogEntry = {
+		const entry: BleLogEntry = {
 			id: generateId(),
 			ts: Date.now(),
 			level,
