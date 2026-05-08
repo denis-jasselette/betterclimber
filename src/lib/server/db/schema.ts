@@ -38,6 +38,7 @@ export const climbs = pgTable(
 		angle: integer('angle'),
 		is_draft: boolean('is_draft').notNull().default(false),
 		allow_matches: boolean('allow_matches').notNull().default(true),
+		is_campus: boolean('is_campus').notNull().default(false),
 		created_at: timestamp('created_at', { withTimezone: true })
 	},
 	(t) => [
