@@ -69,12 +69,6 @@ export interface LogEntry {
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error'
 
-export interface BoardConnectorState {
-	status: ConnectionStatus
-	deviceName: string | null
-	error: string | null
-}
-
 function generateId(): string {
 	return Math.random().toString(36).slice(2, 9)
 }

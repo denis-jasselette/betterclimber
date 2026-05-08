@@ -3,7 +3,7 @@ import { browser } from '$app/environment'
 export type GradingSystem = 'v-scale' | 'french'
 export type ThemePreference = 'dark' | 'light' | 'system'
 
-export interface AppSettings {
+interface AppSettings {
 	gradingSystem: GradingSystem
 	theme: ThemePreference
 }

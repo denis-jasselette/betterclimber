@@ -39,7 +39,7 @@ export interface Placement {
  * Role IDs from the real Kilter DB (placement_roles table).
  * These map directly to the `r{id}` tokens in a climb's frames string.
  */
-export const ROLE = {
+const ROLE = {
 	START: 12,
 	HAND: 13,
 	FINISH: 14,
@@ -68,7 +68,7 @@ export const ROLE_LABELS: Record<RoleId, string> = {
 	[ROLE.FOOT]: 'Foot'
 }
 
-export const SET = {
+const SET = {
 	BOLT_ON: 1,
 	SCREW_ON: 20
 } as const
@@ -82,11 +82,6 @@ export function isSetId(n: number): n is SetId {
 export const SET_RADII: Record<SetId, number> = {
 	[SET.BOLT_ON]: 32,
 	[SET.SCREW_ON]: 20
-}
-
-export const SET_LABELS: Record<SetId, string> = {
-	[SET.BOLT_ON]: 'Bolt-on',
-	[SET.SCREW_ON]: 'Screw-on'
 }
 
 // ─── Climbs ─────────────────────────────────────────────────────────────────
@@ -279,7 +274,7 @@ export interface ResolvedHold {
  *
  * Conversion reference: widely-used community consensus mapping.
  */
-export const V_TO_FRENCH: Record<string, string> = {
+const V_TO_FRENCH: Record<string, string> = {
 	V0: '4',
 	V1: '5',
 	V2: '5+',

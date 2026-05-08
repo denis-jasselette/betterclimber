@@ -1,7 +1,7 @@
 import type { Hole } from '../types'
 import holesJSON from './holes.json'
 
-export const holes: Hole[] = holesJSON
+const holes: Hole[] = holesJSON
 
 const holesMap = new Map(holes.map((x) => [x.id, x]))
 
