@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
-	import { afterNavigate, beforeNavigate, goto } from '$app/navigation'
+	import { afterNavigate, beforeNavigate } from '$app/navigation'
 	import ClimbCard from '$lib/components/ClimbCard.svelte'
 	import SearchFilters from '$lib/components/SearchFilters.svelte'
 	import TopBar from '$lib/components/TopBar.svelte'
@@ -23,27 +23,49 @@
 		filterDrawerOpen = false
 	}
 
+	// ── Local filter state — drives the UI immediately ────────────────────────
+	// Initialised from server data so hard-reload / paste URL restores state.
+	// afterNavigate re-syncs on real navigations (angle change via goto) without
+	// firing on our own replaceState calls (shallow routing).
+	// The URL is kept in sync via replaceState as an external side-effect.
+	// eslint-disable-next-line svelte/prefer-writable-derived
+	// svelte-ignore state_referenced_locally — intentional: afterNavigate handles re-sync
+	let filters = $state<Partial<ClimbFilters>>(data.filters)
+
+	afterNavigate(() => {
+		filters = data.filters
+	})
+
+	$effect(() => {
+		// Keep the URL in sync as a side-effect.
+		// Use raw history.replaceState (not SvelteKit's replaceState) so the address bar
+		// updates without re-running the load function. Pass history.state to preserve
+		// SvelteKit's internal router state on the history entry.
+		const url = new URL(window.location.href)
+		url.search = filtersToParams(data.angle, filters).toString()
+		history.replaceState(history.state, '', url)
+	})
+
 	let activeFilterCount = $derived(
 		[
-			data.filters.gradeMin != null || data.filters.gradeMax != null,
-			data.filters.minQuality,
-			data.filters.excludeTicked,
-			data.filters.onlyAttempted,
-			data.filters.onlyLiked,
-			data.filters.onlyBenchmarks,
-			data.filters.onlyCampus,
-			data.filters.onlyRoutes,
-			data.filters.onlyRecentlyLit
+			filters.gradeMin != null || filters.gradeMax != null,
+			filters.minQuality,
+			filters.excludeTicked,
+			filters.onlyAttempted,
+			filters.onlyLiked,
+			filters.onlyBenchmarks,
+			filters.onlyCampus,
+			filters.onlyRoutes,
+			filters.onlyRecentlyLit
 		].filter(Boolean).length
 	)
 
 	function handleUpdateFilters(newFilters: Partial<ClimbFilters> = {}) {
-		const params = filtersToParams(data.angle, newFilters)
-		goto(`?${params}`, { replaceState: true, keepFocus: true })
+		filters = newFilters
 	}
 
 	function handleClearFilters() {
-		handleUpdateFilters({})
+		filters = {}
 	}
 
 	// ── Displayed results: keep previous list visible while new results load ──
@@ -53,11 +75,16 @@
 
 	$effect(() => {
 		loadingResults = true
-		searchClimbs(data.filters, data.angle).then((climbs) => {
+		let cancelled = false
+		searchClimbs(filters, data.angle).then((climbs) => {
+			if (cancelled) return
 			displayedClimbs = climbs
 			resultsStore.list = climbs
 			loadingResults = false
 		})
+		return () => {
+			cancelled = true
+		}
 	})
 
 	// ── Scroll position save / restore around climb detail navigation ─────────
@@ -193,7 +220,7 @@
 
 			<div class="space-y-5">
 				<!-- Filters -->
-				<SearchFilters filters={data.filters} {handleUpdateFilters} {handleClearFilters} />
+				<SearchFilters {filters} {handleUpdateFilters} {handleClearFilters} />
 			</div>
 		</aside>
 
@@ -229,7 +256,7 @@
 								{item}
 								{connector}
 								angle={data.angle}
-								href="/climb/{item.climb.uuid}?{filtersToParams(data.angle, data.filters)}"
+								href="/climb/{item.climb.uuid}?{filtersToParams(data.angle, filters)}"
 							/>
 						{/snippet}
 					</VirtualList>
