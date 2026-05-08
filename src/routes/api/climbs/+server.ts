@@ -79,7 +79,7 @@ export const GET: RequestHandler = async ({ url }) => {
 		// biome-ignore lint/style/noNonNullAssertion: or() with 2 args always returns a value
 		climbConditions.push(textFilter!)
 	}
-	if (onlyCampus) climbConditions.push(eq(climbs.allow_matches, false))
+	if (onlyCampus) climbConditions.push(eq(climbs.is_campus, true))
 	if (onlyRoutes) climbConditions.push(gt(climbs.frames_count, 1))
 
 	// Cursor-based pagination (WHERE quality < prev OR (quality = prev AND ascents < prev) OR ...)
@@ -117,6 +117,7 @@ export const GET: RequestHandler = async ({ url }) => {
 			angle: climbs.angle,
 			is_draft: climbs.is_draft,
 			allow_matches: climbs.allow_matches,
+			is_campus: climbs.is_campus,
 			// Stats fields (the "active" stats row for sorting/display)
 			stat_angle: climbStats.angle,
 			difficulty_average: climbStats.difficulty_average,
@@ -147,7 +148,7 @@ export const GET: RequestHandler = async ({ url }) => {
 			angle: row.angle,
 			is_draft: row.is_draft,
 			allow_matches: row.allow_matches,
-			is_campus: !row.allow_matches,
+			is_campus: row.is_campus,
 			is_route: (row.frames_count ?? 0) > 1
 		}
 
