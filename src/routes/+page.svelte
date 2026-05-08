@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
-	import { browser } from '$app/environment'
 	import { afterNavigate, beforeNavigate, goto } from '$app/navigation'
 	import ClimbCard from '$lib/components/ClimbCard.svelte'
 	import SearchFilters from '$lib/components/SearchFilters.svelte'
 	import TopBar from '$lib/components/TopBar.svelte'
 	import VirtualList from '$lib/components/VirtualList.svelte'
 	import { connector } from '$lib/connector.svelte'
-	import { getEntry } from '$lib/data/log-service'
+	import { searchClimbs } from '$lib/data/repository'
 	import type { ClimbFilters, ClimbWithStats } from '$lib/data/types'
 	import { resultsStore } from '$lib/results-store.svelte'
 	import { filtersToParams } from '$lib/url-filters'
@@ -43,30 +42,6 @@
 		handleUpdateFilters({})
 	}
 
-	// ── Personal filter (client-side, localStorage) ───────────────────────────
-	function applyPersonalFilters(
-		climbs: ClimbWithStats[],
-		filters: Partial<ClimbFilters>,
-		angle: number
-	): ClimbWithStats[] {
-		if (!browser) return climbs
-		if (
-			!filters.excludeTicked &&
-			!filters.onlyAttempted &&
-			!filters.onlyLiked &&
-			!filters.onlyRecentlyLit
-		)
-			return climbs
-		return climbs.filter(({ climb }) => {
-			const entry = getEntry(climb.uuid, angle)
-			if (filters.excludeTicked && entry.ticked) return false
-			if (filters.onlyAttempted && entry.attemptCount === 0) return false
-			if (filters.onlyLiked && !entry.liked) return false
-			if (filters.onlyRecentlyLit && !entry.lastLitAt) return false
-			return true
-		})
-	}
-
 	// ── Displayed results: keep previous list visible while new results load ──
 	// eslint-disable-next-line svelte/prefer-writable-derived
 	let displayedClimbs = $state<ClimbWithStats[]>([])
@@ -74,11 +49,9 @@
 
 	$effect(() => {
 		loadingResults = true
-		const promise = data.results
-		promise.then((results) => {
-			const filtered = applyPersonalFilters(results.climbs, data.filters, data.angle)
-			displayedClimbs = filtered
-			resultsStore.list = filtered
+		searchClimbs(data.filters, data.angle).then((climbs) => {
+			displayedClimbs = climbs
+			resultsStore.list = climbs
 			loadingResults = false
 		})
 	})
