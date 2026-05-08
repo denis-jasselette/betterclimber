@@ -48,6 +48,7 @@
 
 	let activeFilterCount = $derived(
 		[
+			filters.query?.trim(),
 			filters.gradeMin != null || filters.gradeMax != null,
 			filters.minQuality,
 			filters.excludeTicked,
