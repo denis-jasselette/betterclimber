@@ -7,7 +7,7 @@
  * Public API (never changes regardless of backing store):
  *   searchClimbs(filters, angle)  → Promise<ClimbWithStats[]>
  *   getClimb(uuid, angle)         → Promise<ClimbWithStats | null>
- *   resolveHolds(climb)           → Promise<ResolvedHold[]>
+ *   resolveHolds(climb)           → ResolvedHold[]
  *
  * Note: resolveHolds is backed by static JSON (placements/holes/leds never change).
  * Note: log-service filters (excludeTicked, onlyAttempted, etc.) are applied
@@ -130,7 +130,7 @@ export async function getClimb(
  * Resolve a climb's frames string into holds with LED positions.
  * Uses static local JSON — board geometry never changes.
  */
-export async function resolveHolds(climb: Climb): Promise<ResolvedHold[]> {
+export function resolveHolds(climb: Climb): ResolvedHold[] {
 	const tokens = parseFrames(climb.frames)
 	const resolved: ResolvedHold[] = []
 	for (const token of tokens) {

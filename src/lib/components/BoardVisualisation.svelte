@@ -20,6 +20,11 @@
 	const IMG_W = 1477 // original image width  (landscape)
 	const IMG_H = 1200 // original image height (landscape)
 
+	// Pixel calibration constants derived from the board image dimensions:
+	// The hold x/y coordinates in the DB are in board-space units (roughly inches).
+	// xScale/yScale convert units → pixels; xOffset/yOffset shift the origin to
+	// match the image crop. yScale is negative because the DB y-axis points up,
+	// while SVG y-axis points down.
 	function transformX(x: number) {
 		const xScale = 7.6
 		const xOffset = 190.4
@@ -34,6 +39,7 @@
 
 	const activeHolds = $derived(
 		resolveFrames(frames).map((hold) => ({
+			placementId: hold.placement.id,
 			cx: transformX(hold.hole.x),
 			cy: transformY(hold.hole.y),
 			radius: isSetId(hold.placement.set_id) ? SET_RADII[hold.placement.set_id] : 32,
@@ -61,7 +67,7 @@
 			height={IMG_H}
 		/>
 
-		{#each activeHolds as hold (hold.cx + '_' + hold.cy)}
+		{#each activeHolds as hold (hold.placementId)}
 			<circle
 				cx={hold.cx}
 				cy={hold.cy}

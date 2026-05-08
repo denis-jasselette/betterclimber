@@ -28,13 +28,10 @@
 	// ── Visible slice ─────────────────────────────────────────────────────────
 	let visibleCount = $state(0)
 
-	// Initialise and reset visible count whenever the item list or pageSize changes
+	// Reset visible count whenever the item list or pageSize changes.
 	$effect(() => {
-		// Access both to register as dependencies
-		const _items = items
-		const _ps = pageSize
-		_items // track — re-run effect when items change
-		visibleCount = _ps
+		void items
+		visibleCount = pageSize
 	})
 
 	const visibleItems = $derived(items.slice(0, visibleCount))

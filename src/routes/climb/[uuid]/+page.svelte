@@ -7,6 +7,7 @@
 	import {
 		getEntry,
 		incrementAttempts,
+		type LogEntry,
 		recordLitUp,
 		resetAttempts,
 		setLiked,
@@ -99,7 +100,7 @@
 	// $state + $effect is intentional: logSnapshot must be writable (refreshLog mutates it
 	// after localStorage writes that $derived cannot detect).
 	// eslint-disable-next-line svelte/prefer-writable-derived
-	let logSnapshot = $state(getEntry('', null))
+	let logSnapshot = $state<LogEntry>({ ticked: false, attemptCount: 0, liked: false })
 
 	$effect(() => {
 		logSnapshot = getEntry(uuid, data.angle)
