@@ -25,7 +25,7 @@
 
 	let activeFilterCount = $derived(
 		[
-			data.filters.gradeMin !== null || data.filters.gradeMax !== null,
+			data.filters.gradeMin != null || data.filters.gradeMax != null,
 			data.filters.minQuality,
 			data.filters.excludeTicked,
 			data.filters.onlyAttempted,
