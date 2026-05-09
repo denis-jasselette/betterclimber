@@ -41,8 +41,7 @@
 		() => item.climb.uuid,
 		() => angle,
 		() => item.climb,
-		() => connector,
-		() => item.activeStats?.difficulty_average ?? null
+		() => connector
 	)
 </script>
 

@@ -116,8 +116,7 @@
 		() => uuid,
 		() => data.angle,
 		() => item?.climb ?? null,
-		() => connector,
-		() => item?.activeStats?.difficulty_average ?? null
+		() => connector
 	)
 
 	// ── Custom climb actions (edit / delete) ──────────────────────────────────

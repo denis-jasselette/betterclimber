@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { page } from '$app/state'
 	import { connector } from '$lib/connector.svelte'
 	import type { Angle } from '$lib/data/types'
 	import AngleDropdown from './AngleDropdown.svelte'
@@ -12,7 +11,6 @@
 	}
 
 	const { children, angle = null }: Props = $props()
-	const onStatsPage = $derived(page.url.pathname === '/stats')
 </script>
 
 <header class="sticky top-0 z-50 border-b border-border bg-bg/90 backdrop-blur-sm">
@@ -42,28 +40,6 @@
 	</div>
 
 	<div class="flex-1"></div>
-
-	<!-- Stats link -->
-	<a
-		href="/stats"
-		class="rounded-lg p-1.5 transition {onStatsPage
-			? 'text-cyan-400'
-			: 'text-muted hover:text-text'}"
-		aria-label="Training stats"
-	>
-		<svg
-			class="size-5"
-			xmlns="http://www.w3.org/2000/svg"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
-		>
-			<rect x="3" y="12" width="4" height="9" rx="1" />
-			<rect x="10" y="7" width="4" height="14" rx="1" />
-			<rect x="17" y="3" width="4" height="18" rx="1" />
-		</svg>
-	</a>
 
 	<!-- BLE status -->
 	<BleStatus {connector} />
