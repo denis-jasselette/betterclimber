@@ -3,6 +3,7 @@
 	import { ALL_ANGLES, ALL_GRADES, formatGrade } from '$lib/data/types'
 	import type { GradingSystem, ThemePreference } from '$lib/settings-store.svelte'
 	import { settings } from '$lib/settings-store.svelte'
+	import AuthSection from './AuthSection.svelte'
 
 	type OptionDef<T> = { value: T; label: string; description: string }
 
@@ -65,6 +66,9 @@
 				</svg>
 			</button>
 		</div>
+
+		<!-- Account / Auth -->
+		<AuthSection />
 
 		<!-- Default angle -->
 		<section class="mb-8">
