@@ -14,6 +14,7 @@ import type { BoardConnector } from '$lib/ble/board-connector.svelte'
 import {
 	getEntry,
 	incrementAttempts,
+	type LogEntry,
 	recordLitUp,
 	resetAttempts,
 	setLiked,
