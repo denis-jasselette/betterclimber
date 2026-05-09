@@ -5,6 +5,8 @@
 	import TopBar from '$lib/components/TopBar.svelte'
 	import { connector } from '$lib/connector.svelte'
 	import { createClimbActions } from '$lib/data/climb-actions.svelte'
+	import { deleteCustomClimb } from '$lib/data/custom-climbs'
+	import { mergeDbLog } from '$lib/data/log-service'
 	import { getClimb } from '$lib/data/repository'
 	import type { ClimbWithStats } from '$lib/data/types'
 	import { difficultyToGrade, formatGrade, ROLE_COLORS, ROLE_LABELS } from '$lib/data/types'
@@ -27,7 +29,13 @@
 	let item = $state<ClimbWithStats | null>(null)
 
 	$effect(() => {
-		// Try the in-memory results list first (client-side navigation)
+		// Custom climbs are always read fresh from localStorage by the load function.
+		// Skip the in-memory results store for them so edits reflect immediately.
+		if (data.item?.climb.setter_id === 0 && data.item.climb.uuid === uuid) {
+			item = data.item
+			return
+		}
+		// Try the in-memory results list first (client-side navigation — avoids an API round-trip)
 		const fromStore = resultsStore.list.find((r) => r.climb.uuid === uuid) ?? null
 		if (fromStore) {
 			item = fromStore
@@ -40,6 +48,11 @@
 				item = r
 			})
 		}
+	})
+
+	// Merge DB log entries for this angle into localStorage on page load.
+	$effect(() => {
+		if (data.angle !== null) mergeDbLog(data.angle)
 	})
 
 	// ── Derived display values ─────────────────────────────────────────────────
@@ -105,6 +118,16 @@
 		() => item?.climb ?? null,
 		() => connector
 	)
+
+	// ── Custom climb actions (edit / delete) ──────────────────────────────────
+	const isCustomClimb = $derived(item?.climb.setter_id === 0)
+	let confirmingDelete = $state(false)
+
+	function handleDelete() {
+		deleteCustomClimb(uuid)
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		goto('/')
+	}
 </script>
 
 <svelte:head>
@@ -231,7 +254,9 @@
 					<p class="mt-1 text-sm text-muted">
 						by <a
 							href="/?author={encodeURIComponent(climb.setter_username)}"
-							class="underline underline-offset-2 hover:text-text"
+							class={climb.setter_username === '@me'
+								? 'font-semibold text-cyan-400'
+								: 'underline underline-offset-2 hover:text-text'}
 						>{climb.setter_username}</a>
 					</p>
 				</div>
@@ -243,8 +268,8 @@
 			</div>
 
 			<!-- Stats + tags -->
-			{#if activeStats}
-				<div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted">
+			<div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted">
+				{#if activeStats}
 					<!-- Quality -->
 					<div class="flex items-center gap-1">
 						{#each [1, 2, 3] as star (star)}
@@ -280,36 +305,72 @@
 							<span>{activeStats.ascent_count.toLocaleString()} ascents</span>
 						</div>
 					{/if}
-					<!-- Tag pills -->
-					{#if activeStats?.benchmark_difficulty != null}
+					<!-- Benchmark pill -->
+					{#if activeStats.benchmark_difficulty != null}
 						<span
 							class="rounded-md bg-yellow-500/10 px-2 py-0.5 text-[11px] font-semibold text-yellow-400"
 							>Benchmark</span
 						>
 					{/if}
-					{#if climb.is_campus}
-						<span
-							class="rounded-md bg-purple-500/10 px-2 py-0.5 text-[11px] font-semibold text-purple-400"
-							>Campus</span
-						>
-					{/if}
-					{#if climb.is_route}
-						<span
-							class="rounded-md bg-blue-500/10 px-2 py-0.5 text-[11px] font-semibold text-blue-400"
-							>Route</span
-						>
-					{/if}
-					{#if !climb.allow_matches}
-						<span class="rounded-md bg-muted/20 px-2 py-0.5 text-[11px] font-semibold text-muted"
-							>No matching</span
-						>
-					{/if}
-				</div>
-			{/if}
+				{/if}
+				<!-- Tag pills — shown regardless of stats availability -->
+				{#if climb.is_campus}
+					<span
+						class="rounded-md bg-purple-500/10 px-2 py-0.5 text-[11px] font-semibold text-purple-400"
+						>Campus</span
+					>
+				{/if}
+				{#if climb.is_route}
+					<span
+						class="rounded-md bg-blue-500/10 px-2 py-0.5 text-[11px] font-semibold text-blue-400"
+						>Route</span
+					>
+				{/if}
+				{#if !climb.allow_matches}
+					<span class="rounded-md bg-muted/20 px-2 py-0.5 text-[11px] font-semibold text-muted"
+						>No matching</span
+					>
+				{/if}
+			</div>
 
 			<!-- Description -->
 			{#if climb.description}
 				<p class="mt-6 text-sm leading-relaxed text-muted">{climb.description}</p>
+			{/if}
+
+			<!-- Custom climb: edit / delete -->
+			{#if isCustomClimb}
+				<div class="mt-4 flex items-center gap-3">
+					{#if confirmingDelete}
+						<span class="text-sm text-muted">Delete this climb?</span>
+						<button
+							onclick={handleDelete}
+							class="rounded-xl border border-red-600 bg-red-600/10 px-3 py-1.5 text-sm font-semibold text-red-400 transition hover:bg-red-600/20 active:scale-95"
+						>
+							Yes, delete
+						</button>
+						<button
+							onclick={() => (confirmingDelete = false)}
+							class="rounded-xl border border-border px-3 py-1.5 text-sm text-muted transition hover:text-text active:scale-95"
+						>
+							Cancel
+						</button>
+					{:else}
+						<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+						<a
+							href="/climb/{uuid}/edit{page.url.search}"
+							class="rounded-xl border border-border px-3 py-1.5 text-sm text-muted transition hover:text-text active:scale-95"
+						>
+							Edit
+						</a>
+						<button
+							onclick={() => (confirmingDelete = true)}
+							class="rounded-xl border border-border px-3 py-1.5 text-sm text-muted transition hover:border-red-500/50 hover:text-red-400 active:scale-95"
+						>
+							Delete
+						</button>
+					{/if}
+				</div>
 			{/if}
 
 			<!-- Action buttons -->

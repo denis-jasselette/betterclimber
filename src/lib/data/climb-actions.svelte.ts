@@ -29,22 +29,28 @@ export function createClimbActions(
 	getConnector: () => BoardConnector
 ) {
 	// ── Log state ────────────────────────────────────────────────────────────────
-	// logOverride is null until a local mutation fires; once set it takes
-	// precedence over the derived value, avoiding state_referenced_locally.
-	// Reset to null whenever the uuid changes (navigating between climbs).
-	let logOverride = $state<ReturnType<typeof getEntry> | null>(null)
-	const logDerived = $derived(getEntry(getUuid(), getAngle()))
-
-	$effect(() => {
-		getUuid() // track — triggers reset when uuid changes
-		logOverride = null
-	})
-
-	const logSnapshot = $derived(logOverride ?? logDerived)
+	// logSnapshot is a mutable $state object so that destructured references in
+	// components remain valid and reactive. Svelte 5 $state objects are deep
+	// reactive proxies — mutating properties in place propagates to all
+	// dependents, whereas replacing the object reference would not.
+	// Spread to capture a plain copy; TypeScript infers the shape from LogEntry.
+	let logSnapshot = $state({ ...getEntry(getUuid(), getAngle()) })
 
 	function refreshLog() {
-		logOverride = getEntry(getUuid(), getAngle())
+		const entry = getEntry(getUuid(), getAngle())
+		logSnapshot.ticked = entry.ticked
+		logSnapshot.attemptCount = entry.attemptCount
+		logSnapshot.liked = entry.liked
+		logSnapshot.lastLitAt = entry.lastLitAt
 	}
+
+	// Re-sync when uuid or angle changes (navigating between climbs or
+	// switching board angle).
+	$effect(() => {
+		getUuid()
+		getAngle()
+		refreshLog()
+	})
 
 	// ── Tick / Like ───────────────────────────────────────────────────────────────
 	function toggleTick() {

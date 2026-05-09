@@ -7,6 +7,10 @@
  *
  * Board geometry (placements, holes, leds) remains as static JSON in
  * src/lib/data/mock/ — it is tiny, never changes, and used only for BLE.
+ *
+ * JS property names for better-auth managed tables (users, sessions, accounts,
+ * verifications) must be camelCase — better-auth's Drizzle adapter uses JS
+ * property names, not SQL column names, when building queries.
  */
 
 import {
@@ -78,7 +82,92 @@ export const climbStats = pgTable(
 	]
 )
 
+// ── users ─────────────────────────────────────────────────────────────────────
+// JS property names are camelCase so better-auth's Drizzle adapter can map them.
+// anonId is our custom field for anonymous user tracking.
+
+export const users = pgTable('users', {
+	id: text('id').primaryKey(),
+	name: text('name'),
+	email: text('email'),
+	emailVerified: boolean('email_verified').notNull().default(false),
+	image: text('image'),
+	/** Our custom field: links anonymous sessions to this account. */
+	anonId: text('anon_id').unique(),
+	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true })
+})
+
+// ── user_log ──────────────────────────────────────────────────────────────────
+
+export const userLog = pgTable(
+	'user_log',
+	{
+		user_id: text('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		climb_uuid: varchar('climb_uuid', { length: 36 }).notNull(),
+		angle: integer('angle').notNull(),
+		ticked: boolean('ticked').notNull().default(false),
+		attempt_count: integer('attempt_count').notNull().default(0),
+		liked: boolean('liked').notNull().default(false),
+		last_lit_at: timestamp('last_lit_at', { withTimezone: true }),
+		updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow()
+	},
+	(t) => [
+		// Composite PK: one row per (user, climb, angle)
+		{ primaryKey: [t.user_id, t.climb_uuid, t.angle] },
+		index('user_log_user_id_angle_idx').on(t.user_id, t.angle)
+	]
+)
+
+// ── better-auth managed tables ────────────────────────────────────────────────
+// JS property names are camelCase so better-auth's Drizzle adapter can map them.
+// SQL column names remain snake_case to match Neon conventions.
+
+export const sessions = pgTable('sessions', {
+	id: text('id').primaryKey(),
+	expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+	token: text('token').notNull().unique(),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
+	ipAddress: text('ip_address'),
+	userAgent: text('user_agent'),
+	userId: text('user_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' })
+})
+
+export const accounts = pgTable('accounts', {
+	id: text('id').primaryKey(),
+	accountId: text('account_id').notNull(),
+	providerId: text('provider_id').notNull(),
+	userId: text('user_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	accessToken: text('access_token'),
+	refreshToken: text('refresh_token'),
+	idToken: text('id_token'),
+	accessTokenExpiresAt: timestamp('access_token_expires_at', { withTimezone: true }),
+	refreshTokenExpiresAt: timestamp('refresh_token_expires_at', { withTimezone: true }),
+	scope: text('scope'),
+	password: text('password'),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull()
+})
+
+export const verifications = pgTable('verifications', {
+	id: text('id').primaryKey(),
+	identifier: text('identifier').notNull(),
+	value: text('value').notNull(),
+	expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }),
+	updatedAt: timestamp('updated_at', { withTimezone: true })
+})
+
 // ── Type inference helpers ────────────────────────────────────────────────────
 
 export type ClimbRow = typeof climbs.$inferSelect
 export type ClimbStatsRow = typeof climbStats.$inferSelect
+export type UserRow = typeof users.$inferSelect
+export type UserLogRow = typeof userLog.$inferSelect

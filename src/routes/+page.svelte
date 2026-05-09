@@ -6,6 +6,7 @@
 	import TopBar from '$lib/components/TopBar.svelte'
 	import VirtualList from '$lib/components/VirtualList.svelte'
 	import { connector } from '$lib/connector.svelte'
+	import { type CustomClimb, filterCustomClimbs, getCustomClimbs } from '$lib/data/custom-climbs'
 	import { searchClimbs } from '$lib/data/repository'
 	import type { ClimbFilters, ClimbWithStats } from '$lib/data/types'
 	import { resultsStore } from '$lib/results-store.svelte'
@@ -31,6 +32,14 @@
 	// eslint-disable-next-line svelte/prefer-writable-derived
 	// svelte-ignore state_referenced_locally — intentional: afterNavigate handles re-sync
 	let filters = $state<Partial<ClimbFilters>>(data.filters)
+
+	// ── Custom climbs (localStorage, client-only) ─────────────────────────────
+	let allCustomClimbs = $state<CustomClimb[]>([])
+	onMount(() => {
+		allCustomClimbs = getCustomClimbs()
+	})
+	const customResults = $derived(filterCustomClimbs(allCustomClimbs, filters, data.angle))
+	const customUuids = $derived(new Set(customResults.map((r) => r.climb.uuid)))
 
 	$effect(() => {
 		// Keep the URL in sync as a side-effect.
@@ -103,7 +112,8 @@
 			if (cancelled) return
 			displayedClimbs = climbs
 			nextCursor = nc
-			resultsStore.list = climbs
+			// Custom climbs prepended for prev/next navigation
+			resultsStore.list = [...customResults, ...climbs]
 			loadingResults = false
 		})
 		return () => {
@@ -158,6 +168,8 @@
 
 		// Keep filters in sync with the URL on all navigations (e.g. angle change).
 		filters = data.filters
+		// Reload custom climbs on every navigation (user may have just created/deleted one).
+		allCustomClimbs = getCustomClimbs()
 
 		if (comingBackFromClimb) {
 			// Restore the accumulated result list and cursor from the previous visit.
@@ -334,6 +346,16 @@
 				</div>
 			{:else}
 				<div class="space-y-3" class:opacity-60={loadingResults}>
+					<!-- Custom climbs at the top (author shown as @me in accent color) -->
+					{#each customResults as item (item.climb.uuid)}
+						<ClimbCard
+							{item}
+							{connector}
+							angle={data.angle}
+							href="/climb/{item.climb.uuid}?{filtersToParams(data.angle, filters)}"
+						/>
+					{/each}
+
 					<VirtualList
 						items={displayedClimbs}
 						pageSize={20}
@@ -343,12 +365,16 @@
 						initialVisibleCount={restoredVisibleCount}
 					>
 						{#snippet children(item)}
-							<ClimbCard
-								{item}
-								{connector}
-								angle={data.angle}
-								href="/climb/{item.climb.uuid}?{filtersToParams(data.angle, filters)}"
-							/>
+							{#if customUuids.has(item.climb.uuid)}
+								<!-- skip — already shown above -->
+							{:else}
+								<ClimbCard
+									{item}
+									{connector}
+									angle={data.angle}
+									href="/climb/{item.climb.uuid}?{filtersToParams(data.angle, filters)}"
+								/>
+							{/if}
 						{/snippet}
 					</VirtualList>
 				</div>
@@ -356,3 +382,15 @@
 		</main>
 	</div>
 </div>
+
+<!-- FAB: create custom climb -->
+<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+<a
+	href="/climb/new"
+	title="Create custom climb"
+	class="fixed right-4 bottom-6 z-40 flex size-14 items-center justify-center rounded-full bg-cyan-600 text-white shadow-lg transition hover:bg-cyan-500 active:scale-95"
+>
+	<svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+		<path d="M12 5v14M5 12h14" />
+	</svg>
+</a>
