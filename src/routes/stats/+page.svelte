@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { onMount } from 'svelte'
+	import { browser } from '$app/environment'
 	import TopBar from '$lib/components/TopBar.svelte'
 	import {
+		type DateRange,
 		type DayActivity,
 		type GradeCount,
 		getActivityByDay,
@@ -13,20 +14,44 @@
 	} from '$lib/data/log-stats'
 	import { ALL_GRADES } from '$lib/data/types'
 
-	// ── Data ──────────────────────────────────────────────────────────────────
-	let dailyActivity = $state<DayActivity[]>([])
-	let weeklyActivity = $state<WeekActivity[]>([])
-	let gradeDistribution = $state<GradeCount[]>([])
-	let totalTicks = $state(0)
-	let totalClimbsLit = $state(0)
+	// ── Time range filter ─────────────────────────────────────────────────────
+	type RangePreset = 'all' | '1y' | '3m' | '1m' | 'custom'
+	let rangePreset = $state<RangePreset>('all')
+	let customFrom = $state('')
+	let customTo = $state('')
 
-	onMount(() => {
-		dailyActivity = getActivityByDay(182)
-		weeklyActivity = getActivityByWeek(182)
-		gradeDistribution = getGradeDistribution()
-		totalTicks = getTotalTicks()
-		totalClimbsLit = getTotalClimbsLit()
+	const PRESETS: { key: RangePreset; label: string }[] = [
+		{ key: 'all', label: 'All time' },
+		{ key: '1y', label: '1Y' },
+		{ key: '3m', label: '3M' },
+		{ key: '1m', label: '1M' },
+		{ key: 'custom', label: 'Custom' }
+	]
+
+	const effectiveRange = $derived.by((): DateRange | undefined => {
+		if (rangePreset === 'all') return undefined
+		if (rangePreset === 'custom') {
+			const from = customFrom ? new Date(`${customFrom}T00:00:00`) : undefined
+			const to = customTo ? new Date(`${customTo}T23:59:59`) : undefined
+			return { from, to }
+		}
+		const days = rangePreset === '1y' ? 365 : rangePreset === '3m' ? 90 : 30
+		const from = new Date()
+		from.setDate(from.getDate() - days)
+		from.setHours(0, 0, 0, 0)
+		const to = new Date()
+		to.setHours(23, 59, 59, 999)
+		return { from, to }
 	})
+
+	// ── Data ──────────────────────────────────────────────────────────────────
+	const dailyActivity = $derived<DayActivity[]>(browser ? getActivityByDay(effectiveRange) : [])
+	const weeklyActivity = $derived<WeekActivity[]>(browser ? getActivityByWeek(effectiveRange) : [])
+	const gradeDistribution = $derived<GradeCount[]>(
+		browser ? getGradeDistribution(effectiveRange) : []
+	)
+	const totalTicks = $derived(browser ? getTotalTicks(effectiveRange) : 0)
+	const totalClimbsLit = $derived(browser ? getTotalClimbsLit(effectiveRange) : 0)
 
 	// ── Heatmap (GitHub-style calendar) ───────────────────────────────────────
 	// Arrange days into weeks (Mon–Sun columns)
@@ -159,6 +184,43 @@
 			</div>
 		</div>
 
+		<!-- Time range filter -->
+		<div class="space-y-3">
+			<div class="flex flex-wrap gap-2">
+				{#each PRESETS as preset (preset.key)}
+					<button
+						class="rounded-xl border px-3 py-1.5 text-sm font-medium transition active:scale-95
+							{rangePreset === preset.key
+							? 'border-cyan-500 bg-cyan-500/10 text-cyan-400'
+							: 'border-border bg-surface-raised text-muted hover:text-text'}"
+						onclick={() => (rangePreset = preset.key)}
+					>
+						{preset.label}
+					</button>
+				{/each}
+			</div>
+			{#if rangePreset === 'custom'}
+				<div class="flex flex-wrap items-center gap-3">
+					<label class="flex items-center gap-2 text-sm text-muted">
+						From
+						<input
+							type="date"
+							bind:value={customFrom}
+							class="rounded-lg border border-border bg-surface px-2 py-1 text-sm text-text focus:border-cyan-500 focus:outline-none"
+						/>
+					</label>
+					<label class="flex items-center gap-2 text-sm text-muted">
+						To
+						<input
+							type="date"
+							bind:value={customTo}
+							class="rounded-lg border border-border bg-surface px-2 py-1 text-sm text-text focus:border-cyan-500 focus:outline-none"
+						/>
+					</label>
+				</div>
+			{/if}
+		</div>
+
 		<!-- Summary cards -->
 		<div class="grid grid-cols-2 gap-4 sm:grid-cols-2">
 			<div class="rounded-2xl border border-border bg-surface p-5">
@@ -186,7 +248,7 @@
 						onmouseleave={() => (tooltip = null)}
 					>
 						<!-- Month labels -->
-						{#each heatmapMonthLabels as { x, label }}
+						{#each heatmapMonthLabels as { x, label } (x)}
 							<text
 								x={x}
 								y={heatmapHeight + 16}
@@ -197,9 +259,8 @@
 						{/each}
 
 						<!-- Day cells -->
-						{#each heatmapWeeks as week, wi}
-							{#each week as day, di}
-								<!-- svelte-ignore a11y_mouse_events_have_key_events -->
+						{#each heatmapWeeks as week, wi (wi)}
+							{#each week as day, di (di)}
 								<rect
 									x={wi * CELL_STRIDE}
 									y={di * CELL_STRIDE}
@@ -228,7 +289,7 @@
 				<!-- Legend -->
 				<div class="mt-2 flex items-center gap-2 text-xs text-muted">
 					<span>Less</span>
-					{#each [0, 0.25, 0.5, 0.75, 1] as ratio}
+					{#each [0, 0.25, 0.5, 0.75, 1] as ratio (ratio)}
 						<div
 							class="size-3 rounded-sm"
 							style="background: {heatmapColor(Math.ceil(ratio * heatmapMax))}"
@@ -251,7 +312,7 @@
 						height={CHART_H + 20}
 						aria-label="Weekly climb intensity bar chart"
 					>
-						{#each weeklyActivity as week, i}
+						{#each weeklyActivity as week, i (week.weekStart)}
 							{@const barH = Math.max(2, Math.round((week.climbCount / weekMax) * CHART_H))}
 							{@const x = i * (BAR_W + BAR_GAP)}
 							<rect
@@ -278,7 +339,7 @@
 				<p class="text-sm text-muted">No ticks recorded yet. Send some climbs to see your grade pyramid!</p>
 			{:else}
 				<div class="space-y-1.5">
-					{#each gradesToShow as { grade, count }}
+					{#each gradesToShow as { grade, count } (grade)}
 						<div class="flex items-center gap-3">
 							<span class="w-8 text-right text-xs font-semibold text-muted">{grade}</span>
 							<div class="flex-1 overflow-hidden rounded-full bg-surface">

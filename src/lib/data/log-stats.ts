@@ -31,6 +31,15 @@ export interface WeekActivity {
 	climbCount: number
 }
 
+/** Optional date range filter. Undefined bounds are treated as open-ended. */
+export interface DateRange {
+	from?: Date
+	to?: Date
+}
+
+/** Default display window in days when no date range is given. */
+const DEFAULT_DAYS = 182
+
 function toDateStr(iso: string): string {
 	return iso.slice(0, 10)
 }
@@ -44,17 +53,31 @@ function isoToMonday(date: Date): Date {
 	return d
 }
 
-/**
- * Returns activity grouped by calendar day for the last `days` days (default 182 = ~6 months).
- * Uses `lastLitAt` as the primary activity signal (when a climb was performed on the board).
- */
-export function getActivityByDay(days = 182): DayActivity[] {
-	const entries = getAllEntries()
-	const today = new Date()
-	today.setHours(23, 59, 59, 999)
+function resolveRange(range?: DateRange): { from: Date; to: Date } {
+	const to =
+		range?.to ??
+		(() => {
+			const d = new Date()
+			d.setHours(23, 59, 59, 999)
+			return d
+		})()
+	const from =
+		range?.from ??
+		(() => {
+			const d = new Date(to)
+			d.setDate(d.getDate() - DEFAULT_DAYS)
+			return d
+		})()
+	return { from, to }
+}
 
-	const cutoff = new Date(today)
-	cutoff.setDate(cutoff.getDate() - days)
+/**
+ * Returns activity grouped by calendar day for the given date range.
+ * Defaults to the last 182 days (~6 months) when no range is provided.
+ */
+export function getActivityByDay(range?: DateRange): DayActivity[] {
+	const entries = getAllEntries()
+	const { from: cutoff, to: today } = resolveRange(range)
 
 	// Map from date string → set of unique "uuid@angle" keys
 	const litByDay = new Map<string, Set<string>>()
@@ -101,8 +124,8 @@ export function getActivityByDay(days = 182): DayActivity[] {
 /**
  * Aggregates daily activity into ISO weeks (Monday start).
  */
-export function getActivityByWeek(days = 182): WeekActivity[] {
-	const daily = getActivityByDay(days)
+export function getActivityByWeek(range?: DateRange): WeekActivity[] {
+	const daily = getActivityByDay(range)
 	const weekMap = new Map<string, number>()
 
 	for (const day of daily) {
@@ -119,8 +142,9 @@ export function getActivityByWeek(days = 182): WeekActivity[] {
 /**
  * Returns ticked climb counts grouped by V-grade (all grades, zero counts included).
  * Only counts entries where ticked=true and difficulty is stored.
+ * When a range is provided, filters by tickedAt date.
  */
-export function getGradeDistribution(): GradeCount[] {
+export function getGradeDistribution(range?: DateRange): GradeCount[] {
 	const entries = getAllEntries()
 	const gradeCounts = new Map<string, number>()
 
@@ -129,21 +153,43 @@ export function getGradeDistribution(): GradeCount[] {
 	}
 
 	for (const entry of Object.values(entries)) {
-		if (entry.ticked && entry.difficulty != null) {
-			const grade = difficultyToGrade(entry.difficulty)
-			gradeCounts.set(grade, (gradeCounts.get(grade) ?? 0) + 1)
+		if (!entry.ticked || entry.difficulty == null) continue
+		if (range) {
+			const tickedAt = entry.tickedAt ? new Date(entry.tickedAt) : null
+			if (!tickedAt) continue
+			if (range.from && tickedAt < range.from) continue
+			if (range.to && tickedAt > range.to) continue
 		}
+		const grade = difficultyToGrade(entry.difficulty)
+		gradeCounts.set(grade, (gradeCounts.get(grade) ?? 0) + 1)
 	}
 
 	return ALL_GRADES.map((grade) => ({ grade, count: gradeCounts.get(grade) ?? 0 }))
 }
 
-/** Total ticks across all entries. */
-export function getTotalTicks(): number {
-	return Object.values(getAllEntries()).filter((e) => e.ticked).length
+/** Total ticks, optionally filtered to a date range (by tickedAt). */
+export function getTotalTicks(range?: DateRange): number {
+	return Object.values(getAllEntries()).filter((e) => {
+		if (!e.ticked) return false
+		if (range) {
+			const tickedAt = e.tickedAt ? new Date(e.tickedAt) : null
+			if (!tickedAt) return false
+			if (range.from && tickedAt < range.from) return false
+			if (range.to && tickedAt > range.to) return false
+		}
+		return true
+	}).length
 }
 
-/** Total unique climbs lit up (ever). */
-export function getTotalClimbsLit(): number {
-	return Object.values(getAllEntries()).filter((e) => e.lastLitAt).length
+/** Total unique climbs lit up, optionally filtered to a date range (by lastLitAt). */
+export function getTotalClimbsLit(range?: DateRange): number {
+	return Object.values(getAllEntries()).filter((e) => {
+		if (!e.lastLitAt) return false
+		if (range) {
+			const litAt = new Date(e.lastLitAt)
+			if (range.from && litAt < range.from) return false
+			if (range.to && litAt > range.to) return false
+		}
+		return true
+	}).length
 }
