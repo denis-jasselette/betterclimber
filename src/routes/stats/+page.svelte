@@ -8,8 +8,10 @@
 		getActivityByDay,
 		getActivityByWeek,
 		getGradeDistribution,
+		getPersonalBests,
 		getTotalClimbsLit,
 		getTotalTicks,
+		type PersonalBests,
 		type WeekActivity
 	} from '$lib/data/log-stats'
 	import { ALL_GRADES } from '$lib/data/types'
@@ -52,6 +54,11 @@
 	)
 	const totalTicks = $derived(browser ? getTotalTicks(effectiveRange) : 0)
 	const totalClimbsLit = $derived(browser ? getTotalClimbsLit(effectiveRange) : 0)
+	const personalBests = $derived<PersonalBests>(
+		browser
+			? getPersonalBests(effectiveRange)
+			: { highestTick: null, highestFlash: null, avgAttemptsPerDay: null }
+	)
 
 	// ── Heatmap (GitHub-style calendar) ───────────────────────────────────────
 	// Arrange days into weeks (Mon–Sun columns)
@@ -127,13 +134,15 @@
 	const barChartWidth = $derived(weeklyActivity.length * (BAR_W + BAR_GAP))
 
 	// ── Grade distribution ─────────────────────────────────────────────────────
-	const gradeMax = $derived(Math.max(1, ...gradeDistribution.map((g) => g.count)))
-	// Only show grades that have at least 1 tick OR are in a range with ticks
+	const gradeMax = $derived(
+		Math.max(1, ...gradeDistribution.map((g) => g.ticked + g.attemptedOnly))
+	)
+	// Only show grades in the active range (padded by 1 on each side)
 	const gradesToShow = $derived.by(() => {
-		const withTicks = gradeDistribution.filter((g) => g.count > 0)
-		if (withTicks.length === 0) return []
-		const minIdx = ALL_GRADES.indexOf(withTicks[0].grade)
-		const maxIdx = ALL_GRADES.indexOf(withTicks[withTicks.length - 1].grade)
+		const withActivity = gradeDistribution.filter((g) => g.ticked + g.attemptedOnly > 0)
+		if (withActivity.length === 0) return []
+		const minIdx = ALL_GRADES.indexOf(withActivity[0].grade)
+		const maxIdx = ALL_GRADES.indexOf(withActivity[withActivity.length - 1].grade)
 		return gradeDistribution.filter((g) => {
 			const idx = ALL_GRADES.indexOf(g.grade)
 			return idx >= Math.max(0, minIdx - 1) && idx <= Math.min(ALL_GRADES.length - 1, maxIdx + 1)
@@ -232,6 +241,30 @@
 				<p class="mt-1 text-3xl font-bold text-cyan-400">{totalClimbsLit}</p>
 			</div>
 		</div>
+
+		<!-- Personal bests (#106) -->
+		<section>
+			<h2 class="mb-4 text-base font-semibold text-text">Personal bests</h2>
+			<div class="grid grid-cols-3 gap-3">
+				<div class="rounded-2xl border border-border bg-surface p-4 text-center">
+					<p class="text-xs font-medium uppercase tracking-widest text-muted">Highest tick</p>
+					<p class="mt-2 text-2xl font-bold text-cyan-400">{personalBests.highestTick ?? '—'}</p>
+				</div>
+				<div class="rounded-2xl border border-border bg-surface p-4 text-center">
+					<p class="text-xs font-medium uppercase tracking-widest text-muted">Highest flash</p>
+					<p class="mt-2 text-2xl font-bold text-cyan-400">{personalBests.highestFlash ?? '—'}</p>
+				</div>
+				<div class="rounded-2xl border border-border bg-surface p-4 text-center">
+					<p class="text-xs font-medium uppercase tracking-widest text-muted">Avg attempts/day</p>
+					<p class="mt-2 text-2xl font-bold tabular-nums text-cyan-400">
+						{personalBests.avgAttemptsPerDay ?? '—'}
+					</p>
+				</div>
+			</div>
+			<p class="mt-2 text-xs text-muted">
+				Flash = ticked on first attempt · Requires ticking from the climb detail page
+			</p>
+		</section>
 
 		<!-- Session heatmap -->
 		<section>
@@ -332,27 +365,43 @@
 			{/if}
 		</section>
 
-		<!-- Grade distribution -->
+		<!-- Grade distribution (#107: two-tone bars) -->
 		<section>
-			<h2 class="mb-4 text-base font-semibold text-text">Ticked grade distribution</h2>
-			{#if gradeDistribution.every((g) => g.count === 0)}
-				<p class="text-sm text-muted">No ticks recorded yet. Send some climbs to see your grade pyramid!</p>
+			<h2 class="mb-4 text-base font-semibold text-text">Grade distribution</h2>
+			{#if gradeDistribution.every((g) => g.ticked + g.attemptedOnly === 0)}
+				<p class="text-sm text-muted">
+					No activity recorded yet. Send some climbs to see your grade pyramid!
+				</p>
 			{:else}
+				<!-- Legend -->
+				<div class="mb-3 flex items-center gap-4 text-xs text-muted">
+					<span class="flex items-center gap-1.5">
+						<span class="inline-block size-2.5 rounded-sm bg-cyan-500"></span>Ticked
+					</span>
+					<span class="flex items-center gap-1.5">
+						<span class="inline-block size-2.5 rounded-sm bg-amber-400"></span>Attempted
+					</span>
+				</div>
 				<div class="space-y-1.5">
-					{#each gradesToShow as { grade, count } (grade)}
+					{#each gradesToShow as { grade, ticked, attemptedOnly } (grade)}
+						{@const total = ticked + attemptedOnly}
+						{@const tickedPct = total > 0 ? (ticked / total) * 100 : 0}
+						{@const barPct = total === 0 ? 0 : Math.max(4, (total / gradeMax) * 100)}
 						<div class="flex items-center gap-3">
 							<span class="w-8 text-right text-xs font-semibold text-muted">{grade}</span>
 							<div class="flex-1 overflow-hidden rounded-full bg-surface">
 								<div
-									class="h-5 rounded-full bg-cyan-500 transition-all duration-500"
-									style="width: {count === 0 ? '0%' : `${Math.max(4, (count / gradeMax) * 100)}%`}"
+									class="h-5 rounded-full transition-all duration-500"
+									style="width: {barPct}%; background: linear-gradient(to right, rgb(6 182 212) {tickedPct}%, rgb(251 191 36) {tickedPct}%)"
 								></div>
 							</div>
-							<span class="w-6 text-right text-xs text-muted">{count > 0 ? count : ''}</span>
+							<span class="w-6 text-right text-xs text-muted">{total > 0 ? total : ''}</span>
 						</div>
 					{/each}
 				</div>
-				<p class="mt-3 text-xs text-muted">Only grades with adjacent ticks shown · Requires ticking climbs from the detail page</p>
+				<p class="mt-3 text-xs text-muted">
+					Only grades in active range shown · Requires ticking from the climb detail page
+				</p>
 			{/if}
 		</section>
 	</main>
