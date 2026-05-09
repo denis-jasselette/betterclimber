@@ -262,6 +262,23 @@ export interface ClimbWithStats {
 	activeStats: ClimbStats | null
 }
 
+// ─── Playlists ───────────────────────────────────────────────────────────────
+
+export interface Playlist {
+	id: string
+	name: string
+	created_at: string
+	/** Number of climbs in the playlist — returned by the API, not stored locally. */
+	item_count: number
+}
+
+export interface PlaylistItem {
+	playlist_id: string
+	climb_uuid: string
+	position: number
+	added_at: string
+}
+
 // ─── Parsed hold ─────────────────────────────────────────────────────────────
 
 /** A hold ready for BLE transmission or display, with position resolved. */

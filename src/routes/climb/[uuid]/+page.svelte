@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation'
 	import { page } from '$app/state'
+	import AddToPlaylist from '$lib/components/AddToPlaylist.svelte'
 	import BoardVisualisation from '$lib/components/BoardVisualisation.svelte'
 	import TopBar from '$lib/components/TopBar.svelte'
 	import { connector } from '$lib/connector.svelte'
@@ -93,6 +94,9 @@
 			goTo(prevItem)
 		}
 	}
+
+	// ── Playlist sheet ───────────────────────────────────────────────────────
+	let showPlaylistSheet = $state(false)
 
 	// ── Climb interactions (log + BLE) ───────────────────────────────────────
 	const {
@@ -399,6 +403,28 @@
 					</button>
 				</div>
 
+				<!-- Row 1b: Add to playlist — full width -->
+					<button
+						onclick={() => (showPlaylistSheet = true)}
+						class="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface-raised px-4 py-2.5 text-sm font-semibold text-muted transition hover:text-text"
+					>
+						<svg
+							class="size-4"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<line x1="8" y1="6" x2="21" y2="6" />
+							<line x1="8" y1="12" x2="21" y2="12" />
+							<line x1="8" y1="18" x2="21" y2="18" />
+							<line x1="3" y1="6" x2="3.01" y2="6" />
+							<line x1="3" y1="12" x2="3.01" y2="12" />
+							<line x1="3" y1="18" x2="3.01" y2="18" />
+						</svg>
+						Add to playlist
+					</button>
+
 				<!-- Row 2: Light Up — full width -->
 				{#if !connector.isSupported}
 					<div
@@ -519,3 +545,7 @@
 		</div>
 	{/if}
 </div>
+
+{#if showPlaylistSheet}
+	<AddToPlaylist climbUuid={uuid} onclose={() => (showPlaylistSheet = false)} />
+{/if}

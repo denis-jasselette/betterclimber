@@ -16,7 +16,8 @@
 import { error, json } from '@sveltejs/kit'
 import { and, eq } from 'drizzle-orm'
 import { db } from '$lib/server/db'
-import { userLog, users } from '$lib/server/db/schema'
+import { userLog } from '$lib/server/db/schema'
+import { resolveUserId } from '$lib/server/users'
 import type { RequestHandler } from './$types'
 
 const ANON_COOKIE = 'kb_anon_id'
@@ -27,25 +28,6 @@ interface LogEntry {
 	attemptCount: number
 	liked: boolean
 	lastLitAt?: string | null
-}
-
-/**
- * Resolve (or create) a user row for the given anon_id.
- * Returns the user id.
- */
-async function resolveUserId(anonId: string): Promise<string> {
-	const existing = await db
-		.select({ id: users.id })
-		.from(users)
-		.where(eq(users.anonId, anonId))
-		.limit(1)
-
-	if (existing.length > 0) return existing[0].id
-
-	// Create a new anonymous user
-	const newId = crypto.randomUUID()
-	await db.insert(users).values({ id: newId, anonId: anonId })
-	return newId
 }
 
 function rowToEntry(row: {
