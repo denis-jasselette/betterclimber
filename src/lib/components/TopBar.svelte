@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { connector } from '$lib/connector.svelte'
+	import type { Angle } from '$lib/data/types'
 	import AngleDropdown from './AngleDropdown.svelte'
 	import BleStatus from './BleStatus.svelte'
 	import SettingsButton from './SettingsButton.svelte'
 
 	interface Props {
-		angle?: number | null
+		angle?: Angle | null
 		children?: import('svelte').Snippet
 	}
 

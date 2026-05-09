@@ -1,4 +1,5 @@
 import { browser } from '$app/environment'
+import { type Angle, isAngle } from '$lib/data/types'
 
 export type GradingSystem = 'v-scale' | 'french'
 export type ThemePreference = 'dark' | 'light' | 'system'
@@ -10,6 +11,7 @@ interface AppSettings {
 	flashGrade: string | null
 	/** V-grade string of the user's current project / limit (e.g. 'V9'), or null if unset. */
 	projectGrade: string | null
+	defaultAngle: Angle | null
 }
 
 const STORAGE_KEY = 'kilter-settings'
@@ -21,7 +23,8 @@ const DEFAULTS: AppSettings = {
 	gradingSystem: 'v-scale',
 	theme: 'system',
 	flashGrade: null,
-	projectGrade: null
+	projectGrade: null,
+	defaultAngle: null
 }
 
 function loadFromLocalStorage(): AppSettings {
@@ -29,7 +32,10 @@ function loadFromLocalStorage(): AppSettings {
 	try {
 		const raw = localStorage.getItem(STORAGE_KEY)
 		if (!raw) return { ...DEFAULTS }
-		return { ...DEFAULTS, ...JSON.parse(raw) }
+		const parsed = JSON.parse(raw)
+		const defaultAngle =
+			parsed.defaultAngle != null && isAngle(parsed.defaultAngle) ? parsed.defaultAngle : null
+		return { ...DEFAULTS, ...parsed, defaultAngle }
 	} catch {
 		return { ...DEFAULTS }
 	}
@@ -66,6 +72,7 @@ function createSettings() {
 			data.theme = serverSettings.theme
 			data.flashGrade = serverSettings.flashGrade
 			data.projectGrade = serverSettings.projectGrade
+			data.defaultAngle = serverSettings.defaultAngle
 		},
 
 		get gradingSystem() {
@@ -97,6 +104,14 @@ function createSettings() {
 		},
 		set projectGrade(v: string | null) {
 			data.projectGrade = v
+			persist(data)
+		},
+
+		get defaultAngle() {
+			return data.defaultAngle
+		},
+		set defaultAngle(v: Angle | null) {
+			data.defaultAngle = v
 			persist(data)
 		}
 	}

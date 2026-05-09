@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { fade, fly } from 'svelte/transition'
-	import { ALL_GRADES, formatGrade } from '$lib/data/types'
+	import { ALL_ANGLES, ALL_GRADES, formatGrade } from '$lib/data/types'
 	import type { GradingSystem, ThemePreference } from '$lib/settings-store.svelte'
 	import { settings } from '$lib/settings-store.svelte'
 
@@ -65,6 +65,38 @@
 				</svg>
 			</button>
 		</div>
+
+		<!-- Default angle -->
+		<section class="mb-8">
+			<h2 class="mb-1 text-xs font-semibold tracking-wider text-muted uppercase">
+				Default angle
+			</h2>
+			<p class="mb-3 text-xs text-muted">
+				Pre-selects this angle on fresh loads when the URL has no angle set.
+			</p>
+			<div class="flex flex-wrap gap-2">
+				<button
+					onclick={() => (settings.defaultAngle = null)}
+					class="rounded-lg border px-3 py-1.5 text-sm transition active:scale-95 {settings.defaultAngle ===
+					null
+						? 'border-orange-500 bg-orange-500/15 font-semibold text-orange-300'
+						: 'border-border bg-surface text-muted hover:text-text'}"
+				>
+					None
+				</button>
+				{#each ALL_ANGLES as a (a)}
+					<button
+						onclick={() => (settings.defaultAngle = a)}
+						class="rounded-lg border px-3 py-1.5 text-sm transition active:scale-95 {settings.defaultAngle ===
+						a
+							? 'border-orange-500 bg-orange-500/15 font-semibold text-orange-300'
+							: 'border-border bg-surface text-muted hover:text-text'}"
+					>
+						{a}°
+					</button>
+				{/each}
+			</div>
+		</section>
 
 		<!-- Grading system -->
 		<section class="mb-8">
