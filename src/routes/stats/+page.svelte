@@ -139,7 +139,7 @@
 </svelte:head>
 
 <div class="min-h-screen bg-bg text-text">
-	<TopBar />
+	<TopBar hideBoardControls />
 
 	<main class="mx-auto max-w-4xl space-y-10 px-4 py-8">
 		<!-- Page title + back -->
