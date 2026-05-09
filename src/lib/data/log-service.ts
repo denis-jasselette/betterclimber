@@ -23,6 +23,10 @@ export type LogEntry = {
 	 * at this angle. Undefined / null means it has never been displayed.
 	 */
 	lastLitAt?: string | null
+	/** ISO timestamp of when this climb was first ticked (sent). Null when unticked. */
+	tickedAt?: string | null
+	/** Numeric difficulty at the time of tick (for grade distribution stats). */
+	difficulty?: number | null
 }
 
 const STORAGE_KEY = 'kb_user_log_v2'
@@ -80,9 +84,24 @@ export function getEntry(uuid: string, angle: number | null): LogEntry {
 	return load()[logKey(uuid, angle)] ?? { ...EMPTY }
 }
 
-export function setTicked(uuid: string, angle: number | null, value: boolean) {
+export function setTicked(
+	uuid: string,
+	angle: number | null,
+	value: boolean,
+	difficulty?: number | null
+) {
 	if (angle === null) return
-	mutateEntry(uuid, angle, (e) => ({ ...e, ticked: value }))
+	mutateEntry(uuid, angle, (e) => ({
+		...e,
+		ticked: value,
+		tickedAt: value ? new Date().toISOString() : null,
+		difficulty: value ? (difficulty ?? e.difficulty ?? null) : e.difficulty
+	}))
+}
+
+/** Return all raw log entries keyed by `${uuid}@${angle}`. */
+export function getAllEntries(): Record<string, LogEntry> {
+	return load()
 }
 
 /** Increment the attempt counter by 1. */

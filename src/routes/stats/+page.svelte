@@ -1,106 +1,137 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
 	import TopBar from '$lib/components/TopBar.svelte'
-	import { ALL_GRADES, formatGrade } from '$lib/data/types'
-	import { settings } from '$lib/settings-store.svelte'
+	import {
+		type DayActivity,
+		type GradeCount,
+		getActivityByDay,
+		getActivityByWeek,
+		getGradeDistribution,
+		getTotalClimbsLit,
+		getTotalTicks,
+		type WeekActivity
+	} from '$lib/data/log-stats'
+	import { ALL_GRADES } from '$lib/data/types'
 
-	interface HeatmapDay {
-		date: string
-		count: number
-	}
+	// ── Data ──────────────────────────────────────────────────────────────────
+	let dailyActivity = $state<DayActivity[]>([])
+	let weeklyActivity = $state<WeekActivity[]>([])
+	let gradeDistribution = $state<GradeCount[]>([])
+	let totalTicks = $state(0)
+	let totalClimbsLit = $state(0)
 
-	interface GradeBar {
-		grade: string
-		count: number
-	}
-
-	let loading = $state(true)
-	let heatmap = $state<HeatmapDay[]>([])
-	let gradeDistribution = $state<GradeBar[]>([])
-
-	onMount(async () => {
-		try {
-			const res = await fetch('/api/stats')
-			if (res.ok) {
-				const data = await res.json()
-				heatmap = data.heatmap
-				gradeDistribution = data.gradeDistribution
-			}
-		} finally {
-			loading = false
-		}
+	onMount(() => {
+		dailyActivity = getActivityByDay(182)
+		weeklyActivity = getActivityByWeek(182)
+		gradeDistribution = getGradeDistribution()
+		totalTicks = getTotalTicks()
+		totalClimbsLit = getTotalClimbsLit()
 	})
 
-	// ── Heatmap helpers ────────────────────────────────────────────────────────
+	// ── Heatmap (GitHub-style calendar) ───────────────────────────────────────
+	// Arrange days into weeks (Mon–Sun columns)
+	const CELL = 12
+	const GAP = 2
+	const CELL_STRIDE = CELL + GAP
 
-	/** Build a 52-week × 7-day grid of ISO date strings. */
-	const grid = $derived(
-		(() => {
-			const today = new Date()
-			// Start from the Sunday 52 weeks ago
-			const start = new Date(today)
-			start.setDate(start.getDate() - 7 * 52)
-			// Adjust to the nearest preceding Sunday
-			start.setDate(start.getDate() - start.getDay())
-
-			const cells: string[] = []
-			const d = new Date(start)
-			while (d <= today) {
-				cells.push(d.toISOString().slice(0, 10))
-				d.setDate(d.getDate() + 1)
+	const heatmapWeeks = $derived.by(() => {
+		if (dailyActivity.length === 0) return []
+		// Group into 7-day weeks starting from the first Monday on or before the first day
+		const weeks: DayActivity[][] = []
+		let week: DayActivity[] = []
+		for (const day of dailyActivity) {
+			const dow = new Date(`${day.date}T00:00:00`).getDay() // 0=Sun,1=Mon...
+			const col = dow === 0 ? 6 : dow - 1 // 0=Mon … 6=Sun
+			if (week.length === 0 && col !== 0) {
+				// Pad first partial week with nulls represented as zero-count days
+				for (let i = 0; i < col; i++) {
+					week.push({ date: '', climbCount: 0, tickCount: 0 })
+				}
 			}
-			return cells
-		})()
-	)
+			week.push(day)
+			if (week.length === 7) {
+				weeks.push(week)
+				week = []
+			}
+		}
+		if (week.length > 0) weeks.push(week)
+		return weeks
+	})
 
-	const heatmapMap = $derived(new Map(heatmap.map((h) => [h.date, h.count])))
+	const heatmapMax = $derived(Math.max(1, ...dailyActivity.map((d) => d.climbCount)))
 
-	const maxCount = $derived(Math.max(1, ...heatmap.map((h) => h.count)))
-
-	function intensityClass(count: number): string {
-		if (count === 0) return 'fill-surface-raised'
-		const ratio = count / maxCount
-		if (ratio < 0.25) return 'fill-green-900'
-		if (ratio < 0.5) return 'fill-green-700'
-		if (ratio < 0.75) return 'fill-green-500'
-		return 'fill-green-400'
+	function heatmapColor(count: number): string {
+		if (count === 0) return 'var(--color-surface)'
+		const ratio = count / heatmapMax
+		if (ratio < 0.25) return 'rgb(8 145 178 / 0.3)' // cyan-600 faint
+		if (ratio < 0.5) return 'rgb(8 145 178 / 0.55)'
+		if (ratio < 0.75) return 'rgb(6 182 212 / 0.75)' // cyan-500
+		return 'rgb(6 182 212)'
 	}
 
-	// Group grid cells into columns (weeks)
-	const weeks = $derived(
-		(() => {
-			const cols: string[][] = []
-			for (let i = 0; i < grid.length; i += 7) {
-				cols.push(grid.slice(i, i + 7))
+	const heatmapWidth = $derived(heatmapWeeks.length * CELL_STRIDE)
+	const heatmapHeight = 7 * CELL_STRIDE
+
+	// Month labels for heatmap
+	const heatmapMonthLabels = $derived.by(() => {
+		const labels: { x: number; label: string }[] = []
+		let lastMonth = -1
+		heatmapWeeks.forEach((week, wi) => {
+			const firstReal = week.find((d) => d.date !== '')
+			if (!firstReal) return
+			const m = new Date(`${firstReal.date}T00:00:00`).getMonth()
+			if (m !== lastMonth) {
+				labels.push({
+					x: wi * CELL_STRIDE,
+					label: new Date(`${firstReal.date}T00:00:00`).toLocaleString('default', {
+						month: 'short'
+					})
+				})
+				lastMonth = m
 			}
-			return cols
-		})()
-	)
+		})
+		return labels
+	})
 
-	// ── Grade distribution helpers ─────────────────────────────────────────────
+	// ── Weekly intensity bar chart ─────────────────────────────────────────────
+	const BAR_W = 8
+	const BAR_GAP = 3
+	const CHART_H = 80
 
-	const maxGradeCount = $derived(Math.max(1, ...gradeDistribution.map((g) => g.count)))
+	const weekMax = $derived(Math.max(1, ...weeklyActivity.map((w) => w.climbCount)))
+	const barChartWidth = $derived(weeklyActivity.length * (BAR_W + BAR_GAP))
 
-	const allGrades = $derived(
-		ALL_GRADES.map((g) => ({
-			label: formatGrade(g, settings.gradingSystem),
-			vGrade: g,
-			count: gradeDistribution.find((gd) => gd.grade === g)?.count ?? 0
-		})).filter((g) => g.count > 0)
-	)
+	// ── Grade distribution ─────────────────────────────────────────────────────
+	const gradeMax = $derived(Math.max(1, ...gradeDistribution.map((g) => g.count)))
+	// Only show grades that have at least 1 tick OR are in a range with ticks
+	const gradesToShow = $derived.by(() => {
+		const withTicks = gradeDistribution.filter((g) => g.count > 0)
+		if (withTicks.length === 0) return []
+		const minIdx = ALL_GRADES.indexOf(withTicks[0].grade)
+		const maxIdx = ALL_GRADES.indexOf(withTicks[withTicks.length - 1].grade)
+		return gradeDistribution.filter((g) => {
+			const idx = ALL_GRADES.indexOf(g.grade)
+			return idx >= Math.max(0, minIdx - 1) && idx <= Math.min(ALL_GRADES.length - 1, maxIdx + 1)
+		})
+	})
 
-	// Total ticked count
-	const totalTicks = $derived(gradeDistribution.reduce((sum, g) => sum + g.count, 0))
+	// Tooltip state for heatmap
+	let tooltip = $state<{ x: number; y: number; text: string } | null>(null)
 
-	// Activity in the last 30 days
-	const last30Days = $derived(
-		(() => {
-			const cutoff = new Date()
-			cutoff.setDate(cutoff.getDate() - 30)
-			const cutoffStr = cutoff.toISOString().slice(0, 10)
-			return heatmap.filter((h) => h.date >= cutoffStr).reduce((sum, h) => sum + h.count, 0)
-		})()
-	)
+	function showTooltip(e: MouseEvent, day: DayActivity) {
+		if (!day.date) return
+		const d = new Date(`${day.date}T00:00:00`)
+		const label = d.toLocaleDateString('default', {
+			weekday: 'short',
+			month: 'short',
+			day: 'numeric'
+		})
+		const text =
+			day.climbCount === 0
+				? `${label}: no activity`
+				: `${label}: ${day.climbCount} climb${day.climbCount !== 1 ? 's' : ''}${day.tickCount > 0 ? `, ${day.tickCount} tick${day.tickCount !== 1 ? 's' : ''}` : ''}`
+		tooltip = { x: e.offsetX, y: e.offsetY - 28, text }
+	}
 </script>
 
 <svelte:head>
@@ -108,111 +139,160 @@
 </svelte:head>
 
 <div class="min-h-screen bg-bg text-text">
-	<TopBar angle={null} />
+	<TopBar hideBoardControls />
 
-	<div class="mx-auto max-w-2xl px-4 py-6">
-		<!-- Header -->
-		<div class="mb-6">
-			<a href="/" class="text-sm text-muted transition hover:text-text">← Home</a>
-			<h1 class="mt-2 text-2xl font-bold text-text">Training Stats</h1>
+	<main class="mx-auto max-w-4xl space-y-10 px-4 py-8">
+		<!-- Page title + back -->
+		<div class="flex items-center gap-4">
+			<a
+				href="/"
+				class="flex size-9 items-center justify-center rounded-xl border border-border bg-surface-raised text-muted transition hover:text-text"
+				aria-label="Back"
+			>
+				<svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M19 12H5M12 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" />
+				</svg>
+			</a>
+			<div>
+				<h1 class="text-xl font-bold text-text">Training Stats</h1>
+				<p class="text-sm text-muted">Based on your local session log</p>
+			</div>
 		</div>
 
-		{#if loading}
-			<!-- Loading skeletons -->
-			<div class="space-y-6">
-				<div class="h-32 animate-pulse rounded-2xl bg-surface"></div>
-				<div class="h-48 animate-pulse rounded-2xl bg-surface"></div>
+		<!-- Summary cards -->
+		<div class="grid grid-cols-2 gap-4 sm:grid-cols-2">
+			<div class="rounded-2xl border border-border bg-surface p-5">
+				<p class="text-xs font-medium uppercase tracking-widest text-muted">Climbs sent</p>
+				<p class="mt-1 text-3xl font-bold text-cyan-400">{totalTicks}</p>
 			</div>
-		{:else}
-			<!-- Summary row -->
-			<div class="mb-6 grid grid-cols-2 gap-3">
-				<div class="rounded-2xl border border-border bg-surface p-4 text-center">
-					<div class="text-2xl font-bold text-text tabular-nums">{totalTicks}</div>
-					<div class="mt-0.5 text-xs text-muted">Problems ticked</div>
-				</div>
-				<div class="rounded-2xl border border-border bg-surface p-4 text-center">
-					<div class="text-2xl font-bold text-text tabular-nums">{last30Days}</div>
-					<div class="mt-0.5 text-xs text-muted">Activity this month</div>
-				</div>
+			<div class="rounded-2xl border border-border bg-surface p-5">
+				<p class="text-xs font-medium uppercase tracking-widest text-muted">Climbs lit up</p>
+				<p class="mt-1 text-3xl font-bold text-cyan-400">{totalClimbsLit}</p>
 			</div>
+		</div>
 
-			<!-- Activity heatmap -->
-			<div class="mb-6 rounded-2xl border border-border bg-surface p-4">
-				<h2 class="mb-3 text-xs font-semibold tracking-wider text-muted uppercase">
-					Activity heatmap
-				</h2>
-				{#if heatmap.length === 0}
-					<p class="py-4 text-center text-sm text-muted">No activity recorded yet.</p>
-				{:else}
-					<div class="overflow-x-auto">
-						<svg
-							width={weeks.length * 12 + 4}
-							height={7 * 12 + 4}
-							class="block"
-							aria-label="Activity heatmap"
-						>
-							{#each weeks as week, wi (wi)}
-								{#each week as day, di (day)}
-									{@const count = heatmapMap.get(day) ?? 0}
-									<rect
-										x={wi * 12 + 2}
-										y={di * 12 + 2}
-										width={10}
-										height={10}
-										rx={2}
-										class="{intensityClass(count)} transition-colors"
-									>
-										<title>{day}: {count} {count === 1 ? 'entry' : 'entries'}</title>
-									</rect>
-								{/each}
-							{/each}
-						</svg>
-					</div>
-					<div class="mt-2 flex items-center gap-1.5 text-xs text-muted">
-						<span>Less</span>
-						<svg width="68" height="10">
-							{#each ['fill-surface-raised', 'fill-green-900', 'fill-green-700', 'fill-green-500', 'fill-green-400'] as cls, i (i)}
-								<rect x={i * 14} y={0} width={10} height={10} rx={2} class={cls} />
-							{/each}
-						</svg>
-						<span>More</span>
-					</div>
-				{/if}
-			</div>
-
-			<!-- Grade pyramid -->
-			<div class="rounded-2xl border border-border bg-surface p-4">
-				<h2 class="mb-3 text-xs font-semibold tracking-wider text-muted uppercase">
-					Ticked grade pyramid
-				</h2>
-				{#if allGrades.length === 0}
-					<p class="py-4 text-center text-sm text-muted">No ticked climbs yet.</p>
-				{:else}
-					<div class="space-y-1.5">
-						{#each [...allGrades].reverse() as g (g.vGrade)}
-							<div class="flex items-center gap-2">
-								<span class="w-8 shrink-0 text-right text-xs font-semibold text-muted"
-									>{g.label}</span
-								>
-								<div class="flex-1">
-									<div
-										class="h-5 rounded bg-green-600/30 transition-all"
-										style="width: {(g.count / maxGradeCount) * 100}%"
-									>
-										<div
-											class="h-full rounded bg-green-500 transition-all"
-											style="width: 100%"
-										></div>
-									</div>
-								</div>
-								<span class="w-6 shrink-0 text-right text-xs text-muted tabular-nums"
-									>{g.count}</span
-								>
-							</div>
+		<!-- Session heatmap -->
+		<section>
+			<h2 class="mb-4 text-base font-semibold text-text">Session activity</h2>
+			{#if dailyActivity.every((d) => d.climbCount === 0)}
+				<p class="text-sm text-muted">No activity recorded yet. Light up some climbs on the board!</p>
+			{:else}
+				<div class="overflow-x-auto">
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<svg
+						width={heatmapWidth}
+						height={heatmapHeight + 20}
+						aria-label="Session activity heatmap"
+						onmouseleave={() => (tooltip = null)}
+					>
+						<!-- Month labels -->
+						{#each heatmapMonthLabels as { x, label }}
+							<text
+								x={x}
+								y={heatmapHeight + 16}
+								fill="var(--color-muted)"
+								font-size="9"
+								font-family="inherit"
+							>{label}</text>
 						{/each}
+
+						<!-- Day cells -->
+						{#each heatmapWeeks as week, wi}
+							{#each week as day, di}
+								<!-- svelte-ignore a11y_mouse_events_have_key_events -->
+								<rect
+									x={wi * CELL_STRIDE}
+									y={di * CELL_STRIDE}
+									width={CELL}
+									height={CELL}
+									rx="2"
+									fill={day.date ? heatmapColor(day.climbCount) : 'transparent'}
+									onmousemove={(e) => showTooltip(e, day)}
+									style="cursor: {day.date && day.climbCount > 0 ? 'pointer' : 'default'}"
+								/>
+							{/each}
+						{/each}
+					</svg>
+				</div>
+
+				<!-- Tooltip -->
+				{#if tooltip}
+					<div
+						class="pointer-events-none absolute z-50 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-text shadow-lg"
+						style="left: {tooltip.x}px; top: {tooltip.y}px"
+					>
+						{tooltip.text}
 					</div>
 				{/if}
-			</div>
-		{/if}
-	</div>
+
+				<!-- Legend -->
+				<div class="mt-2 flex items-center gap-2 text-xs text-muted">
+					<span>Less</span>
+					{#each [0, 0.25, 0.5, 0.75, 1] as ratio}
+						<div
+							class="size-3 rounded-sm"
+							style="background: {heatmapColor(Math.ceil(ratio * heatmapMax))}"
+						></div>
+					{/each}
+					<span>More</span>
+				</div>
+			{/if}
+		</section>
+
+		<!-- Weekly intensity -->
+		<section>
+			<h2 class="mb-4 text-base font-semibold text-text">Weekly intensity</h2>
+			{#if weeklyActivity.every((w) => w.climbCount === 0)}
+				<p class="text-sm text-muted">No activity recorded yet.</p>
+			{:else}
+				<div class="overflow-x-auto">
+					<svg
+						width={barChartWidth}
+						height={CHART_H + 20}
+						aria-label="Weekly climb intensity bar chart"
+					>
+						{#each weeklyActivity as week, i}
+							{@const barH = Math.max(2, Math.round((week.climbCount / weekMax) * CHART_H))}
+							{@const x = i * (BAR_W + BAR_GAP)}
+							<rect
+								{x}
+								y={CHART_H - barH}
+								width={BAR_W}
+								height={barH}
+								rx="2"
+								fill={week.climbCount > 0 ? 'rgb(6 182 212 / 0.7)' : 'var(--color-surface)'}
+							/>
+						{/each}
+						<!-- Baseline -->
+						<line x1="0" y1={CHART_H} x2={barChartWidth} y2={CHART_H} stroke="var(--color-border)" stroke-width="1" />
+					</svg>
+				</div>
+				<p class="mt-1 text-xs text-muted">Each bar = one week · Height = climbs lit up</p>
+			{/if}
+		</section>
+
+		<!-- Grade distribution -->
+		<section>
+			<h2 class="mb-4 text-base font-semibold text-text">Ticked grade distribution</h2>
+			{#if gradeDistribution.every((g) => g.count === 0)}
+				<p class="text-sm text-muted">No ticks recorded yet. Send some climbs to see your grade pyramid!</p>
+			{:else}
+				<div class="space-y-1.5">
+					{#each gradesToShow as { grade, count }}
+						<div class="flex items-center gap-3">
+							<span class="w-8 text-right text-xs font-semibold text-muted">{grade}</span>
+							<div class="flex-1 overflow-hidden rounded-full bg-surface">
+								<div
+									class="h-5 rounded-full bg-cyan-500 transition-all duration-500"
+									style="width: {count === 0 ? '0%' : `${Math.max(4, (count / gradeMax) * 100)}%`}"
+								></div>
+							</div>
+							<span class="w-6 text-right text-xs text-muted">{count > 0 ? count : ''}</span>
+						</div>
+					{/each}
+				</div>
+				<p class="mt-3 text-xs text-muted">Only grades with adjacent ticks shown · Requires ticking climbs from the detail page</p>
+			{/if}
+		</section>
+	</main>
 </div>
