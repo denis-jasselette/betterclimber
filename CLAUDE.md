@@ -131,6 +131,10 @@ This outputs SQL or JSON suitable for re-seeding the Neon database.
 - `untrack()` for one-shot initialization inside reactive contexts
 - Biome can't see Svelte template usage → `noUnusedImports`/`noUnusedVariables` disabled for `*.svelte` files
 
+**Required skills for Svelte work:**
+- Before writing or editing any `.svelte` or `.svelte.ts`/`.svelte.js` file, invoke the **`svelte-code-writer`** skill. It provides documentation lookup and code analysis tailored to this project's Svelte 5 setup.
+- When working with reactive state (`$state`, `$derived`, `$effect`, `$props`, `$bindable`), invoke the **`svelte-runes`** skill first to avoid common reactivity mistakes.
+
 ## Biome Config Notes
 
 - `layout.css` excluded (Tailwind v4 `@import`/`@plugin`/`@theme` not supported by Biome CSS parser)
