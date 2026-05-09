@@ -14,7 +14,7 @@
  */
 
 import { error, json } from '@sveltejs/kit'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { db } from '$lib/server/db'
 import { userLog, users } from '$lib/server/db/schema'
 import type { RequestHandler } from './$types'
@@ -126,6 +126,11 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		upsertValues.last_lit_at = patch.lastLitAt ? new Date(patch.lastLitAt) : null
 	}
 
+	const now = new Date()
+
+	// Set ticked_at only on the first tick (INSERT or when ticking for the first time)
+	const tickedAt = patch.ticked ? now : null
+
 	await db
 		.insert(userLog)
 		.values({
@@ -133,21 +138,26 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 			climb_uuid: climbUuid,
 			angle,
 			ticked: patch.ticked ?? false,
+			ticked_at: tickedAt,
 			attempt_count: patch.attemptCount ?? 0,
 			liked: patch.liked ?? false,
 			last_lit_at: patch.lastLitAt ? new Date(patch.lastLitAt) : null,
-			updated_at: new Date()
+			updated_at: now
 		})
 		.onConflictDoUpdate({
 			target: [userLog.user_id, userLog.climb_uuid, userLog.angle],
 			set: {
 				...(patch.ticked !== undefined && { ticked: patch.ticked }),
+				// ticked_at: set on first tick, never overwritten — COALESCE preserves existing value
+				...(patch.ticked && {
+					ticked_at: sql`COALESCE(${userLog.ticked_at}, ${now})`
+				}),
 				...(patch.attemptCount !== undefined && { attempt_count: patch.attemptCount }),
 				...(patch.liked !== undefined && { liked: patch.liked }),
 				...(patch.lastLitAt !== undefined && {
 					last_lit_at: patch.lastLitAt ? new Date(patch.lastLitAt) : null
 				}),
-				updated_at: new Date()
+				updated_at: now
 			}
 		})
 
