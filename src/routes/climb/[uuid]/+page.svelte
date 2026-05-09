@@ -28,7 +28,13 @@
 	let item = $state<ClimbWithStats | null>(null)
 
 	$effect(() => {
-		// Try the in-memory results list first (client-side navigation)
+		// Custom climbs are always read fresh from localStorage by the load function.
+		// Skip the in-memory results store for them so edits reflect immediately.
+		if (data.item?.climb.setter_id === 0 && data.item.climb.uuid === uuid) {
+			item = data.item
+			return
+		}
+		// Try the in-memory results list first (client-side navigation — avoids an API round-trip)
 		const fromStore = resultsStore.list.find((r) => r.climb.uuid === uuid) ?? null
 		if (fromStore) {
 			item = fromStore
