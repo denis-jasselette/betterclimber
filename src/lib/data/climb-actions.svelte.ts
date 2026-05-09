@@ -26,8 +26,7 @@ export function createClimbActions(
 	getUuid: () => string,
 	getAngle: () => number | null,
 	getClimb: () => Climb | null,
-	getConnector: () => BoardConnector,
-	getDifficulty: () => number | null = () => null
+	getConnector: () => BoardConnector
 ) {
 	// ── Log state ────────────────────────────────────────────────────────────────
 	// logSnapshot is a mutable $state object so that destructured references in
@@ -55,7 +54,7 @@ export function createClimbActions(
 
 	// ── Tick / Like ───────────────────────────────────────────────────────────────
 	function toggleTick() {
-		setTicked(getUuid(), getAngle(), !logSnapshot.ticked, getDifficulty())
+		setTicked(getUuid(), getAngle(), !logSnapshot.ticked)
 		refreshLog()
 	}
 
