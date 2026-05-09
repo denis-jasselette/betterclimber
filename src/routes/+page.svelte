@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte'
+	import { onMount, untrack } from 'svelte'
 	import { afterNavigate, beforeNavigate } from '$app/navigation'
 	import ClimbCard from '$lib/components/ClimbCard.svelte'
 	import SearchFilters from '$lib/components/SearchFilters.svelte'
@@ -31,10 +31,6 @@
 	// eslint-disable-next-line svelte/prefer-writable-derived
 	// svelte-ignore state_referenced_locally — intentional: afterNavigate handles re-sync
 	let filters = $state<Partial<ClimbFilters>>(data.filters)
-
-	afterNavigate(() => {
-		filters = data.filters
-	})
 
 	$effect(() => {
 		// Keep the URL in sync as a side-effect.
@@ -80,13 +76,30 @@
 	let nextCursor = $state<string | null>(null)
 	// Incremented on each new search — passed to VirtualList so it resets visible count.
 	let searchToken = $state<object>({})
+	// Passed to VirtualList when restoring a previous browse session so it starts
+	// showing all accumulated items without resetting to pageSize.
+	let restoredVisibleCount = $state(0)
+
+	// Set to true by afterNavigate (back from climb) before filters are updated.
+	// Checked inside the search effect (via untrack) to skip the API call.
+	// Cleared by the setTimeout in afterNavigate after all effects have run.
+	let skipNextSearch = false
 
 	$effect(() => {
+		// Establish reactive dependencies on filters + angle.
+		const _filters = filters
+		const _angle = data.angle
+
+		// When coming back from a climb detail page the browse state is restored
+		// synchronously in afterNavigate — no new API call needed.
+		if (untrack(() => skipNextSearch)) return
+
 		loadingResults = true
 		nextCursor = null
 		searchToken = {}
+		restoredVisibleCount = 0
 		let cancelled = false
-		searchClimbs(filters, data.angle, null).then(({ climbs, nextCursor: nc }) => {
+		searchClimbs(_filters, _angle, null).then(({ climbs, nextCursor: nc }) => {
 			if (cancelled) return
 			displayedClimbs = climbs
 			nextCursor = nc
@@ -112,17 +125,63 @@
 		loadingMore = false
 	}
 
-	// ── Scroll position save / restore around climb detail navigation ─────────
+	// ── Scroll position + browse state save / restore around climb navigation ─
 	const SCROLL_KEY = 'kilter-scroll'
+	const BROWSE_STATE_KEY = 'kilter-browse-state'
+
+	interface BrowseState {
+		nextCursor: string | null
+		displayedCount: number
+	}
 
 	beforeNavigate(({ to }) => {
 		if (to?.url.pathname.startsWith('/climb/')) {
 			sessionStorage.setItem(SCROLL_KEY, String(window.scrollY))
+			// Persist cursor + item count so we can restore without re-fetching.
+			const state: BrowseState = { nextCursor, displayedCount: displayedClimbs.length }
+			sessionStorage.setItem(BROWSE_STATE_KEY, JSON.stringify(state))
 		}
 	})
 
 	afterNavigate(({ from }) => {
-		if (from?.url.pathname.startsWith('/climb/')) {
+		const comingBackFromClimb = from?.url.pathname.startsWith('/climb/')
+
+		if (comingBackFromClimb) {
+			// Prevent the search $effect (triggered by the filters update below) from
+			// firing a new API call — we're restoring the previous browse session.
+			skipNextSearch = true
+			// Always clear the flag on the next tick so future filter changes work.
+			setTimeout(() => {
+				skipNextSearch = false
+			}, 0)
+		}
+
+		// Keep filters in sync with the URL on all navigations (e.g. angle change).
+		filters = data.filters
+
+		if (comingBackFromClimb) {
+			// Restore the accumulated result list and cursor from the previous visit.
+			// resultsStore.list already contains all pages fetched before navigation.
+			const raw = sessionStorage.getItem(BROWSE_STATE_KEY)
+			if (raw) {
+				try {
+					const saved = JSON.parse(raw) as BrowseState
+					displayedClimbs = resultsStore.list.slice(0, saved.displayedCount)
+					nextCursor = saved.nextCursor
+					restoredVisibleCount = saved.displayedCount
+				} catch {
+					displayedClimbs = resultsStore.list
+					nextCursor = null
+					restoredVisibleCount = resultsStore.list.length
+				}
+			} else {
+				// No saved state (e.g. session storage cleared) — show all known results.
+				displayedClimbs = resultsStore.list
+				nextCursor = null
+				restoredVisibleCount = resultsStore.list.length
+			}
+			loadingResults = false
+
 			const y = Number(sessionStorage.getItem(SCROLL_KEY) ?? '0')
 			setTimeout(() => window.scrollTo({ top: y, behavior: 'instant' }), 0)
 		}
@@ -281,6 +340,7 @@
 						key={(item) => item.climb.uuid}
 						onLoadMore={nextCursor ? loadMoreClimbs : undefined}
 						resetToken={searchToken}
+						initialVisibleCount={restoredVisibleCount}
 					>
 						{#snippet children(item)}
 							<ClimbCard
