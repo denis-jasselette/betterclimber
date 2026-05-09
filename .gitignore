@@ -18,8 +18,6 @@ Thumbs.db
 !.env.example
 !.env.test
 
-# Drizzle migrations output
-/drizzle
 
 # Vite
 vite.config.js.timestamp-*

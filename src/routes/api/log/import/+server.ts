@@ -10,7 +10,7 @@
  *
  * After merge, deletes the anonymous user's log rows (the anon user row itself
  * is kept so the cookie doesn't recreate it, but its log is cleared).
- * Sets users.anon_id on the authenticated user to the cookie value so future
+ * Sets users.anonId on the authenticated user to the cookie value so future
  * writes go directly to the right account.
  */
 
@@ -32,7 +32,7 @@ export const POST: RequestHandler = async ({ locals, cookies }) => {
 	const anonUser = await db
 		.select({ id: users.id })
 		.from(users)
-		.where(eq(users.anon_id, anonId))
+		.where(eq(users.anonId, anonId))
 		.limit(1)
 
 	if (anonUser.length === 0) return json({ ok: true, merged: 0 })
@@ -82,7 +82,7 @@ export const POST: RequestHandler = async ({ locals, cookies }) => {
 	// (so the same cookie maps directly to the real user next time)
 	await db
 		.update(users)
-		.set({ anon_id: anonId })
+		.set({ anonId: anonId })
 		.where(and(eq(users.id, locals.user.id)))
 
 	return json({ ok: true, merged: anonRows.length })

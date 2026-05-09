@@ -26,7 +26,7 @@ export const GET: RequestHandler = async ({ locals, cookies }) => {
 	const anonUser = await db
 		.select({ id: users.id })
 		.from(users)
-		.where(and(eq(users.anon_id, anonId)))
+		.where(and(eq(users.anonId, anonId)))
 		.limit(1)
 
 	if (anonUser.length === 0) return json({ hasPending: false })

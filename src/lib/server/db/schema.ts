@@ -7,6 +7,10 @@
  *
  * Board geometry (placements, holes, leds) remains as static JSON in
  * src/lib/data/mock/ — it is tiny, never changes, and used only for BLE.
+ *
+ * JS property names for better-auth managed tables (users, sessions, accounts,
+ * verifications) must be camelCase — better-auth's Drizzle adapter uses JS
+ * property names, not SQL column names, when building queries.
  */
 
 import {
@@ -79,13 +83,19 @@ export const climbStats = pgTable(
 )
 
 // ── users ─────────────────────────────────────────────────────────────────────
+// JS property names are camelCase so better-auth's Drizzle adapter can map them.
+// anonId is our custom field for anonymous user tracking.
 
 export const users = pgTable('users', {
 	id: text('id').primaryKey(),
-	anon_id: text('anon_id').unique(),
-	google_id: text('google_id').unique(),
+	name: text('name'),
 	email: text('email'),
-	created_at: timestamp('created_at', { withTimezone: true }).defaultNow()
+	emailVerified: boolean('email_verified').notNull().default(false),
+	image: text('image'),
+	/** Our custom field: links anonymous sessions to this account. */
+	anonId: text('anon_id').unique(),
+	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true })
 })
 
 // ── user_log ──────────────────────────────────────────────────────────────────
@@ -112,47 +122,47 @@ export const userLog = pgTable(
 )
 
 // ── better-auth managed tables ────────────────────────────────────────────────
-// These are created/managed by better-auth's migrate command.
-// We declare them here so Drizzle knows about them.
+// JS property names are camelCase so better-auth's Drizzle adapter can map them.
+// SQL column names remain snake_case to match Neon conventions.
 
 export const sessions = pgTable('sessions', {
 	id: text('id').primaryKey(),
-	expires_at: timestamp('expires_at', { withTimezone: true }).notNull(),
+	expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
 	token: text('token').notNull().unique(),
-	created_at: timestamp('created_at', { withTimezone: true }).notNull(),
-	updated_at: timestamp('updated_at', { withTimezone: true }).notNull(),
-	ip_address: text('ip_address'),
-	user_agent: text('user_agent'),
-	user_id: text('user_id')
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
+	ipAddress: text('ip_address'),
+	userAgent: text('user_agent'),
+	userId: text('user_id')
 		.notNull()
 		.references(() => users.id, { onDelete: 'cascade' })
 })
 
 export const accounts = pgTable('accounts', {
 	id: text('id').primaryKey(),
-	account_id: text('account_id').notNull(),
-	provider_id: text('provider_id').notNull(),
-	user_id: text('user_id')
+	accountId: text('account_id').notNull(),
+	providerId: text('provider_id').notNull(),
+	userId: text('user_id')
 		.notNull()
 		.references(() => users.id, { onDelete: 'cascade' }),
-	access_token: text('access_token'),
-	refresh_token: text('refresh_token'),
-	id_token: text('id_token'),
-	access_token_expires_at: timestamp('access_token_expires_at', { withTimezone: true }),
-	refresh_token_expires_at: timestamp('refresh_token_expires_at', { withTimezone: true }),
+	accessToken: text('access_token'),
+	refreshToken: text('refresh_token'),
+	idToken: text('id_token'),
+	accessTokenExpiresAt: timestamp('access_token_expires_at', { withTimezone: true }),
+	refreshTokenExpiresAt: timestamp('refresh_token_expires_at', { withTimezone: true }),
 	scope: text('scope'),
 	password: text('password'),
-	created_at: timestamp('created_at', { withTimezone: true }).notNull(),
-	updated_at: timestamp('updated_at', { withTimezone: true }).notNull()
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull()
 })
 
 export const verifications = pgTable('verifications', {
 	id: text('id').primaryKey(),
 	identifier: text('identifier').notNull(),
 	value: text('value').notNull(),
-	expires_at: timestamp('expires_at', { withTimezone: true }).notNull(),
-	created_at: timestamp('created_at', { withTimezone: true }),
-	updated_at: timestamp('updated_at', { withTimezone: true })
+	expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }),
+	updatedAt: timestamp('updated_at', { withTimezone: true })
 })
 
 // ── Type inference helpers ────────────────────────────────────────────────────
