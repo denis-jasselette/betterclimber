@@ -9,6 +9,7 @@
 		getActivityByWeek,
 		getGradeDistribution,
 		getPersonalBests,
+		getTotalAttempts,
 		getTotalClimbsLit,
 		getTotalTicks,
 		type PersonalBests,
@@ -54,6 +55,7 @@
 	)
 	const totalTicks = $derived(browser ? getTotalTicks(effectiveRange) : 0)
 	const totalClimbsLit = $derived(browser ? getTotalClimbsLit(effectiveRange) : 0)
+	const totalAttempts = $derived(browser ? getTotalAttempts(effectiveRange) : 0)
 	const personalBests = $derived<PersonalBests>(
 		browser
 			? getPersonalBests(effectiveRange)
@@ -231,7 +233,7 @@
 		</div>
 
 		<!-- Summary cards -->
-		<div class="grid grid-cols-2 gap-4 sm:grid-cols-2">
+		<div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
 			<div class="rounded-2xl border border-border bg-surface p-5">
 				<p class="text-xs font-medium uppercase tracking-widest text-muted">Climbs sent</p>
 				<p class="mt-1 text-3xl font-bold text-cyan-400">{totalTicks}</p>
@@ -239,6 +241,10 @@
 			<div class="rounded-2xl border border-border bg-surface p-5">
 				<p class="text-xs font-medium uppercase tracking-widest text-muted">Climbs lit up</p>
 				<p class="mt-1 text-3xl font-bold text-cyan-400">{totalClimbsLit}</p>
+			</div>
+			<div class="rounded-2xl border border-border bg-surface p-5">
+				<p class="text-xs font-medium uppercase tracking-widest text-muted">Total attempts</p>
+				<p class="mt-1 text-3xl font-bold text-cyan-400">{totalAttempts}</p>
 			</div>
 		</div>
 
