@@ -221,7 +221,7 @@
 
 			<div class="space-y-5">
 				<!-- Filters -->
-				<SearchFilters {filters} {handleUpdateFilters} {handleClearFilters} />
+				<SearchFilters {filters} resultCount={displayedClimbs.length} {handleUpdateFilters} {handleClearFilters} />
 			</div>
 		</aside>
 
