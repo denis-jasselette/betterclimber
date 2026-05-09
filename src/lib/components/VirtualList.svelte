@@ -17,6 +17,7 @@
 	 *   resetToken   — change this value to reset the visible count (e.g. on new search)
 	 */
 
+	import { untrack } from 'svelte'
 	import { browser } from '$app/environment'
 
 	interface Props<T> {
@@ -51,6 +52,22 @@
 	// ── IntersectionObserver sentinel ─────────────────────────────────────────
 	let sentinel = $state<Element | null>(null)
 	let observer: IntersectionObserver | null = null
+	// Tracks whether the sentinel is currently inside the viewport (+rootMargin).
+	let isIntersecting = $state(false)
+
+	// When items are appended (onLoadMore resolved) while the sentinel is already
+	// in the viewport, the observer won't fire again — no intersection transition
+	// occurred. Kick off the first batch reveal manually so the observer can take
+	// over from there (new items push the sentinel below the viewport, triggering
+	// a real transition on subsequent scrolls).
+	// Use untrack to read isIntersecting/visibleCount without making them
+	// dependencies — this effect must only react to items.length growing.
+	$effect(() => {
+		void items.length
+		if (untrack(() => isIntersecting) && untrack(() => visibleCount) < items.length) {
+			revealNextBatch()
+		}
+	})
 
 	function attachObserver(el: Element | null) {
 		if (observer) {
@@ -60,7 +77,8 @@
 		if (!el || !browser) return
 		observer = new IntersectionObserver(
 			(entries) => {
-				if (!entries[0]?.isIntersecting) return
+				isIntersecting = entries[0]?.isIntersecting ?? false
+				if (!isIntersecting) return
 				if (visibleCount < items.length) {
 					revealNextBatch()
 				} else {
