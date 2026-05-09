@@ -131,7 +131,7 @@
 		</svg>
 		<input
 			type="search"
-			placeholder="Search… (author:, name:, description:)"
+			placeholder="Search…"
 			value={inputValue}
 			oninput={(e) => handleQueryInput(e.currentTarget.value)}
 			class="w-full rounded-xl border border-border bg-surface-raised/60 py-2.5 pr-4 pl-9 text-sm text-text placeholder:text-muted focus:ring-cyan-500 "

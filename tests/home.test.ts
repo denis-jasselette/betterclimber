@@ -29,14 +29,14 @@ test('text search input accepts a query without breaking results', async ({ page
 	await page.goto('/?angle=45')
 	await expect(page.locator('article').first()).toBeVisible()
 
-	await page.getByPlaceholder('Search by name or setter…').fill('slab')
+	await page.getByPlaceholder('Search…').fill('slab')
 	// Results section still present (mock returns same data regardless of query)
 	await expect(page.locator('article').first()).toBeVisible()
 })
 
 test('filter sidebar shows search input', async ({ page }) => {
 	await page.goto('/?angle=45')
-	await expect(page.getByPlaceholder('Search by name or setter…')).toBeVisible()
+	await expect(page.getByPlaceholder('Search…')).toBeVisible()
 })
 
 test('advanced filter section opens and shows campus/route toggles', async ({ page }) => {
