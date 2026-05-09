@@ -38,6 +38,7 @@
 		"drizzle-kit": "^0.31.10",
 		"eslint": "^10.3.0",
 		"eslint-plugin-svelte": "^3.17.1",
+		"fallow": "^2.67.0",
 		"jsdom": "^29.1.1",
 		"lefthook": "^2.1.6",
 		"svelte": "^5.55.4",
