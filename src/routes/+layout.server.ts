@@ -1,4 +1,4 @@
-import { ALL_GRADES } from '$lib/data/types'
+import { ALL_GRADES, type Angle, isAngle } from '$lib/data/types'
 import type { GradingSystem, ThemePreference } from '$lib/settings-store.svelte'
 import type { LayoutServerLoad } from './$types'
 
@@ -10,6 +10,7 @@ export const load: LayoutServerLoad = ({ cookies }) => {
 	let theme: ThemePreference = 'system'
 	let flashGrade: string | null = null
 	let projectGrade: string | null = null
+	let defaultAngle: Angle | null = null
 
 	try {
 		const raw = cookies.get('kilter-settings')
@@ -19,10 +20,12 @@ export const load: LayoutServerLoad = ({ cookies }) => {
 			if (VALID_THEME.includes(parsed.theme)) theme = parsed.theme
 			if (ALL_GRADES.includes(parsed.flashGrade)) flashGrade = parsed.flashGrade
 			if (ALL_GRADES.includes(parsed.projectGrade)) projectGrade = parsed.projectGrade
+			if (parsed.defaultAngle != null && isAngle(parsed.defaultAngle))
+				defaultAngle = parsed.defaultAngle
 		}
 	} catch {
 		// malformed cookie — fall back to defaults
 	}
 
-	return { settings: { gradingSystem, theme, flashGrade, projectGrade } }
+	return { settings: { gradingSystem, theme, flashGrade, projectGrade, defaultAngle } }
 }

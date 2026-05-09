@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { goto } from '$app/navigation'
 	import { page } from '$app/state'
-	import { ALL_ANGLES } from '$lib/data/types'
+	import { ALL_ANGLES, type Angle } from '$lib/data/types'
+	import { settings } from '$lib/settings-store.svelte'
 
 	let {
 		angle
 	}: {
-		angle: number | null
+		angle: Angle | null
 	} = $props()
 
 	let open = $state(false)
@@ -74,7 +75,7 @@
 
 	{#if open}
 		<div
-			class="absolute top-full right-0 z-50 mt-1.5 min-w-28 overflow-hidden rounded-xl border border-border bg-surface shadow-2xl"
+			class="absolute top-full right-0 z-50 mt-1.5 min-w-36 overflow-hidden rounded-xl border border-border bg-surface shadow-2xl"
 		>
 			{#each ALL_ANGLES as a (a)}
 				<button
@@ -96,6 +97,29 @@
 					{/if}
 				</button>
 			{/each}
+			{#if angle !== null}
+				<div class="border-t border-border">
+					<button
+						onclick={() => {
+							settings.defaultAngle = angle
+							open = false
+						}}
+						class="flex w-full items-center gap-2 px-3.5 py-2.5 text-xs transition hover:bg-surface-raised
+							{settings.defaultAngle === angle ? 'text-orange-300' : 'text-muted hover:text-text'}"
+					>
+						<svg
+							class="size-3.5 shrink-0"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+						</svg>
+						{settings.defaultAngle === angle ? 'Default angle' : 'Set as default'}
+					</button>
+				</div>
+			{/if}
 		</div>
 	{/if}
 </div>
