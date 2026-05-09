@@ -50,6 +50,27 @@
 	<!-- Extra items (e.g. filter toggle) -->
 	{@render children?.()}
 
+	<!-- Stats -->
+	<a
+		href="/stats"
+		aria-label="Training stats"
+		class="flex size-9 items-center justify-center rounded-xl border border-border bg-surface-raised text-muted transition hover:border-border hover:text-text active:scale-95"
+	>
+		<svg
+			class="size-4"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="1.75"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+		>
+			<rect x="3" y="12" width="4" height="9" rx="1" />
+			<rect x="10" y="7" width="4" height="14" rx="1" />
+			<rect x="17" y="3" width="4" height="18" rx="1" />
+		</svg>
+	</a>
+
 	<!-- Settings -->
 	<SettingsButton />
 	</div>
