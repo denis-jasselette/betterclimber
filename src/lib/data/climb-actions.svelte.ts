@@ -14,7 +14,6 @@ import type { BoardConnector } from '$lib/ble/board-connector.svelte'
 import {
 	getEntry,
 	incrementAttempts,
-	type LogEntry,
 	recordLitUp,
 	resetAttempts,
 	setLiked,
@@ -34,13 +33,8 @@ export function createClimbActions(
 	// components remain valid and reactive. Svelte 5 $state objects are deep
 	// reactive proxies — mutating properties in place propagates to all
 	// dependents, whereas replacing the object reference would not.
-	const initEntry = getEntry(getUuid(), getAngle())
-	let logSnapshot = $state<LogEntry>({
-		ticked: initEntry.ticked,
-		attemptCount: initEntry.attemptCount,
-		liked: initEntry.liked,
-		lastLitAt: initEntry.lastLitAt
-	})
+	// Spread to capture a plain copy; TypeScript infers the shape from LogEntry.
+	let logSnapshot = $state({ ...getEntry(getUuid(), getAngle()) })
 
 	function refreshLog() {
 		const entry = getEntry(getUuid(), getAngle())
