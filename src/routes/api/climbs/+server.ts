@@ -7,6 +7,9 @@
  *   gradeMax     number        Maximum difficulty_average (numeric, inclusive)
  *   minQuality   number        Minimum quality_average (0–3, default 0)
  *   query        string        Text search on name and setter_username (ILIKE)
+ *   author       string        Filter by setter_username (ILIKE substring)
+ *   name         string        Filter by climb name only (ILIKE substring)
+ *   desc         string        Filter by description (ILIKE substring)
  *   onlyBenchmarks 1|0        Only climbs with a non-null benchmark_difficulty
  *   limit        number        Page size (default 50, max 200)
  *   cursor       string        Opaque cursor for the next page (base64 JSON)
@@ -52,6 +55,9 @@ export const GET: RequestHandler = async ({ url }) => {
 	const gradeMax = p.has('gradeMax') ? Number(p.get('gradeMax')) : null
 	const minQuality = p.has('minQuality') ? Number(p.get('minQuality')) : 0
 	const query = p.get('query')?.trim() ?? ''
+	const author = p.get('author')?.trim() ?? ''
+	const name = p.get('name')?.trim() ?? ''
+	const descQuery = p.get('desc')?.trim() ?? ''
 	const onlyBenchmarks = p.get('onlyBenchmarks') === '1'
 	const onlyCampus = p.get('onlyCampus') === '1'
 	const onlyRoutes = p.get('onlyRoutes') === '1'
@@ -79,6 +85,9 @@ export const GET: RequestHandler = async ({ url }) => {
 		// biome-ignore lint/style/noNonNullAssertion: or() with 2 args always returns a value
 		climbConditions.push(textFilter!)
 	}
+	if (author) climbConditions.push(ilike(climbs.setter_username, `%${author}%`))
+	if (name) climbConditions.push(ilike(climbs.name, `%${name}%`))
+	if (descQuery) climbConditions.push(ilike(climbs.description, `%${descQuery}%`))
 	if (onlyCampus) climbConditions.push(eq(climbs.is_campus, true))
 	if (onlyRoutes) climbConditions.push(gt(climbs.frames_count, 1))
 

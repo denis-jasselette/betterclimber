@@ -228,6 +228,12 @@ export interface ClimbFilters {
 	minQuality: number
 	/** Free-text search matched against name and setter_username. */
 	query: string
+	/** Filter by setter/author name (ILIKE substring). Set by `author:` token in the search box. */
+	authorQuery: string
+	/** Filter by climb name only (ILIKE substring). Set by `name:` token in the search box. */
+	nameQuery: string
+	/** Filter by description (ILIKE substring). Set by `description:` token in the search box. */
+	descriptionQuery: string
 	/** Hide climbs the user has already ticked (sent). */
 	excludeTicked: boolean
 	/** Show only climbs the user has logged an attempt on. */
