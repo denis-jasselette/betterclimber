@@ -80,6 +80,27 @@
 		goto(`/climb/${target.climb.uuid}${page.url.search}`, { replaceState: true })
 	}
 
+	// ── Share ─────────────────────────────────────────────────────────────────
+	let shareCopied = $state(false)
+
+	async function shareClimb() {
+		const shareUrl = `${page.url.origin}/climb/${uuid}${data.angle != null ? `?angle=${data.angle}` : ''}`
+		const climbName = item?.climb.name ?? 'Climb'
+		if (typeof navigator !== 'undefined' && navigator.share) {
+			try {
+				await navigator.share({ title: `${climbName} — Kilterboard`, url: shareUrl })
+			} catch {
+				// User cancelled or permission denied — ignore
+			}
+		} else if (typeof navigator !== 'undefined' && navigator.clipboard) {
+			await navigator.clipboard.writeText(shareUrl)
+			shareCopied = true
+			setTimeout(() => {
+				shareCopied = false
+			}, 2000)
+		}
+	}
+
 	// ── Touch swipe ───────────────────────────────────────────────────────────
 	let touchStartX = 0
 	let touchStartY = 0
@@ -521,6 +542,40 @@
 						{/if}
 					</button>
 				{/if}
+
+				<!-- Row 3: Share -->
+				<button
+					onclick={shareClimb}
+					class="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface-raised px-4 py-2.5 text-sm font-semibold text-muted transition hover:text-text active:scale-95"
+				>
+					{#if shareCopied}
+						<svg
+							class="size-4 text-green-400"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.5"
+						>
+							<path d="M5 13l4 4L19 7" />
+						</svg>
+						<span class="text-green-400">Link copied!</span>
+					{:else}
+						<svg
+							class="size-4"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<circle cx="18" cy="5" r="3" />
+							<circle cx="6" cy="12" r="3" />
+							<circle cx="18" cy="19" r="3" />
+							<line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+							<line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+						</svg>
+						Share climb
+					{/if}
+				</button>
 			</div>
 
 			{#if lightError}
