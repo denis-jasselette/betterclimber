@@ -18,10 +18,22 @@ export interface DayActivity {
 	tickCount: number
 }
 
-/** Grade label with tick count. */
+/** Grade label with ticked + attempted-only split counts. */
 export interface GradeCount {
 	grade: string
-	count: number
+	/** Climbs ticked at this grade. */
+	ticked: number
+	/** Climbs attempted but not yet ticked at this grade. */
+	attemptedOnly: number
+}
+
+export interface PersonalBests {
+	/** Hardest grade ticked. Null if none. */
+	highestTick: string | null
+	/** Hardest grade sent on the first attempt (attemptCount = 0). Null if none. */
+	highestFlash: string | null
+	/** Total attempts ÷ distinct active days. Null if no data. */
+	avgAttemptsPerDay: number | null
 }
 
 /** One ISO week (Mon–Sun) with aggregate activity. */
@@ -51,6 +63,15 @@ function isoToMonday(date: Date): Date {
 	d.setDate(d.getDate() + diff)
 	d.setHours(0, 0, 0, 0)
 	return d
+}
+
+/** Returns false if isoDate is outside the given range (or missing when range is set). */
+function inRange(isoDate: string | null | undefined, range: DateRange): boolean {
+	const d = isoDate ? new Date(isoDate) : null
+	if (!d) return false
+	if (range.from && d < range.from) return false
+	if (range.to && d > range.to) return false
+	return true
 }
 
 function resolveRange(range?: DateRange): { from: Date; to: Date } {
@@ -140,58 +161,86 @@ export function getActivityByWeek(range?: DateRange): WeekActivity[] {
 }
 
 /**
- * Returns ticked climb counts grouped by V-grade (all grades, zero counts included).
- * Only counts entries where ticked=true and difficulty is stored.
- * When a range is provided, filters by tickedAt date.
+ * Returns ticked + attempted-only climb counts per V-grade (all grades, zero counts included).
+ * Only counts entries where difficulty is stored.
+ * Ticked rows filtered by tickedAt; attempted-only rows filtered by lastLitAt.
  */
 export function getGradeDistribution(range?: DateRange): GradeCount[] {
 	const entries = getAllEntries()
-	const gradeCounts = new Map<string, number>()
-
-	for (const grade of ALL_GRADES) {
-		gradeCounts.set(grade, 0)
-	}
+	const tickedCounts = new Map<string, number>()
+	const attemptedCounts = new Map<string, number>()
 
 	for (const entry of Object.values(entries)) {
-		if (!entry.ticked || entry.difficulty == null) continue
-		if (range) {
-			const tickedAt = entry.tickedAt ? new Date(entry.tickedAt) : null
-			if (!tickedAt) continue
-			if (range.from && tickedAt < range.from) continue
-			if (range.to && tickedAt > range.to) continue
-		}
+		if (entry.difficulty == null) continue
 		const grade = difficultyToGrade(entry.difficulty)
-		gradeCounts.set(grade, (gradeCounts.get(grade) ?? 0) + 1)
+		if (entry.ticked) {
+			if (range && !inRange(entry.tickedAt, range)) continue
+			tickedCounts.set(grade, (tickedCounts.get(grade) ?? 0) + 1)
+		} else if ((entry.attemptCount ?? 0) > 0) {
+			if (range && !inRange(entry.lastLitAt, range)) continue
+			attemptedCounts.set(grade, (attemptedCounts.get(grade) ?? 0) + 1)
+		}
 	}
 
-	return ALL_GRADES.map((grade) => ({ grade, count: gradeCounts.get(grade) ?? 0 }))
+	return ALL_GRADES.map((grade) => ({
+		grade,
+		ticked: tickedCounts.get(grade) ?? 0,
+		attemptedOnly: attemptedCounts.get(grade) ?? 0
+	}))
+}
+
+/** Compute personal bests from the log, optionally filtered by date range. */
+export function getPersonalBests(range?: DateRange): PersonalBests {
+	const entries = Object.values(getAllEntries())
+
+	let highestTickRank = -1
+	let highestFlashRank = -1
+	let highestTick: string | null = null
+	let highestFlash: string | null = null
+
+	for (const entry of entries) {
+		if (!entry.ticked || entry.difficulty == null) continue
+		if (range && !inRange(entry.tickedAt, range)) continue
+		const grade = difficultyToGrade(entry.difficulty)
+		const rank = ALL_GRADES.indexOf(grade)
+		if (rank > highestTickRank) {
+			highestTickRank = rank
+			highestTick = grade
+		}
+		if ((entry.attemptCount ?? 0) === 0 && rank > highestFlashRank) {
+			highestFlashRank = rank
+			highestFlash = grade
+		}
+	}
+
+	// Avg attempts per day: total attempts / distinct active days (proxy: lastLitAt date)
+	const activeDays = new Set<string>()
+	let totalAttempts = 0
+	for (const entry of entries) {
+		if ((entry.attemptCount ?? 0) > 0 && entry.lastLitAt) {
+			if (range && !inRange(entry.lastLitAt, range)) continue
+			totalAttempts += entry.attemptCount ?? 0
+			activeDays.add(entry.lastLitAt.slice(0, 10))
+		}
+	}
+	const avgAttemptsPerDay =
+		activeDays.size > 0 ? Math.round((totalAttempts / activeDays.size) * 10) / 10 : null
+
+	return { highestTick, highestFlash, avgAttemptsPerDay }
 }
 
 /** Total ticks, optionally filtered to a date range (by tickedAt). */
 export function getTotalTicks(range?: DateRange): number {
-	return Object.values(getAllEntries()).filter((e) => {
-		if (!e.ticked) return false
-		if (range) {
-			const tickedAt = e.tickedAt ? new Date(e.tickedAt) : null
-			if (!tickedAt) return false
-			if (range.from && tickedAt < range.from) return false
-			if (range.to && tickedAt > range.to) return false
-		}
-		return true
-	}).length
+	return Object.values(getAllEntries()).filter(
+		(e) => e.ticked && (!range || inRange(e.tickedAt, range))
+	).length
 }
 
 /** Total unique climbs lit up, optionally filtered to a date range (by lastLitAt). */
 export function getTotalClimbsLit(range?: DateRange): number {
-	return Object.values(getAllEntries()).filter((e) => {
-		if (!e.lastLitAt) return false
-		if (range) {
-			const litAt = new Date(e.lastLitAt)
-			if (range.from && litAt < range.from) return false
-			if (range.to && litAt > range.to) return false
-		}
-		return true
-	}).length
+	return Object.values(getAllEntries()).filter(
+		(e) => e.lastLitAt && (!range || inRange(e.lastLitAt, range))
+	).length
 }
 
 /** Total attempt count summed across all log entries, optionally filtered by lastLitAt date. */

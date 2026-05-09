@@ -104,10 +104,14 @@ export function getAllEntries(): Record<string, LogEntry> {
 	return load()
 }
 
-/** Increment the attempt counter by 1. */
-export function incrementAttempts(uuid: string, angle: number | null) {
+/** Increment the attempt counter by 1. Stores difficulty on first call so grade stats work. */
+export function incrementAttempts(uuid: string, angle: number | null, difficulty?: number | null) {
 	if (angle === null) return
-	mutateEntry(uuid, angle, (e) => ({ ...e, attemptCount: e.attemptCount + 1 }))
+	mutateEntry(uuid, angle, (e) => ({
+		...e,
+		attemptCount: e.attemptCount + 1,
+		difficulty: e.difficulty ?? difficulty ?? null
+	}))
 }
 
 /** Reset the attempt counter to 0. */
