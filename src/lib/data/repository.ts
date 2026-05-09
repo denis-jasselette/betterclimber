@@ -5,9 +5,9 @@
  * Backed by the /api/climbs SvelteKit endpoint (Neon PostgreSQL).
  *
  * Public API (never changes regardless of backing store):
- *   searchClimbs(filters, angle)  → Promise<ClimbWithStats[]>
- *   getClimb(uuid, angle)         → Promise<ClimbWithStats | null>
- *   resolveHolds(climb)           → ResolvedHold[]
+ *   searchClimbs(filters, angle, cursor) → Promise<{ climbs, nextCursor }>
+ *   getClimb(uuid, angle)                → Promise<ClimbWithStats | null>
+ *   resolveHolds(climb)                  → ResolvedHold[]
  *
  * Note: resolveHolds is backed by static JSON (placements/holes/leds never change).
  * Note: log-service filters (excludeTicked, onlyAttempted, etc.) are applied
@@ -52,7 +52,11 @@ function gradeToMaxDifficulty(grade: string): number {
 
 // ── API helpers ───────────────────────────────────────────────────────────────
 
-function buildSearchParams(filters: Partial<ClimbFilters>, angle: number | null): URLSearchParams {
+function buildSearchParams(
+	filters: Partial<ClimbFilters>,
+	angle: number | null,
+	cursor: string | null = null
+): URLSearchParams {
 	const p = new URLSearchParams()
 	if (angle !== null) p.set('angle', String(angle))
 
@@ -65,22 +69,25 @@ function buildSearchParams(filters: Partial<ClimbFilters>, angle: number | null)
 	if (onlyBenchmarks) p.set('onlyBenchmarks', '1')
 	if (onlyCampus) p.set('onlyCampus', '1')
 	if (onlyRoutes) p.set('onlyRoutes', '1')
-
-	p.set('limit', '200')
+	if (cursor) p.set('cursor', cursor)
 
 	return p
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
+export type SearchResult = { climbs: ClimbWithStats[]; nextCursor: string | null }
+
 /**
  * Search and filter climbs via the /api/climbs endpoint.
  * Log-service filters (excludeTicked, onlyAttempted, etc.) are applied locally.
+ * Pass `cursor` from a previous response's `nextCursor` to load the next page.
  */
 export async function searchClimbs(
 	filters: Partial<ClimbFilters> = {},
-	angle: number | null = null
-): Promise<ClimbWithStats[]> {
+	angle: number | null = null,
+	cursor: string | null = null
+): Promise<SearchResult> {
 	const {
 		excludeTicked = false,
 		onlyAttempted = false,
@@ -88,11 +95,14 @@ export async function searchClimbs(
 		onlyRecentlyLit = false
 	} = filters
 
-	const params = buildSearchParams(filters, angle)
+	const params = buildSearchParams(filters, angle, cursor)
 	const res = await fetch(`/api/climbs?${params}`)
-	if (!res.ok) return []
+	if (!res.ok) return { climbs: [], nextCursor: null }
 
-	const { climbs: rawClimbs } = (await res.json()) as { climbs: ClimbWithStats[] }
+	const { climbs: rawClimbs, nextCursor } = (await res.json()) as {
+		climbs: ClimbWithStats[]
+		nextCursor: string | null
+	}
 
 	// Apply log-service filters client-side (localStorage — server can't see these)
 	const tickedUuids = excludeTicked ? getUuidsWhere(angle, (e) => e.ticked) : new Set<string>()
@@ -102,7 +112,7 @@ export async function searchClimbs(
 	const likedUuids = onlyLiked ? getUuidsWhere(angle, (e) => e.liked) : new Set<string>()
 	const litUuids = onlyRecentlyLit ? getUuidsWhere(angle, (e) => !!e.lastLitAt) : new Set<string>()
 
-	return rawClimbs.filter((item) => {
+	const climbs = rawClimbs.filter((item) => {
 		const uuid = item.climb.uuid
 		if (excludeTicked && tickedUuids.has(uuid)) return false
 		if (onlyAttempted && !attemptedUuids.has(uuid)) return false
@@ -110,6 +120,8 @@ export async function searchClimbs(
 		if (onlyRecentlyLit && !litUuids.has(uuid)) return false
 		return true
 	})
+
+	return { climbs, nextCursor }
 }
 
 /**

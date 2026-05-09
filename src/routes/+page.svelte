@@ -73,13 +73,20 @@
 	// eslint-disable-next-line svelte/prefer-writable-derived
 	let displayedClimbs = $state<ClimbWithStats[]>([])
 	let loadingResults = $state(true)
+	let loadingMore = $state(false)
+	let nextCursor = $state<string | null>(null)
+	// Incremented on each new search — passed to VirtualList so it resets visible count.
+	let searchToken = $state<object>({})
 
 	$effect(() => {
 		loadingResults = true
+		nextCursor = null
+		searchToken = {}
 		let cancelled = false
-		searchClimbs(filters, data.angle).then((climbs) => {
+		searchClimbs(filters, data.angle, null).then(({ climbs, nextCursor: nc }) => {
 			if (cancelled) return
 			displayedClimbs = climbs
+			nextCursor = nc
 			resultsStore.list = climbs
 			loadingResults = false
 		})
@@ -87,6 +94,20 @@
 			cancelled = true
 		}
 	})
+
+	async function loadMoreClimbs() {
+		if (!nextCursor || loadingMore) return
+		loadingMore = true
+		const { climbs: newClimbs, nextCursor: nc } = await searchClimbs(
+			filters,
+			data.angle,
+			nextCursor
+		)
+		displayedClimbs = [...displayedClimbs, ...newClimbs]
+		nextCursor = nc
+		resultsStore.list = displayedClimbs
+		loadingMore = false
+	}
 
 	// ── Scroll position save / restore around climb detail navigation ─────────
 	const SCROLL_KEY = 'kilter-scroll'
@@ -251,7 +272,13 @@
 				</div>
 			{:else}
 				<div class="space-y-3" class:opacity-60={loadingResults}>
-					<VirtualList items={displayedClimbs} pageSize={20} key={(item) => item.climb.uuid}>
+					<VirtualList
+						items={displayedClimbs}
+						pageSize={20}
+						key={(item) => item.climb.uuid}
+						onLoadMore={nextCursor ? loadMoreClimbs : undefined}
+						resetToken={searchToken}
+					>
 						{#snippet children(item)}
 							<ClimbCard
 								{item}
