@@ -33,7 +33,11 @@
 
 	// ── Build lookup maps from JSON ───────────────────────────────────────────
 
-	const allPlacements = placementsJson as Placement[]
+	// layout_id 1 = Kilter Board Original Full Kit (the only board we support).
+	// placements.json contains 3773 entries across 8 layouts; the other 7 layouts
+	// have different board geometries and must not be shown on this board image.
+	const LAYOUT_ID = 1
+	const boardPlacements = (placementsJson as Placement[]).filter((p) => p.layout_id === LAYOUT_ID)
 
 	interface HoleXY {
 		x: number
@@ -43,8 +47,8 @@
 		(holesJson as Array<{ id: number; x: number; y: number }>).map((h) => [h.id, h])
 	)
 
-	// Precompute visual coords for every placement
-	const placementVisuals = allPlacements.map((p) => {
+	// Precompute visual coords for every placement in this layout
+	const placementVisuals = boardPlacements.map((p) => {
 		const hole = holeMap.get(p.hole_id)
 		return {
 			id: p.id,
