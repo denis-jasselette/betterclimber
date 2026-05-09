@@ -20,9 +20,10 @@ pnpm lint      # Biome check (lint + format)
 pnpm check     # svelte-check (TypeScript + Svelte types)
 pnpm build     # Vite production build
 pnpm test      # Vitest unit tests
+pnpm fallow    # Dead code + duplication gate
 ```
 
-All four must pass with zero errors. Fix lint errors with `pnpm format` first (auto-fixes formatting and safe lint violations), then fix remaining errors manually.
+All five must pass with zero errors. Fix lint errors with `pnpm format` first (auto-fixes formatting and safe lint violations), then fix remaining errors manually.
 
 ## Project Overview
 
