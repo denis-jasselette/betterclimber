@@ -78,7 +78,86 @@ export const climbStats = pgTable(
 	]
 )
 
+// ── users ─────────────────────────────────────────────────────────────────────
+
+export const users = pgTable('users', {
+	id: text('id').primaryKey(),
+	anon_id: text('anon_id').unique(),
+	google_id: text('google_id').unique(),
+	email: text('email'),
+	created_at: timestamp('created_at', { withTimezone: true }).defaultNow()
+})
+
+// ── user_log ──────────────────────────────────────────────────────────────────
+
+export const userLog = pgTable(
+	'user_log',
+	{
+		user_id: text('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		climb_uuid: varchar('climb_uuid', { length: 36 }).notNull(),
+		angle: integer('angle').notNull(),
+		ticked: boolean('ticked').notNull().default(false),
+		attempt_count: integer('attempt_count').notNull().default(0),
+		liked: boolean('liked').notNull().default(false),
+		last_lit_at: timestamp('last_lit_at', { withTimezone: true }),
+		updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow()
+	},
+	(t) => [
+		// Composite PK: one row per (user, climb, angle)
+		{ primaryKey: [t.user_id, t.climb_uuid, t.angle] },
+		index('user_log_user_id_angle_idx').on(t.user_id, t.angle)
+	]
+)
+
+// ── better-auth managed tables ────────────────────────────────────────────────
+// These are created/managed by better-auth's migrate command.
+// We declare them here so Drizzle knows about them.
+
+export const sessions = pgTable('sessions', {
+	id: text('id').primaryKey(),
+	expires_at: timestamp('expires_at', { withTimezone: true }).notNull(),
+	token: text('token').notNull().unique(),
+	created_at: timestamp('created_at', { withTimezone: true }).notNull(),
+	updated_at: timestamp('updated_at', { withTimezone: true }).notNull(),
+	ip_address: text('ip_address'),
+	user_agent: text('user_agent'),
+	user_id: text('user_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' })
+})
+
+export const accounts = pgTable('accounts', {
+	id: text('id').primaryKey(),
+	account_id: text('account_id').notNull(),
+	provider_id: text('provider_id').notNull(),
+	user_id: text('user_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	access_token: text('access_token'),
+	refresh_token: text('refresh_token'),
+	id_token: text('id_token'),
+	access_token_expires_at: timestamp('access_token_expires_at', { withTimezone: true }),
+	refresh_token_expires_at: timestamp('refresh_token_expires_at', { withTimezone: true }),
+	scope: text('scope'),
+	password: text('password'),
+	created_at: timestamp('created_at', { withTimezone: true }).notNull(),
+	updated_at: timestamp('updated_at', { withTimezone: true }).notNull()
+})
+
+export const verifications = pgTable('verifications', {
+	id: text('id').primaryKey(),
+	identifier: text('identifier').notNull(),
+	value: text('value').notNull(),
+	expires_at: timestamp('expires_at', { withTimezone: true }).notNull(),
+	created_at: timestamp('created_at', { withTimezone: true }),
+	updated_at: timestamp('updated_at', { withTimezone: true })
+})
+
 // ── Type inference helpers ────────────────────────────────────────────────────
 
 export type ClimbRow = typeof climbs.$inferSelect
 export type ClimbStatsRow = typeof climbStats.$inferSelect
+export type UserRow = typeof users.$inferSelect
+export type UserLogRow = typeof userLog.$inferSelect

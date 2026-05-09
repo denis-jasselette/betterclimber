@@ -53,6 +53,7 @@
 	},
 	"dependencies": {
 		"@neondatabase/serverless": "^1.0.2",
+		"better-auth": "^1.6.9",
 		"drizzle-orm": "^0.45.2",
 		"svelte-range-slider-pips": "^4.1.1"
 	},
