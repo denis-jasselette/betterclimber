@@ -2,10 +2,12 @@
 	/**
 	 * BoardEditor
 	 *
-	 * Interactive Kilter Board hold picker. Shows all placements as faint circles;
-	 * clicking cycles the hold through: off → START → HAND → FOOT → FINISH → off.
+	 * Interactive Kilter Board hold picker. Shows all placements as invisible tap
+	 * targets; clicking cycles the hold through:
+	 *   off → HAND → FOOT → START → FINISH → off
 	 * The `frames` prop is kept in sync via $bindable so the parent always has the
-	 * current frames string.
+	 * current frames string. Pass an existing frames string to pre-populate the editor
+	 * (for editing an existing climb).
 	 */
 
 	import { SvelteMap } from 'svelte/reactivity'
@@ -54,11 +56,23 @@
 	})
 
 	// ── Role cycling ──────────────────────────────────────────────────────────
+	// Order: HAND (middle) → FOOT (foot-only) → START → FINISH
+	// Most common types first so the user reaches them with fewer taps.
+	const ROLE_CYCLE: (RoleId | null)[] = [null, 13, 15, 12, 14]
 
-	const ROLE_CYCLE: (RoleId | null)[] = [null, 12, 13, 15, 14]
+	// Parse an existing frames string into placement→role entries
+	function parseInitialFrames(s: string): Array<[number, RoleId]> {
+		const entries: Array<[number, RoleId]> = []
+		for (const m of s.matchAll(/p(\d+)r(\d+)/g)) {
+			const pid = Number(m[1])
+			const rid = Number(m[2]) as RoleId
+			if (ROLE_CYCLE.includes(rid)) entries.push([pid, rid])
+		}
+		return entries
+	}
 
-	// placementId → RoleId (only active holds)
-	const activeHolds = new SvelteMap<number, RoleId>()
+	// placementId → RoleId (only active holds); pre-populated from the initial frames
+	const activeHolds = new SvelteMap<number, RoleId>(parseInitialFrames(frames))
 
 	function cycleHold(placementId: number) {
 		const current = activeHolds.get(placementId) ?? null
@@ -89,9 +103,9 @@
 	// ── Legend data ───────────────────────────────────────────────────────────
 
 	const LEGEND: { roleId: RoleId; label: string; color: string }[] = [
-		{ roleId: 12, label: ROLE_LABELS[12], color: ROLE_COLORS[12].hex },
 		{ roleId: 13, label: ROLE_LABELS[13], color: ROLE_COLORS[13].hex },
 		{ roleId: 15, label: ROLE_LABELS[15], color: ROLE_COLORS[15].hex },
+		{ roleId: 12, label: ROLE_LABELS[12], color: ROLE_COLORS[12].hex },
 		{ roleId: 14, label: ROLE_LABELS[14], color: ROLE_COLORS[14].hex }
 	]
 

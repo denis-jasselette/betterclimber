@@ -256,8 +256,8 @@
 			</div>
 
 			<!-- Stats + tags -->
-			{#if activeStats}
-				<div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted">
+			<div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted">
+				{#if activeStats}
 					<!-- Quality -->
 					<div class="flex items-center gap-1">
 						{#each [1, 2, 3] as star (star)}
@@ -293,32 +293,33 @@
 							<span>{activeStats.ascent_count.toLocaleString()} ascents</span>
 						</div>
 					{/if}
-					<!-- Tag pills -->
-					{#if activeStats?.benchmark_difficulty != null}
+					<!-- Benchmark pill -->
+					{#if activeStats.benchmark_difficulty != null}
 						<span
 							class="rounded-md bg-yellow-500/10 px-2 py-0.5 text-[11px] font-semibold text-yellow-400"
 							>Benchmark</span
 						>
 					{/if}
-					{#if climb.is_campus}
-						<span
-							class="rounded-md bg-purple-500/10 px-2 py-0.5 text-[11px] font-semibold text-purple-400"
-							>Campus</span
-						>
-					{/if}
-					{#if climb.is_route}
-						<span
-							class="rounded-md bg-blue-500/10 px-2 py-0.5 text-[11px] font-semibold text-blue-400"
-							>Route</span
-						>
-					{/if}
-					{#if !climb.allow_matches}
-						<span class="rounded-md bg-muted/20 px-2 py-0.5 text-[11px] font-semibold text-muted"
-							>No matching</span
-						>
-					{/if}
-				</div>
-			{/if}
+				{/if}
+				<!-- Tag pills — shown regardless of stats availability -->
+				{#if climb.is_campus}
+					<span
+						class="rounded-md bg-purple-500/10 px-2 py-0.5 text-[11px] font-semibold text-purple-400"
+						>Campus</span
+					>
+				{/if}
+				{#if climb.is_route}
+					<span
+						class="rounded-md bg-blue-500/10 px-2 py-0.5 text-[11px] font-semibold text-blue-400"
+						>Route</span
+					>
+				{/if}
+				{#if !climb.allow_matches}
+					<span class="rounded-md bg-muted/20 px-2 py-0.5 text-[11px] font-semibold text-muted"
+						>No matching</span
+					>
+				{/if}
+			</div>
 
 			<!-- Description -->
 			{#if climb.description}
@@ -343,6 +344,13 @@
 							Cancel
 						</button>
 					{:else}
+						<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+						<a
+							href="/climb/{uuid}/edit{page.url.search}"
+							class="rounded-xl border border-border px-3 py-1.5 text-sm text-muted transition hover:text-text active:scale-95"
+						>
+							Edit
+						</a>
 						<button
 							onclick={() => (confirmingDelete = true)}
 							class="rounded-xl border border-border px-3 py-1.5 text-sm text-muted transition hover:border-red-500/50 hover:text-red-400 active:scale-95"
