@@ -5,6 +5,7 @@
 	import TopBar from '$lib/components/TopBar.svelte'
 	import { connector } from '$lib/connector.svelte'
 	import { createClimbActions } from '$lib/data/climb-actions.svelte'
+	import { deleteCustomClimb } from '$lib/data/custom-climbs'
 	import { getClimb } from '$lib/data/repository'
 	import type { ClimbWithStats } from '$lib/data/types'
 	import { difficultyToGrade, formatGrade, ROLE_COLORS, ROLE_LABELS } from '$lib/data/types'
@@ -105,6 +106,16 @@
 		() => item?.climb ?? null,
 		() => connector
 	)
+
+	// ── Custom climb actions (edit / delete) ──────────────────────────────────
+	const isCustomClimb = $derived(item?.climb.setter_id === 0)
+	let confirmingDelete = $state(false)
+
+	function handleDelete() {
+		deleteCustomClimb(uuid)
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		goto('/')
+	}
 </script>
 
 <svelte:head>
@@ -231,7 +242,9 @@
 					<p class="mt-1 text-sm text-muted">
 						by <a
 							href="/?author={encodeURIComponent(climb.setter_username)}"
-							class="underline underline-offset-2 hover:text-text"
+							class={climb.setter_username === '@me'
+								? 'font-semibold text-cyan-400'
+								: 'underline underline-offset-2 hover:text-text'}
 						>{climb.setter_username}</a>
 					</p>
 				</div>
@@ -310,6 +323,34 @@
 			<!-- Description -->
 			{#if climb.description}
 				<p class="mt-6 text-sm leading-relaxed text-muted">{climb.description}</p>
+			{/if}
+
+			<!-- Custom climb: edit / delete -->
+			{#if isCustomClimb}
+				<div class="mt-4 flex items-center gap-3">
+					{#if confirmingDelete}
+						<span class="text-sm text-muted">Delete this climb?</span>
+						<button
+							onclick={handleDelete}
+							class="rounded-xl border border-red-600 bg-red-600/10 px-3 py-1.5 text-sm font-semibold text-red-400 transition hover:bg-red-600/20 active:scale-95"
+						>
+							Yes, delete
+						</button>
+						<button
+							onclick={() => (confirmingDelete = false)}
+							class="rounded-xl border border-border px-3 py-1.5 text-sm text-muted transition hover:text-text active:scale-95"
+						>
+							Cancel
+						</button>
+					{:else}
+						<button
+							onclick={() => (confirmingDelete = true)}
+							class="rounded-xl border border-border px-3 py-1.5 text-sm text-muted transition hover:border-red-500/50 hover:text-red-400 active:scale-95"
+						>
+							Delete
+						</button>
+					{/if}
+				</div>
 			{/if}
 
 			<!-- Action buttons -->

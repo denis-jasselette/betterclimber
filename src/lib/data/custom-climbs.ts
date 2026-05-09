@@ -17,6 +17,14 @@ export interface CustomClimb {
 	description: string
 	frames: string
 	angle: number | null
+	/** Proposed difficulty (numeric, matches DIFFICULTY_GRADES). null = ungraded. */
+	difficulty: number | null
+	/** Whether hand-matching on start holds is allowed. */
+	allowMatches: boolean
+	/** Campus problem — no feet. */
+	isCampus: boolean
+	/** Draft — not yet published. */
+	isDraft: boolean
 	createdAt: string
 }
 
@@ -57,6 +65,10 @@ export function saveCustomClimb(climb: CustomClimb): void {
 	save(climbs)
 }
 
+export function deleteCustomClimb(uuid: string): void {
+	save(load().filter((c) => c.uuid !== uuid))
+}
+
 // ── Adapter: CustomClimb → ClimbWithStats ────────────────────────────────────
 
 export function toClimbWithStats(c: CustomClimb): ClimbWithStats {
@@ -65,19 +77,31 @@ export function toClimbWithStats(c: CustomClimb): ClimbWithStats {
 			uuid: c.uuid,
 			layout_id: 1,
 			setter_id: 0,
-			setter_username: 'You (custom)',
+			setter_username: '@me',
 			name: c.name,
 			description: c.description,
 			frames: c.frames,
 			frames_count: parseFrames(c.frames).length,
 			angle: c.angle,
-			is_draft: false,
-			allow_matches: true,
-			is_campus: false,
+			is_draft: c.isDraft,
+			allow_matches: c.allowMatches,
+			is_campus: c.isCampus,
 			is_route: false
 		},
 		stats: [],
-		activeStats: null
+		// Synthesise minimal activeStats when angle + difficulty are both set,
+		// so the grade badge on the detail page shows the proposed grade.
+		activeStats:
+			c.angle !== null && c.difficulty !== null
+				? {
+						climb_uuid: c.uuid,
+						angle: c.angle,
+						difficulty_average: c.difficulty,
+						benchmark_difficulty: null,
+						quality_average: 0,
+						ascent_count: 0
+					}
+				: null
 	}
 }
 
@@ -111,8 +135,9 @@ export function filterCustomClimbs(
 				return false
 			if (nq && !c.name.toLowerCase().includes(nq)) return false
 			if (dq && !c.description.toLowerCase().includes(dq)) return false
-			// authorQuery against 'You (custom)' — matches if empty or "you"/"custom"
-			if (aq && !'you (custom)'.includes(aq)) return false
+			// authorQuery '@me' is a special case that always matches custom climbs.
+			// Any other author query is checked against '@me'.
+			if (aq && aq !== '@me' && !'@me'.includes(aq)) return false
 
 			return true
 		})

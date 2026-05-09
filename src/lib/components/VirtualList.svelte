@@ -27,17 +27,33 @@
 		children: import('svelte').Snippet<[T]>
 		onLoadMore?: () => void
 		resetToken?: unknown
+		/**
+		 * When restoring a previous browse session (e.g. navigating back from a
+		 * climb detail), pass the number of items that were visible so the list
+		 * starts fully expanded rather than being reset to pageSize.
+		 */
+		initialVisibleCount?: number
 	}
 
-	const { items, pageSize = 20, key, children, onLoadMore, resetToken }: Props<T> = $props()
+	const {
+		items,
+		pageSize = 20,
+		key,
+		children,
+		onLoadMore,
+		resetToken,
+		initialVisibleCount = 0
+	}: Props<T> = $props()
 
 	// ── Visible slice ─────────────────────────────────────────────────────────
 	let visibleCount = $state(0)
 
 	// Reset visible count when a new search starts (resetToken changes).
+	// When restoring from back-navigation, initialVisibleCount > 0 so we start
+	// showing all previously-loaded items without the user having to re-scroll.
 	$effect(() => {
 		void resetToken
-		visibleCount = pageSize
+		visibleCount = Math.max(pageSize, initialVisibleCount)
 	})
 
 	const visibleItems = $derived(items.slice(0, visibleCount))

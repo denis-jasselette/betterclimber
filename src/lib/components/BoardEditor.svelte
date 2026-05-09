@@ -111,18 +111,16 @@
 			<image href={BoardBoltOns} width={IMG_W} height={IMG_H} />
 			<image href={BoardScrewOns} width={IMG_W} height={IMG_H} />
 
-			<!-- All placements as faint tap targets -->
+			<!-- Tap targets (always invisible) + active hold rings -->
 			{#each placementVisuals as p (p.id)}
 				{@const roleId = activeHolds.get(p.id)}
-				{@const isActive = roleId !== undefined}
+				<!-- Invisible tap target -->
 				<circle
 					cx={p.cx}
 					cy={p.cy}
 					r={p.radius}
-					stroke={isActive ? ROLE_COLORS[roleId].hex : '#ffffff'}
-					stroke-width={isActive ? 8 : 4}
 					fill="transparent"
-					opacity={isActive ? 0.85 : 0.12}
+					stroke="none"
 					onclick={() => cycleHold(p.id)}
 					role="button"
 					aria-label="Hold {p.id}"
@@ -130,6 +128,19 @@
 					onkeydown={(e) => e.key === 'Enter' && cycleHold(p.id)}
 					style="cursor: pointer"
 				/>
+				<!-- Visible ring — only rendered when active -->
+				{#if roleId !== undefined}
+					<circle
+						cx={p.cx}
+						cy={p.cy}
+						r={p.radius}
+						stroke={ROLE_COLORS[roleId].hex}
+						stroke-width={8}
+						fill="transparent"
+						opacity={0.85}
+						pointer-events="none"
+					/>
+				{/if}
 			{/each}
 		</svg>
 	</div>
