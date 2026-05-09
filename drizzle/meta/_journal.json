@@ -15,6 +15,13 @@
 			"when": 1778350385197,
 			"tag": "0001_tranquil_multiple_man",
 			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "7",
+			"when": 1778354063552,
+			"tag": "0002_bouncy_morlun",
+			"breakpoints": true
 		}
 	]
 }

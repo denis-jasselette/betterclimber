@@ -17,7 +17,7 @@
 <header class="sticky top-0 z-50 border-b border-border bg-bg/90 backdrop-blur-sm">
 	<div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
 	<!-- Logo + title -->
-	<div class="flex items-center gap-2">
+	<a href="/" class="flex items-center gap-2">
 		<svg
 			class="size-6 text-cyan-400"
 			xmlns="http://www.w3.org/2000/svg"
@@ -38,7 +38,7 @@
 			<circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="none" />
 		</svg>
 		<span class="hidden text-base font-bold tracking-tight text-text sm:inline">Kilterboard</span>
-	</div>
+	</a>
 
 	<div class="flex-1"></div>
 
