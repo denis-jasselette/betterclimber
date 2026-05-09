@@ -46,23 +46,20 @@
 </script>
 
 <article
-	class="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 transition hover:border-border"
+	class="group relative flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 transition hover:border-border"
 >
+	{#if href}
+		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+		<a {href} class="absolute inset-0 rounded-2xl" aria-label={climb.name}></a>
+	{/if}
+
 	<!-- Header row -->
 	<div class="flex items-start justify-between gap-3">
 		<div class="min-w-0 flex-1">
-			{#if href}
-				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-				<a {href} class="group block">
-					<h2 class="truncate font-semibold text-text transition-colors group-hover:text-cyan-300">
-						{climb.name}
-					</h2>
-					<p class="mt-0.5 text-xs text-muted">by {climb.setter_username}</p>
-				</a>
-			{:else}
-				<h2 class="truncate font-semibold text-text">{climb.name}</h2>
-				<p class="mt-0.5 text-xs text-muted">by {climb.setter_username}</p>
-			{/if}
+			<h2 class="truncate font-semibold text-text transition-colors group-hover:text-cyan-300">
+				{climb.name}
+			</h2>
+			<p class="mt-0.5 text-xs text-muted">by {climb.setter_username}</p>
 		</div>
 
 		<!-- Grade badge -->
@@ -141,8 +138,8 @@
 		{/if}
 	</div>
 
-	<!-- Action row: user log + Light Up -->
-	<div class="mt-1 flex items-center gap-2">
+	<!-- Action row: relative + z-10 so buttons sit above the stretched link <a> -->
+	<div class="relative z-10 mt-1 flex items-center gap-2">
 		<!-- Tick -->
 		<button
 			onclick={toggleTick}
