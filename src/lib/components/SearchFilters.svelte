@@ -70,12 +70,20 @@
 	// eslint-disable-next-line svelte/prefer-writable-derived
 	let inputValue = $state(untrack(() => filtersToInputValue(filters)))
 	let debounceTimer: ReturnType<typeof setTimeout> | null = null
+	// Set to true just before we call handleUpdateFilters from the debounce so
+	// the reactive effect below does not overwrite the user's in-progress input
+	// (including trailing spaces needed to type the next word).
+	let skipNextSync = false
 
 	$effect(() => {
-		// Sync when filters change externally (e.g. "Clear filters" or author: link from detail page).
-		// Skip while a debounce is in-flight so in-progress keystrokes aren't clobbered.
-		if (debounceTimer !== null) return
-		inputValue = filtersToInputValue(filters)
+		const f = filters // establish reactive dependency on filters
+		// Skip when our own debounce just fired — we don't want to overwrite
+		// the user's raw input (e.g. trailing spaces) with the trimmed version.
+		if (skipNextSync) {
+			skipNextSync = false
+			return
+		}
+		inputValue = filtersToInputValue(f)
 	})
 
 	function handleQueryInput(value: string) {
@@ -83,6 +91,7 @@
 		if (debounceTimer !== null) clearTimeout(debounceTimer)
 		debounceTimer = setTimeout(() => {
 			debounceTimer = null
+			skipNextSync = true
 			const parsed = parseQueryTokens(value)
 			handleUpdateFilters({
 				...filters,
