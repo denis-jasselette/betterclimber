@@ -109,6 +109,8 @@ export const userLog = pgTable(
 		climb_uuid: varchar('climb_uuid', { length: 36 }).notNull(),
 		angle: integer('angle').notNull(),
 		ticked: boolean('ticked').notNull().default(false),
+		/** Timestamp of the first tick (set once, never overwritten). */
+		ticked_at: timestamp('ticked_at', { withTimezone: true }),
 		attempt_count: integer('attempt_count').notNull().default(0),
 		liked: boolean('liked').notNull().default(false),
 		last_lit_at: timestamp('last_lit_at', { withTimezone: true }),
