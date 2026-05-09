@@ -56,9 +56,9 @@ const NORDIC_UART_RX_UUID = '6e400002-b5a3-f393-e0a9-e50e24dcca9e'
 
 // ── Log entry ─────────────────────────────────────────────────────────────────
 
-export type LogLevel = 'info' | 'warn' | 'error' | 'debug'
+type LogLevel = 'info' | 'warn' | 'error' | 'debug'
 
-export interface BleLogEntry {
+interface BleLogEntry {
 	id: string
 	ts: number
 	level: LogLevel
@@ -67,7 +67,7 @@ export interface BleLogEntry {
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
-export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error'
+type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error'
 
 function generateId(): string {
 	return Math.random().toString(36).slice(2, 9)

@@ -17,7 +17,8 @@
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
 		"test": "vitest run",
-		"test:e2e": "playwright test"
+		"test:e2e": "playwright test",
+		"fallow": "fallow --only dead-code,dupes --fail-on-issues"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.14",
@@ -37,6 +38,7 @@
 		"drizzle-kit": "^0.31.10",
 		"eslint": "^10.3.0",
 		"eslint-plugin-svelte": "^3.17.1",
+		"fallow": "^2.67.0",
 		"jsdom": "^29.1.1",
 		"lefthook": "^2.1.6",
 		"svelte": "^5.55.4",

@@ -38,6 +38,9 @@ jobs:
       - name: Unit tests
         run: pnpm test
 
+      - name: Dead code + duplication gate
+        run: pnpm fallow
+
   e2e:
     needs: ci
     runs-on: ubuntu-latest
