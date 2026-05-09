@@ -27,7 +27,7 @@ export type LogEntry = {
 
 const STORAGE_KEY = 'kb_user_log_v2'
 
-export function logKey(uuid: string, angle: number): string {
+function logKey(uuid: string, angle: number): string {
 	return `${uuid}@${angle}`
 }
 

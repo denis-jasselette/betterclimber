@@ -5,6 +5,7 @@
 	import TopBar from '$lib/components/TopBar.svelte'
 	import { connector } from '$lib/connector.svelte'
 	import { createClimbActions } from '$lib/data/climb-actions.svelte'
+	import { mergeDbLog } from '$lib/data/log-service'
 	import { getClimb } from '$lib/data/repository'
 	import type { ClimbWithStats } from '$lib/data/types'
 	import { difficultyToGrade, formatGrade, ROLE_COLORS, ROLE_LABELS } from '$lib/data/types'
@@ -40,6 +41,11 @@
 				item = r
 			})
 		}
+	})
+
+	// Merge DB log entries for this angle into localStorage on page load.
+	$effect(() => {
+		if (data.angle !== null) mergeDbLog(data.angle)
 	})
 
 	// ── Derived display values ─────────────────────────────────────────────────
