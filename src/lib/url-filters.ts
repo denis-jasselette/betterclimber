@@ -11,6 +11,9 @@ export function filtersToParams(
 	const p = new URLSearchParams()
 	if (angle !== null) p.set('angle', String(angle))
 	if (filters.query?.trim()) p.set('q', filters.query)
+	if (filters.authorQuery?.trim()) p.set('author', filters.authorQuery)
+	if (filters.nameQuery?.trim()) p.set('name', filters.nameQuery)
+	if (filters.descriptionQuery?.trim()) p.set('desc', filters.descriptionQuery)
 	if (filters.gradeMin) p.set('gmin', filters.gradeMin)
 	if (filters.gradeMax) p.set('gmax', filters.gradeMax)
 	if (filters.minQuality && filters.minQuality > 0) p.set('qual', String(filters.minQuality))
@@ -41,6 +44,12 @@ export function parseFiltersFromUrl(url: URL): {
 	const qual = url.searchParams.get('qual')
 
 	if (q) filters.query = q
+	const author = url.searchParams.get('author')
+	const name = url.searchParams.get('name')
+	const desc = url.searchParams.get('desc')
+	if (author) filters.authorQuery = author
+	if (name) filters.nameQuery = name
+	if (desc) filters.descriptionQuery = desc
 	if (gmin) filters.gradeMin = gmin
 	if (gmax) filters.gradeMax = gmax
 	if (qual) filters.minQuality = Math.max(0, Math.min(3, Number(qual)))
