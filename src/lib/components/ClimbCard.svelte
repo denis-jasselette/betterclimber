@@ -59,7 +59,12 @@
 			<h2 class="truncate font-semibold text-text transition-colors group-hover:text-cyan-300">
 				{climb.name}
 			</h2>
-			<p class="mt-0.5 text-xs text-muted">by {climb.setter_username}</p>
+			<p class="mt-0.5 text-xs text-muted">
+				by
+				<span class={climb.setter_username === '@me' ? 'font-semibold text-cyan-400' : ''}>
+					{climb.setter_username}
+				</span>
+			</p>
 		</div>
 
 		<!-- Grade badge -->
