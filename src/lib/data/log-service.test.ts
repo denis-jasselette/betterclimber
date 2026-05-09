@@ -82,6 +82,17 @@ describe('incrementAttempts', () => {
 		incrementAttempts(UUID, ANGLE)
 		expect(getEntry(UUID, ANGLE).ticked).toBe(true)
 	})
+
+	it('stores difficulty on first call', () => {
+		incrementAttempts(UUID, ANGLE, 17)
+		expect(getEntry(UUID, ANGLE).difficulty).toBe(17)
+	})
+
+	it('does not overwrite difficulty already set', () => {
+		incrementAttempts(UUID, ANGLE, 17)
+		incrementAttempts(UUID, ANGLE, 20)
+		expect(getEntry(UUID, ANGLE).difficulty).toBe(17)
+	})
 })
 
 describe('resetAttempts', () => {
