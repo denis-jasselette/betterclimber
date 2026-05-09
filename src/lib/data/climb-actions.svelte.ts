@@ -14,6 +14,7 @@ import type { BoardConnector } from '$lib/ble/board-connector.svelte'
 import {
 	getEntry,
 	incrementAttempts,
+	type LogEntry,
 	recordLitUp,
 	resetAttempts,
 	setLiked,
@@ -29,22 +30,33 @@ export function createClimbActions(
 	getConnector: () => BoardConnector
 ) {
 	// ── Log state ────────────────────────────────────────────────────────────────
-	// logOverride is null until a local mutation fires; once set it takes
-	// precedence over the derived value, avoiding state_referenced_locally.
-	// Reset to null whenever the uuid changes (navigating between climbs).
-	let logOverride = $state<ReturnType<typeof getEntry> | null>(null)
-	const logDerived = $derived(getEntry(getUuid(), getAngle()))
-
-	$effect(() => {
-		getUuid() // track — triggers reset when uuid changes
-		logOverride = null
+	// logSnapshot is a mutable $state object so that destructured references in
+	// components remain valid and reactive. Svelte 5 $state objects are deep
+	// reactive proxies — mutating properties in place propagates to all
+	// dependents, whereas replacing the object reference would not.
+	const initEntry = getEntry(getUuid(), getAngle())
+	let logSnapshot = $state<LogEntry>({
+		ticked: initEntry.ticked,
+		attemptCount: initEntry.attemptCount,
+		liked: initEntry.liked,
+		lastLitAt: initEntry.lastLitAt
 	})
 
-	const logSnapshot = $derived(logOverride ?? logDerived)
-
 	function refreshLog() {
-		logOverride = getEntry(getUuid(), getAngle())
+		const entry = getEntry(getUuid(), getAngle())
+		logSnapshot.ticked = entry.ticked
+		logSnapshot.attemptCount = entry.attemptCount
+		logSnapshot.liked = entry.liked
+		logSnapshot.lastLitAt = entry.lastLitAt
 	}
+
+	// Re-sync when uuid or angle changes (navigating between climbs or
+	// switching board angle).
+	$effect(() => {
+		getUuid()
+		getAngle()
+		refreshLog()
+	})
 
 	// ── Tick / Like ───────────────────────────────────────────────────────────────
 	function toggleTick() {
