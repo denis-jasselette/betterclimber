@@ -1,3 +1,4 @@
+import { getCustomClimb, toClimbWithStats } from '$lib/data/custom-climbs'
 import { getClimb } from '$lib/data/repository'
 import type { Angle } from '$lib/data/types'
 import { ALL_ANGLES } from '$lib/data/types'
@@ -13,6 +14,10 @@ export const load: PageLoad = async ({ params, url }) => {
 		raw !== null && (ALL_ANGLES as ReadonlyArray<number>).includes(parsed)
 			? (parsed as Angle)
 			: null
+
+	// Check custom climbs first (localStorage, no API needed)
+	const custom = getCustomClimb(params.uuid)
+	if (custom) return { item: toClimbWithStats(custom), angle }
 
 	// If the item is already in the results store (client-side swipe navigation),
 	// return it immediately — no API round-trip needed.
