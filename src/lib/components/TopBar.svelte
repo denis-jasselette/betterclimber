@@ -7,10 +7,11 @@
 
 	interface Props {
 		angle?: Angle | null
+		hideBoardControls?: boolean
 		children?: import('svelte').Snippet
 	}
 
-	const { children, angle = null }: Props = $props()
+	const { children, angle = null, hideBoardControls = false }: Props = $props()
 </script>
 
 <header class="sticky top-0 z-50 border-b border-border bg-bg/90 backdrop-blur-sm">
@@ -42,10 +43,14 @@
 	<div class="flex-1"></div>
 
 	<!-- BLE status -->
-	<BleStatus {connector} />
+	{#if !hideBoardControls}
+		<BleStatus {connector} />
+	{/if}
 
 	<!-- Angle dropdown -->
-	<AngleDropdown {angle} />
+	{#if !hideBoardControls}
+		<AngleDropdown {angle} />
+	{/if}
 
 	<!-- Extra items (e.g. filter toggle) -->
 	{@render children?.()}
