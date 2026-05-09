@@ -6,7 +6,9 @@
  *
  * Required environment variables:
  *   BETTER_AUTH_SECRET   — min 32 chars (openssl rand -base64 32)
- *   BETTER_AUTH_URL      — base URL e.g. https://betterclimber.netlify.app
+ *   BETTER_AUTH_URL      — production base URL, e.g. https://betterclimber.netlify.app
+ *                          Use the same value in all environments (deploy previews
+ *                          are added to trustedOrigins below so auth still works).
  *   GOOGLE_CLIENT_ID     — from Google Cloud Console
  *   GOOGLE_CLIENT_SECRET — from Google Cloud Console
  */
@@ -25,6 +27,11 @@ import * as schema from '$lib/server/db/schema'
 export const auth = betterAuth({
 	secret: BETTER_AUTH_SECRET,
 	baseURL: BETTER_AUTH_URL,
+	// Allow Netlify deploy-preview origins so that the OAuth flow works on
+	// preview deployments without registering each URL in Google Cloud Console.
+	// Auth callbacks go through production (BETTER_AUTH_URL); only the final
+	// redirect back to the app is from the deploy-preview origin.
+	trustedOrigins: ['https://*.netlify.app'],
 	database: drizzleAdapter(db, {
 		provider: 'pg',
 		schema: {
