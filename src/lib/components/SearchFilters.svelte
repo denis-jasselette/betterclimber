@@ -18,15 +18,72 @@
 	// ── Debounced search input ────────────────────────────────────────────────
 	// Keep a local copy so the input stays responsive; only push to the URL
 	// after the user stops typing for 300 ms.
+
+	/**
+	 * Build the displayed input string from the current filters.
+	 * Structured tokens (author:/name:/description:) are re-serialised so
+	 * the input stays consistent with the URL state.
+	 */
+	function filtersToInputValue(f: Partial<ClimbFilters>): string {
+		const parts: string[] = []
+		if (f.authorQuery?.trim()) parts.push(`author:${f.authorQuery.trim()}`)
+		if (f.nameQuery?.trim()) parts.push(`name:${f.nameQuery.trim()}`)
+		if (f.descriptionQuery?.trim()) {
+			const v = f.descriptionQuery.trim()
+			parts.push(v.includes(' ') ? `description:"${v}"` : `description:${v}`)
+		}
+		if (f.query?.trim()) parts.push(f.query.trim())
+		return parts.join(' ')
+	}
+
+	/**
+	 * Parse structured tokens out of a raw search string.
+	 * Tokens: `author:value`, `name:value`, `description:value` or `description:"quoted value"`.
+	 * Remaining text becomes the free-text `query`.
+	 */
+	function parseQueryTokens(
+		raw: string
+	): Pick<Partial<ClimbFilters>, 'query' | 'authorQuery' | 'nameQuery' | 'descriptionQuery'> {
+		const tokenRe = /\b(author|name|description):("(?:[^"\\]|\\.)*"|[^\s]+)/gi
+		let remaining = raw
+		const result: Pick<
+			Partial<ClimbFilters>,
+			'query' | 'authorQuery' | 'nameQuery' | 'descriptionQuery'
+		> = {}
+
+		for (const match of [...raw.matchAll(tokenRe)]) {
+			const field = match[1].toLowerCase()
+			let value = match[2]
+			if (value.startsWith('"') && value.endsWith('"')) {
+				value = value.slice(1, -1)
+			}
+			remaining = remaining.replace(match[0], '')
+			if (field === 'author') result.authorQuery = value
+			else if (field === 'name') result.nameQuery = value
+			else if (field === 'description') result.descriptionQuery = value
+		}
+
+		result.query = remaining.trim()
+		return result
+	}
+
 	// eslint-disable-next-line svelte/prefer-writable-derived
-	let inputValue = $state(untrack(() => filters.query ?? ''))
+	let inputValue = $state(untrack(() => filtersToInputValue(filters)))
 	let debounceTimer: ReturnType<typeof setTimeout> | null = null
+	// Set to true just before we call handleUpdateFilters from the debounce so
+	// the reactive effect below does not overwrite the user's in-progress input
+	// (including trailing spaces needed to type the next word).
+	let skipNextSync = false
 
 	$effect(() => {
-		// Sync when filters change externally (e.g. "Clear filters").
-		// Skip while a debounce is in-flight so in-progress keystrokes aren't clobbered.
-		if (debounceTimer !== null) return
-		inputValue = filters.query ?? ''
+		const f = filters // establish reactive dependency on filters
+		// Skip when our own debounce just fired — we don't want to overwrite
+		// the user's raw input (e.g. trailing spaces) with the trimmed version.
+		if (skipNextSync) {
+			skipNextSync = false
+			return
+		}
+		inputValue = filtersToInputValue(f)
 	})
 
 	function handleQueryInput(value: string) {
@@ -34,7 +91,15 @@
 		if (debounceTimer !== null) clearTimeout(debounceTimer)
 		debounceTimer = setTimeout(() => {
 			debounceTimer = null
-			handleUpdateFilters({ ...filters, query: value })
+			skipNextSync = true
+			const parsed = parseQueryTokens(value)
+			handleUpdateFilters({
+				...filters,
+				query: parsed.query ?? '',
+				authorQuery: parsed.authorQuery ?? '',
+				nameQuery: parsed.nameQuery ?? '',
+				descriptionQuery: parsed.descriptionQuery ?? ''
+			})
 		}, 300)
 	}
 
@@ -43,6 +108,9 @@
 			filters.gradeMax !== null ||
 			filters.minQuality ||
 			filters.query?.trim() ||
+			filters.authorQuery?.trim() ||
+			filters.nameQuery?.trim() ||
+			filters.descriptionQuery?.trim() ||
 			filters.excludeTicked ||
 			filters.onlyAttempted ||
 			filters.onlyLiked ||
@@ -72,7 +140,7 @@
 		</svg>
 		<input
 			type="search"
-			placeholder="Search by name or setter…"
+			placeholder="Search…"
 			value={inputValue}
 			oninput={(e) => handleQueryInput(e.currentTarget.value)}
 			class="w-full rounded-xl border border-border bg-surface-raised/60 py-2.5 pr-4 pl-9 text-sm text-text placeholder:text-muted focus:ring-cyan-500 "

@@ -228,7 +228,12 @@
 			<div class="mt-4 flex items-start justify-between gap-4">
 				<div class="min-w-0 flex-1">
 					<h1 class="text-2xl leading-tight font-bold text-text">{climb.name}</h1>
-					<p class="mt-1 text-sm text-muted">by {climb.setter_username}</p>
+					<p class="mt-1 text-sm text-muted">
+						by <a
+							href="/?author={encodeURIComponent(climb.setter_username)}"
+							class="underline underline-offset-2 hover:text-text"
+						>{climb.setter_username}</a>
+					</p>
 				</div>
 				<span
 					class="shrink-0 rounded-xl border border-border bg-surface-raised px-3 py-1 text-lg font-bold text-text"
