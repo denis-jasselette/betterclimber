@@ -26,7 +26,8 @@ export function createClimbActions(
 	getUuid: () => string,
 	getAngle: () => number | null,
 	getClimb: () => Climb | null,
-	getConnector: () => BoardConnector
+	getConnector: () => BoardConnector,
+	getDifficulty: () => number | null = () => null
 ) {
 	// ── Log state ────────────────────────────────────────────────────────────────
 	// logOverride is null until a local mutation fires; once set it takes
@@ -48,7 +49,7 @@ export function createClimbActions(
 
 	// ── Tick / Like ───────────────────────────────────────────────────────────────
 	function toggleTick() {
-		setTicked(getUuid(), getAngle(), !logSnapshot.ticked)
+		setTicked(getUuid(), getAngle(), !logSnapshot.ticked, getDifficulty())
 		refreshLog()
 	}
 

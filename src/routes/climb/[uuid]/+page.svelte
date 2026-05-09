@@ -103,7 +103,8 @@
 		() => uuid,
 		() => data.angle,
 		() => item?.climb ?? null,
-		() => connector
+		() => connector,
+		() => item?.activeStats?.difficulty_average ?? null
 	)
 </script>
 

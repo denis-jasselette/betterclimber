@@ -22,6 +22,10 @@ type LogEntry = {
 	 * at this angle. Undefined / null means it has never been displayed.
 	 */
 	lastLitAt?: string | null
+	/** ISO timestamp when this climb was first ticked at this angle. */
+	tickedAt?: string | null
+	/** Numeric difficulty (community average) stored at tick time for stats. */
+	difficulty?: number | null
 }
 
 const STORAGE_KEY = 'kb_user_log_v2'
@@ -58,9 +62,19 @@ export function getEntry(uuid: string, angle: number | null): LogEntry {
 	return load()[logKey(uuid, angle)] ?? { ...EMPTY }
 }
 
-export function setTicked(uuid: string, angle: number | null, value: boolean) {
+export function setTicked(
+	uuid: string,
+	angle: number | null,
+	value: boolean,
+	difficulty?: number | null
+) {
 	if (angle === null) return
-	mutateEntry(uuid, angle, (e) => ({ ...e, ticked: value }))
+	mutateEntry(uuid, angle, (e) => ({
+		...e,
+		ticked: value,
+		...(value && e.tickedAt == null ? { tickedAt: new Date().toISOString() } : {}),
+		...(value && difficulty != null ? { difficulty } : {})
+	}))
 }
 
 /** Increment the attempt counter by 1. */
@@ -84,6 +98,15 @@ export function setLiked(uuid: string, angle: number | null, value: boolean) {
 export function recordLitUp(uuid: string, angle: number | null) {
 	if (angle === null) return
 	mutateEntry(uuid, angle, (e) => ({ ...e, lastLitAt: new Date().toISOString() }))
+}
+
+/** Returns all log entries with their parsed uuid and angle. */
+export function getAllEntries(): Array<{ uuid: string; angle: number; entry: LogEntry }> {
+	const log = load()
+	return Object.entries(log).map(([key, entry]) => {
+		const atIdx = key.lastIndexOf('@')
+		return { uuid: key.slice(0, atIdx), angle: Number(key.slice(atIdx + 1)), entry }
+	})
 }
 
 /**
