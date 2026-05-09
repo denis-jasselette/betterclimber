@@ -147,3 +147,8 @@ export function getTotalTicks(): number {
 export function getTotalClimbsLit(): number {
 	return Object.values(getAllEntries()).filter((e) => e.lastLitAt).length
 }
+
+/** Total attempt count summed across all log entries. */
+export function getTotalAttempts(): number {
+	return Object.values(getAllEntries()).reduce((sum, e) => sum + (e.attemptCount ?? 0), 0)
+}

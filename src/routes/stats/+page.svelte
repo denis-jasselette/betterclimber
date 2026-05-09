@@ -7,6 +7,7 @@
 		getActivityByDay,
 		getActivityByWeek,
 		getGradeDistribution,
+		getTotalAttempts,
 		getTotalClimbsLit,
 		getTotalTicks,
 		type WeekActivity
@@ -19,6 +20,7 @@
 	let gradeDistribution = $state<GradeCount[]>([])
 	let totalTicks = $state(0)
 	let totalClimbsLit = $state(0)
+	let totalAttempts = $state(0)
 
 	onMount(() => {
 		dailyActivity = getActivityByDay(182)
@@ -26,6 +28,7 @@
 		gradeDistribution = getGradeDistribution()
 		totalTicks = getTotalTicks()
 		totalClimbsLit = getTotalClimbsLit()
+		totalAttempts = getTotalAttempts()
 	})
 
 	// ── Heatmap (GitHub-style calendar) ───────────────────────────────────────
@@ -160,7 +163,7 @@
 		</div>
 
 		<!-- Summary cards -->
-		<div class="grid grid-cols-2 gap-4 sm:grid-cols-2">
+		<div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
 			<div class="rounded-2xl border border-border bg-surface p-5">
 				<p class="text-xs font-medium uppercase tracking-widest text-muted">Climbs sent</p>
 				<p class="mt-1 text-3xl font-bold text-cyan-400">{totalTicks}</p>
@@ -168,6 +171,10 @@
 			<div class="rounded-2xl border border-border bg-surface p-5">
 				<p class="text-xs font-medium uppercase tracking-widest text-muted">Climbs lit up</p>
 				<p class="mt-1 text-3xl font-bold text-cyan-400">{totalClimbsLit}</p>
+			</div>
+			<div class="rounded-2xl border border-border bg-surface p-5">
+				<p class="text-xs font-medium uppercase tracking-widest text-muted">Total attempts</p>
+				<p class="mt-1 text-3xl font-bold text-cyan-400">{totalAttempts}</p>
 			</div>
 		</div>
 
