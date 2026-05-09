@@ -6,6 +6,10 @@ export type ThemePreference = 'dark' | 'light' | 'system'
 interface AppSettings {
 	gradingSystem: GradingSystem
 	theme: ThemePreference
+	/** V-grade string the user sends reliably first go (e.g. 'V6'), or null if unset. */
+	flashGrade: string | null
+	/** V-grade string of the user's current project / limit (e.g. 'V9'), or null if unset. */
+	projectGrade: string | null
 }
 
 const STORAGE_KEY = 'kilter-settings'
@@ -15,7 +19,9 @@ const COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
 const DEFAULTS: AppSettings = {
 	gradingSystem: 'v-scale',
-	theme: 'system'
+	theme: 'system',
+	flashGrade: null,
+	projectGrade: null
 }
 
 function loadFromLocalStorage(): AppSettings {
@@ -58,6 +64,8 @@ function createSettings() {
 		init(serverSettings: AppSettings) {
 			data.gradingSystem = serverSettings.gradingSystem
 			data.theme = serverSettings.theme
+			data.flashGrade = serverSettings.flashGrade
+			data.projectGrade = serverSettings.projectGrade
 		},
 
 		get gradingSystem() {
@@ -73,6 +81,22 @@ function createSettings() {
 		},
 		set theme(v: ThemePreference) {
 			data.theme = v
+			persist(data)
+		},
+
+		get flashGrade() {
+			return data.flashGrade
+		},
+		set flashGrade(v: string | null) {
+			data.flashGrade = v
+			persist(data)
+		},
+
+		get projectGrade() {
+			return data.projectGrade
+		},
+		set projectGrade(v: string | null) {
+			data.projectGrade = v
 			persist(data)
 		}
 	}

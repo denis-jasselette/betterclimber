@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { fade, fly } from 'svelte/transition'
+	import { ALL_GRADES, formatGrade } from '$lib/data/types'
 	import type { GradingSystem, ThemePreference } from '$lib/settings-store.svelte'
 	import { settings } from '$lib/settings-store.svelte'
 
@@ -15,6 +16,20 @@
 		{ value: 'dark', label: 'Dark', description: 'Always dark' },
 		{ value: 'light', label: 'Light', description: 'Always light' }
 	]
+
+	function gradeLabel(v: string) {
+		return formatGrade(v, settings.gradingSystem)
+	}
+
+	function onFlashGradeChange(e: Event) {
+		const val = (e.target as HTMLSelectElement).value
+		settings.flashGrade = val === '' ? null : val
+	}
+
+	function onProjectGradeChange(e: Event) {
+		const val = (e.target as HTMLSelectElement).value
+		settings.projectGrade = val === '' ? null : val
+	}
 </script>
 
 <!-- Backdrop -->
@@ -90,6 +105,50 @@
 						</div>
 					</button>
 				{/each}
+			</div>
+		</section>
+
+		<!-- My Profile -->
+		<section class="mb-8">
+			<h2 class="mb-1 text-xs font-semibold tracking-wider text-muted uppercase">My Profile</h2>
+			<p class="mb-3 text-xs text-muted">
+				Used by the session planner to suggest appropriate climbs.
+			</p>
+			<div class="space-y-3">
+				<div>
+					<label for="flash-grade" class="mb-1 block text-xs font-medium text-text"
+						>Flash grade</label
+					>
+					<p class="mb-1.5 text-xs text-muted">Grade you send reliably on the first go.</p>
+					<select
+						id="flash-grade"
+						value={settings.flashGrade ?? ''}
+						onchange={onFlashGradeChange}
+						class="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text focus:border-cyan-600 focus:outline-none"
+					>
+						<option value="">— Not set —</option>
+						{#each ALL_GRADES as g (g)}
+							<option value={g}>{gradeLabel(g)}</option>
+						{/each}
+					</select>
+				</div>
+				<div>
+					<label for="project-grade" class="mb-1 block text-xs font-medium text-text"
+						>Project grade</label
+					>
+					<p class="mb-1.5 text-xs text-muted">Your current limit / hardest grade being worked.</p>
+					<select
+						id="project-grade"
+						value={settings.projectGrade ?? ''}
+						onchange={onProjectGradeChange}
+						class="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text focus:border-cyan-600 focus:outline-none"
+					>
+						<option value="">— Not set —</option>
+						{#each ALL_GRADES as g (g)}
+							<option value={g}>{gradeLabel(g)}</option>
+						{/each}
+					</select>
+				</div>
 			</div>
 		</section>
 
