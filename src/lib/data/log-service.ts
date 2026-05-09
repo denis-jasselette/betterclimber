@@ -1,5 +1,5 @@
 /**
- * User climb log — stored in localStorage.
+ * User climb log — stored in localStorage with optional DB sync.
  *
  * Tracks per-climb-per-angle actions: tick (sent), attempt count, like, lastLitAt.
  * Each entry is keyed by `${uuid}@${angle}` (e.g. "FC1D...@45").
@@ -7,12 +7,13 @@
  * Storage key is versioned (`kb_user_log_v2`). The old `kb_user_log` key (uuid-only
  * keys) is silently ignored — data loss is acceptable during closed beta.
  *
- * Upgrade path: when real Kilter API auth is wired up, replace the
- * localStorage reads/writes with calls to the `user_ascents` and
- * `user_climb_likes` tables from the /sync endpoint.
+ * DB sync (browser only):
+ *  - On every write, fires-and-forgets a POST to /api/log.
+ *  - On page load at a given angle, fetches GET /api/log?angle= and merges
+ *    into the in-memory store. localStorage takes precedence so offline works.
  */
 
-type LogEntry = {
+export type LogEntry = {
 	ticked: boolean
 	/** Number of attempts logged (0 = none). */
 	attemptCount: number
@@ -46,11 +47,32 @@ function save(log: Record<string, LogEntry>) {
 
 const EMPTY: LogEntry = { ticked: false, attemptCount: 0, liked: false }
 
+/** Fire-and-forget POST to /api/log (browser only). */
+function syncToDb(uuid: string, angle: number, patch: Partial<LogEntry>) {
+	if (typeof fetch === 'undefined') return
+	fetch('/api/log', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ climbUuid: uuid, angle, patch })
+	}).catch(() => {
+		// Ignore network errors — localStorage is the source of truth
+	})
+}
+
 function mutateEntry(uuid: string, angle: number, fn: (e: LogEntry) => LogEntry) {
 	const log = load()
 	const key = logKey(uuid, angle)
-	log[key] = fn(log[key] ?? { ...EMPTY })
+	const updated = fn(log[key] ?? { ...EMPTY })
+	log[key] = updated
 	save(log)
+	// Compute patch = delta between old and new
+	const patch: Partial<LogEntry> = {}
+	if (updated.ticked !== (log[key]?.ticked ?? false)) patch.ticked = updated.ticked
+	if (updated.attemptCount !== undefined) patch.attemptCount = updated.attemptCount
+	if (updated.liked !== undefined) patch.liked = updated.liked
+	if (updated.lastLitAt !== undefined) patch.lastLitAt = updated.lastLitAt
+	// Always sync the full updated entry so the server has correct state
+	syncToDb(uuid, angle, updated)
 }
 
 export function getEntry(uuid: string, angle: number | null): LogEntry {
@@ -99,4 +121,23 @@ export function getUuidsWhere(angle: number | null, pred: (e: LogEntry) => boole
 			.filter(([key, e]) => key.endsWith(suffix) && pred(e))
 			.map(([key]) => key.slice(0, -suffix.length))
 	)
+}
+
+/**
+ * Fetch the DB log for a given angle and merge into localStorage.
+ * localStorage takes precedence (offline-first). Call once per angle on page load.
+ */
+export async function mergeDbLog(angle: number): Promise<void> {
+	if (typeof fetch === 'undefined' || typeof localStorage === 'undefined') return
+	try {
+		const res = await fetch(`/api/log?angle=${angle}`)
+		if (!res.ok) return
+		const remote = (await res.json()) as Record<string, LogEntry>
+		const local = load()
+		// Merge: local wins for any key that already exists
+		const merged = { ...remote, ...local }
+		save(merged)
+	} catch {
+		// Ignore errors — localStorage is the source of truth
+	}
 }

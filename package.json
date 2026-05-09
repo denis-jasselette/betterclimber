@@ -14,6 +14,7 @@
 		"format": "biome format --write . && biome lint --write .",
 		"extract-db": "node scripts/extract-kilter-db.js",
 		"db:generate": "drizzle-kit generate",
+		"db:migrate": "drizzle-kit migrate",
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
 		"test": "vitest run",
@@ -53,6 +54,7 @@
 	},
 	"dependencies": {
 		"@neondatabase/serverless": "^1.0.2",
+		"better-auth": "^1.6.9",
 		"drizzle-orm": "^0.45.2",
 		"svelte-range-slider-pips": "^4.1.1"
 	},
