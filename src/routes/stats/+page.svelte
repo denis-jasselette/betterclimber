@@ -2,48 +2,95 @@
 	import { onMount } from 'svelte'
 	import TopBar from '$lib/components/TopBar.svelte'
 	import {
+		type DateRange,
 		type DayActivity,
 		type GradeCount,
 		getActivityByDay,
 		getActivityByWeek,
 		getGradeDistribution,
+		getPersonalBests,
+		getTotalAttempts,
 		getTotalClimbsLit,
 		getTotalTicks,
+		type PersonalBests,
 		type WeekActivity
 	} from '$lib/data/log-stats'
 	import { ALL_GRADES } from '$lib/data/types'
 
+	type TimeRange = 'all' | '1y' | '3m' | '1m' | 'custom'
+
+	// ── Time range ────────────────────────────────────────────────────────────
+	let selectedRange = $state<TimeRange>('all')
+	let customFrom = $state('')
+	let customTo = $state('')
+
+	const dateRange = $derived.by((): DateRange => {
+		if (selectedRange === 'all') return { from: null, to: null }
+		if (selectedRange === 'custom') {
+			return {
+				from: customFrom ? new Date(customFrom) : null,
+				to: customTo ? new Date(`${customTo}T23:59:59`) : null
+			}
+		}
+		const days = selectedRange === '1y' ? 365 : selectedRange === '3m' ? 90 : 30
+		const from = new Date()
+		from.setDate(from.getDate() - days)
+		return { from, to: null }
+	})
+
 	// ── Data ──────────────────────────────────────────────────────────────────
+	let mounted = $state(false)
 	let dailyActivity = $state<DayActivity[]>([])
 	let weeklyActivity = $state<WeekActivity[]>([])
 	let gradeDistribution = $state<GradeCount[]>([])
 	let totalTicks = $state(0)
 	let totalClimbsLit = $state(0)
+	let totalAttempts = $state(0)
+	let personalBests = $state<PersonalBests>({
+		highestFlash: null,
+		highestTick: null,
+		avgAttemptsPerDay: null
+	})
+
+	function refreshStats() {
+		const range = dateRange
+		const windowRange = selectedRange === 'all' ? 182 : range
+		dailyActivity = getActivityByDay(windowRange)
+		weeklyActivity = getActivityByWeek(windowRange)
+		gradeDistribution = getGradeDistribution(range.from || range.to ? range : undefined)
+		totalTicks = getTotalTicks(range.from || range.to ? range : undefined)
+		totalClimbsLit = getTotalClimbsLit(range.from || range.to ? range : undefined)
+		totalAttempts = getTotalAttempts(range.from || range.to ? range : undefined)
+		personalBests = getPersonalBests(range.from || range.to ? range : undefined)
+	}
 
 	onMount(() => {
-		dailyActivity = getActivityByDay(182)
-		weeklyActivity = getActivityByWeek(182)
-		gradeDistribution = getGradeDistribution()
-		totalTicks = getTotalTicks()
-		totalClimbsLit = getTotalClimbsLit()
+		mounted = true
+		refreshStats()
+	})
+
+	$effect(() => {
+		if (!mounted) return
+		// Re-run whenever range inputs change
+		selectedRange
+		customFrom
+		customTo
+		refreshStats()
 	})
 
 	// ── Heatmap (GitHub-style calendar) ───────────────────────────────────────
-	// Arrange days into weeks (Mon–Sun columns)
 	const CELL = 12
 	const GAP = 2
 	const CELL_STRIDE = CELL + GAP
 
 	const heatmapWeeks = $derived.by(() => {
 		if (dailyActivity.length === 0) return []
-		// Group into 7-day weeks starting from the first Monday on or before the first day
 		const weeks: DayActivity[][] = []
 		let week: DayActivity[] = []
 		for (const day of dailyActivity) {
-			const dow = new Date(`${day.date}T00:00:00`).getDay() // 0=Sun,1=Mon...
-			const col = dow === 0 ? 6 : dow - 1 // 0=Mon … 6=Sun
+			const dow = new Date(`${day.date}T00:00:00`).getDay()
+			const col = dow === 0 ? 6 : dow - 1
 			if (week.length === 0 && col !== 0) {
-				// Pad first partial week with nulls represented as zero-count days
 				for (let i = 0; i < col; i++) {
 					week.push({ date: '', climbCount: 0, tickCount: 0 })
 				}
@@ -63,16 +110,15 @@
 	function heatmapColor(count: number): string {
 		if (count === 0) return 'var(--color-surface)'
 		const ratio = count / heatmapMax
-		if (ratio < 0.25) return 'rgb(8 145 178 / 0.3)' // cyan-600 faint
+		if (ratio < 0.25) return 'rgb(8 145 178 / 0.3)'
 		if (ratio < 0.5) return 'rgb(8 145 178 / 0.55)'
-		if (ratio < 0.75) return 'rgb(6 182 212 / 0.75)' // cyan-500
+		if (ratio < 0.75) return 'rgb(6 182 212 / 0.75)'
 		return 'rgb(6 182 212)'
 	}
 
 	const heatmapWidth = $derived(heatmapWeeks.length * CELL_STRIDE)
 	const heatmapHeight = 7 * CELL_STRIDE
 
-	// Month labels for heatmap
 	const heatmapMonthLabels = $derived.by(() => {
 		const labels: { x: number; label: string }[] = []
 		let lastMonth = -1
@@ -102,13 +148,14 @@
 	const barChartWidth = $derived(weeklyActivity.length * (BAR_W + BAR_GAP))
 
 	// ── Grade distribution ─────────────────────────────────────────────────────
-	const gradeMax = $derived(Math.max(1, ...gradeDistribution.map((g) => g.count)))
-	// Only show grades that have at least 1 tick OR are in a range with ticks
+	const gradeMax = $derived(
+		Math.max(1, ...gradeDistribution.map((g) => g.ticked + g.attemptedOnly))
+	)
 	const gradesToShow = $derived.by(() => {
-		const withTicks = gradeDistribution.filter((g) => g.count > 0)
-		if (withTicks.length === 0) return []
-		const minIdx = ALL_GRADES.indexOf(withTicks[0].grade)
-		const maxIdx = ALL_GRADES.indexOf(withTicks[withTicks.length - 1].grade)
+		const withActivity = gradeDistribution.filter((g) => g.ticked + g.attemptedOnly > 0)
+		if (withActivity.length === 0) return []
+		const minIdx = ALL_GRADES.indexOf(withActivity[0].grade)
+		const maxIdx = ALL_GRADES.indexOf(withActivity[withActivity.length - 1].grade)
 		return gradeDistribution.filter((g) => {
 			const idx = ALL_GRADES.indexOf(g.grade)
 			return idx >= Math.max(0, minIdx - 1) && idx <= Math.min(ALL_GRADES.length - 1, maxIdx + 1)
@@ -141,7 +188,7 @@
 <div class="min-h-screen bg-bg text-text">
 	<TopBar hideBoardControls />
 
-	<main class="mx-auto max-w-4xl space-y-10 px-4 py-8">
+	<main class="mx-auto max-w-4xl space-y-8 px-4 py-8">
 		<!-- Page title + back -->
 		<div class="flex items-center gap-4">
 			<a
@@ -159,17 +206,78 @@
 			</div>
 		</div>
 
-		<!-- Summary cards -->
-		<div class="grid grid-cols-2 gap-4 sm:grid-cols-2">
+		<!-- Time range selector (#104) -->
+		<div>
+			<div class="flex flex-wrap gap-2">
+				{#each ([['all', 'All time'], ['1y', '1Y'], ['3m', '3M'], ['1m', '1M'], ['custom', 'Custom']] as const) as [val, label] (val)}
+					<button
+						class="rounded-lg border px-3 py-1.5 text-sm font-medium transition {selectedRange === val
+							? 'border-cyan-500 bg-cyan-500/10 text-cyan-400'
+							: 'border-border bg-surface text-muted hover:text-text'}"
+						onclick={() => (selectedRange = val)}
+					>
+						{label}
+					</button>
+				{/each}
+			</div>
+			{#if selectedRange === 'custom'}
+				<div class="mt-3 flex flex-wrap items-center gap-3">
+					<label class="flex items-center gap-2 text-sm text-muted">
+						From
+						<input
+							type="date"
+							bind:value={customFrom}
+							class="rounded-lg border border-border bg-surface px-2 py-1 text-sm text-text"
+						/>
+					</label>
+					<label class="flex items-center gap-2 text-sm text-muted">
+						To
+						<input
+							type="date"
+							bind:value={customTo}
+							class="rounded-lg border border-border bg-surface px-2 py-1 text-sm text-text"
+						/>
+					</label>
+				</div>
+			{/if}
+		</div>
+
+		<!-- Summary cards (#105: total attempts) -->
+		<div class="grid grid-cols-3 gap-4">
 			<div class="rounded-2xl border border-border bg-surface p-5">
 				<p class="text-xs font-medium uppercase tracking-widest text-muted">Climbs sent</p>
 				<p class="mt-1 text-3xl font-bold text-cyan-400">{totalTicks}</p>
+			</div>
+			<div class="rounded-2xl border border-border bg-surface p-5">
+				<p class="text-xs font-medium uppercase tracking-widest text-muted">Total attempts</p>
+				<p class="mt-1 text-3xl font-bold text-cyan-400">{totalAttempts}</p>
 			</div>
 			<div class="rounded-2xl border border-border bg-surface p-5">
 				<p class="text-xs font-medium uppercase tracking-widest text-muted">Climbs lit up</p>
 				<p class="mt-1 text-3xl font-bold text-cyan-400">{totalClimbsLit}</p>
 			</div>
 		</div>
+
+		<!-- Personal bests (#106) -->
+		<section>
+			<h2 class="mb-4 text-base font-semibold text-text">Personal bests</h2>
+			<div class="grid grid-cols-3 gap-4">
+				<div class="rounded-2xl border border-border bg-surface p-5 text-center">
+					<p class="text-xs font-medium uppercase tracking-widest text-muted">Highest tick</p>
+					<p class="mt-1 text-2xl font-bold text-text">{personalBests.highestTick ?? '—'}</p>
+				</div>
+				<div class="rounded-2xl border border-border bg-surface p-5 text-center">
+					<p class="text-xs font-medium uppercase tracking-widest text-muted">Highest flash</p>
+					<p class="mt-1 text-2xl font-bold text-text">{personalBests.highestFlash ?? '—'}</p>
+				</div>
+				<div class="rounded-2xl border border-border bg-surface p-5 text-center">
+					<p class="text-xs font-medium uppercase tracking-widest text-muted">Avg attempts/day</p>
+					<p class="mt-1 text-2xl font-bold text-text tabular-nums">
+						{personalBests.avgAttemptsPerDay ?? '—'}
+					</p>
+				</div>
+			</div>
+		</section>
 
 		<!-- Session heatmap -->
 		<section>
@@ -185,18 +293,16 @@
 						aria-label="Session activity heatmap"
 						onmouseleave={() => (tooltip = null)}
 					>
-						<!-- Month labels -->
 						{#each heatmapMonthLabels as { x, label }}
 							<text
 								x={x}
 								y={heatmapHeight + 16}
 								fill="var(--color-muted)"
 								font-size="9"
-								font-family="inherit"
-							>{label}</text>
+								font-family="inherit">{label}</text
+							>
 						{/each}
 
-						<!-- Day cells -->
 						{#each heatmapWeeks as week, wi}
 							{#each week as day, di}
 								<!-- svelte-ignore a11y_mouse_events_have_key_events -->
@@ -215,7 +321,6 @@
 					</svg>
 				</div>
 
-				<!-- Tooltip -->
 				{#if tooltip}
 					<div
 						class="pointer-events-none absolute z-50 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-text shadow-lg"
@@ -225,7 +330,6 @@
 					</div>
 				{/if}
 
-				<!-- Legend -->
 				<div class="mt-2 flex items-center gap-2 text-xs text-muted">
 					<span>Less</span>
 					{#each [0, 0.25, 0.5, 0.75, 1] as ratio}
@@ -263,35 +367,71 @@
 								fill={week.climbCount > 0 ? 'rgb(6 182 212 / 0.7)' : 'var(--color-surface)'}
 							/>
 						{/each}
-						<!-- Baseline -->
-						<line x1="0" y1={CHART_H} x2={barChartWidth} y2={CHART_H} stroke="var(--color-border)" stroke-width="1" />
+						<line
+							x1="0"
+							y1={CHART_H}
+							x2={barChartWidth}
+							y2={CHART_H}
+							stroke="var(--color-border)"
+							stroke-width="1"
+						/>
 					</svg>
 				</div>
 				<p class="mt-1 text-xs text-muted">Each bar = one week · Height = climbs lit up</p>
 			{/if}
 		</section>
 
-		<!-- Grade distribution -->
+		<!-- Grade distribution (#107: two-tone bars) -->
 		<section>
-			<h2 class="mb-4 text-base font-semibold text-text">Ticked grade distribution</h2>
-			{#if gradeDistribution.every((g) => g.count === 0)}
-				<p class="text-sm text-muted">No ticks recorded yet. Send some climbs to see your grade pyramid!</p>
+			<h2 class="mb-4 text-base font-semibold text-text">Grade distribution</h2>
+			{#if gradesToShow.length === 0}
+				<p class="text-sm text-muted">
+					No activity recorded yet. Send some climbs to see your grade pyramid!
+				</p>
 			{:else}
+				<!-- Legend -->
+				<div class="mb-3 flex items-center gap-4 text-xs text-muted">
+					<span class="flex items-center gap-1.5">
+						<span class="inline-block size-2.5 rounded-sm bg-cyan-500"></span>Ticked
+					</span>
+					<span class="flex items-center gap-1.5">
+						<span class="inline-block size-2.5 rounded-sm bg-amber-500"></span>Attempted
+					</span>
+				</div>
 				<div class="space-y-1.5">
-					{#each gradesToShow as { grade, count }}
+					{#each gradesToShow as { grade, ticked, attemptedOnly }}
+						{@const total = ticked + attemptedOnly}
+						{@const tickedPct = total > 0 ? (ticked / total) * 100 : 0}
+						{@const attemptPct = total > 0 ? (attemptedOnly / total) * 100 : 0}
+						{@const barWidth = total === 0 ? 0 : Math.max(4, (total / gradeMax) * 100)}
 						<div class="flex items-center gap-3">
 							<span class="w-8 text-right text-xs font-semibold text-muted">{grade}</span>
 							<div class="flex-1 overflow-hidden rounded-full bg-surface">
 								<div
-									class="h-5 rounded-full bg-cyan-500 transition-all duration-500"
-									style="width: {count === 0 ? '0%' : `${Math.max(4, (count / gradeMax) * 100)}%`}"
-								></div>
+									class="flex h-5 overflow-hidden rounded-full transition-all duration-500"
+									style="width: {barWidth}%"
+								>
+									{#if ticked > 0}
+										<div
+											class="h-full shrink-0 bg-cyan-500"
+											style="width: {tickedPct}%"
+										></div>
+									{/if}
+									{#if attemptedOnly > 0}
+										<div
+											class="h-full shrink-0 bg-amber-500"
+											style="width: {attemptPct}%"
+										></div>
+									{/if}
+								</div>
 							</div>
-							<span class="w-6 text-right text-xs text-muted">{count > 0 ? count : ''}</span>
+							<span class="w-6 text-right text-xs text-muted">{total > 0 ? total : ''}</span>
 						</div>
 					{/each}
 				</div>
-				<p class="mt-3 text-xs text-muted">Only grades with adjacent ticks shown · Requires ticking climbs from the detail page</p>
+				<p class="mt-3 text-xs text-muted">
+					Only grades in active range shown · Requires ticking from the climb detail page
+				</p>
 			{/if}
 		</section>
 	</main>
