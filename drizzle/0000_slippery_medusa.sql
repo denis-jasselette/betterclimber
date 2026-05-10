@@ -1,0 +1,2 @@
+-- Initial schema migration (applied before git history; file is a placeholder).
+-- The tables created here (climbs, climb_stats) were seeded directly into Neon.

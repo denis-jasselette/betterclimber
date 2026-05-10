@@ -178,7 +178,8 @@ export const playlists = pgTable('playlists', {
 		.notNull()
 		.references(() => users.id, { onDelete: 'cascade' }),
 	name: text('name').notNull(),
-	created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+	created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
+	updated_at: timestamp('updated_at', { withTimezone: true })
 })
 
 // ── playlist_items ────────────────────────────────────────────────────────────
