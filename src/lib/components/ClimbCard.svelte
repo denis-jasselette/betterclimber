@@ -4,6 +4,7 @@
 	import type { ClimbWithStats } from '$lib/data/types'
 	import { difficultyToGrade, formatGrade } from '$lib/data/types'
 	import { settings } from '$lib/settings-store.svelte'
+	import PlaylistPicker from './PlaylistPicker.svelte'
 
 	let {
 		item,
@@ -44,6 +45,8 @@
 		() => connector,
 		() => item.activeStats?.difficulty_average ?? null
 	)
+
+	let playlistOpen = $state(false)
 </script>
 
 <article
@@ -209,6 +212,28 @@
 			</svg>
 		</button>
 
+		<!-- Add to playlist -->
+		<button
+			onclick={(e) => {
+				e.preventDefault()
+				playlistOpen = true
+			}}
+			title="Add to playlist"
+			class="flex items-center gap-1 rounded-xl border border-border bg-surface-raised px-2.5 py-2 text-xs font-semibold text-muted transition hover:border-border hover:text-text active:scale-95"
+		>
+			<svg
+				class="size-3.5"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+			>
+				<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+				<line x1="12" y1="9" x2="12" y2="15" />
+				<line x1="9" y1="12" x2="15" y2="12" />
+			</svg>
+		</button>
+
 		<!-- Light Up — fills remaining space -->
 		<button
 			onclick={lightUp}
@@ -251,3 +276,7 @@
 		<p class="text-xs text-red-400">{lightError}</p>
 	{/if}
 </article>
+
+{#if playlistOpen}
+	<PlaylistPicker climbUuid={climb.uuid} onclose={() => (playlistOpen = false)} />
+{/if}

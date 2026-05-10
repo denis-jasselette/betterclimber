@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation'
 	import { page } from '$app/state'
 	import BoardVisualisation from '$lib/components/BoardVisualisation.svelte'
+	import PlaylistPicker from '$lib/components/PlaylistPicker.svelte'
 	import TopBar from '$lib/components/TopBar.svelte'
 	import { connector } from '$lib/connector.svelte'
 	import { createClimbActions } from '$lib/data/climb-actions.svelte'
@@ -140,6 +141,9 @@
 		() => connector,
 		() => item?.activeStats?.difficulty_average ?? null
 	)
+
+	// ── Playlist picker ───────────────────────────────────────────────────────────
+	let playlistOpen = $state(false)
 
 	// ── Custom climb actions (edit / delete) ──────────────────────────────────
 	const isCustomClimb = $derived(item?.climb.setter_id === 0)
@@ -543,23 +547,47 @@
 					</button>
 				{/if}
 
-				<!-- Row 3: Share -->
-				<button
-					onclick={shareClimb}
-					class="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface-raised px-4 py-2.5 text-sm font-semibold text-muted transition hover:text-text active:scale-95"
-				>
-					{#if shareCopied}
-						<svg
-							class="size-4 text-green-400"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2.5"
-						>
-							<path d="M5 13l4 4L19 7" />
-						</svg>
-						<span class="text-green-400">Link copied!</span>
-					{:else}
+				<!-- Row 3: Share + Add to playlist -->
+				<div class="flex gap-3">
+					<button
+						onclick={shareClimb}
+						class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-surface-raised px-4 py-2.5 text-sm font-semibold text-muted transition hover:text-text active:scale-95"
+					>
+						{#if shareCopied}
+							<svg
+								class="size-4 text-green-400"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.5"
+							>
+								<path d="M5 13l4 4L19 7" />
+							</svg>
+							<span class="text-green-400">Link copied!</span>
+						{:else}
+							<svg
+								class="size-4"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<circle cx="18" cy="5" r="3" />
+								<circle cx="6" cy="12" r="3" />
+								<circle cx="18" cy="19" r="3" />
+								<line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+								<line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+							</svg>
+							Share climb
+						{/if}
+					</button>
+
+					<!-- Add to playlist -->
+					<button
+						onclick={() => (playlistOpen = true)}
+						title="Add to playlist"
+						class="flex items-center justify-center gap-2 rounded-xl border border-border bg-surface-raised px-4 py-2.5 text-sm font-semibold text-muted transition hover:text-text active:scale-95"
+					>
 						<svg
 							class="size-4"
 							viewBox="0 0 24 24"
@@ -567,15 +595,13 @@
 							stroke="currentColor"
 							stroke-width="2"
 						>
-							<circle cx="18" cy="5" r="3" />
-							<circle cx="6" cy="12" r="3" />
-							<circle cx="18" cy="19" r="3" />
-							<line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-							<line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+							<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+							<line x1="12" y1="9" x2="12" y2="15" />
+							<line x1="9" y1="12" x2="15" y2="12" />
 						</svg>
-						Share climb
-					{/if}
-				</button>
+						Save
+					</button>
+				</div>
 			</div>
 
 			{#if lightError}
@@ -630,3 +656,7 @@
 		</div>
 	{/if}
 </div>
+
+{#if playlistOpen && item}
+	<PlaylistPicker climbUuid={item.climb.uuid} onclose={() => (playlistOpen = false)} />
+{/if}
