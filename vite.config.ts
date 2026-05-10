@@ -1,7 +1,7 @@
 import { sveltekit } from '@sveltejs/kit/vite'
 import tailwindcss from '@tailwindcss/vite'
-import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
 	plugins: [
@@ -47,5 +47,18 @@ export default defineConfig({
 				enabled: false
 			}
 		})
-	]
+	],
+	test: {
+		coverage: {
+			provider: 'v8',
+			reporter: ['text', 'lcov'],
+			exclude: ['src/lib/data/mock/**', '*.config.*', '**/*.d.ts', '.svelte-kit/**', 'scripts/**'],
+			thresholds: {
+				statements: 85,
+				branches: 80,
+				functions: 90,
+				lines: 90
+			}
+		}
+	}
 })
