@@ -28,6 +28,10 @@
 	}
 
 	async function signIn() {
+		// When signing in from a Netlify deploy preview, pass the current deploy-preview
+		// URL as the callbackURL so production auth redirects back here after OAuth
+		// completes. Production auth accepts deploy-preview origins via trustedOrigins.
+		// On production or local dev the current URL is already the correct destination.
 		await authClient.signIn.social({ provider: 'google', callbackURL: window.location.href })
 	}
 
