@@ -29,6 +29,13 @@
 			"when": 1778432885521,
 			"tag": "0003_puzzling_felicia_hardy",
 			"breakpoints": true
+		},
+		{
+			"idx": 4,
+			"version": "7",
+			"when": 1746835200000,
+			"tag": "0004_session_templates",
+			"breakpoints": true
 		}
 	]
 }
