@@ -239,41 +239,40 @@
 	</div>
 {/if}
 
-<div class="min-h-screen bg-bg text-text">
-	<!-- Top bar — pass data.angle so the dropdown shows the correct value on
-	     hard-refresh before the store has been synced from the URL -->
-	<TopBar angle={data.angle}>
-		<!-- Filter toggle (mobile) -->
-		<button
-			type="button"
-			onclick={toggleFilterDrawerOpen}
-			aria-label="Toggle filters"
-			class="relative flex h-9 items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-3 text-sm font-semibold text-muted transition hover:border-border hover:text-text md:hidden"
+<!-- Top bar — pass data.angle so the dropdown shows the correct value on
+     hard-refresh before the store has been synced from the URL -->
+<TopBar angle={data.angle}>
+	<!-- Filter toggle (mobile) -->
+	<button
+		type="button"
+		onclick={toggleFilterDrawerOpen}
+		aria-label="Toggle filters"
+		class="relative flex h-9 items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-3 text-sm font-semibold text-muted transition hover:border-border hover:text-text md:hidden"
+	>
+		<svg
+			class="size-4"
+			xmlns="http://www.w3.org/2000/svg"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2"
 		>
-			<svg
-				class="size-4"
-				xmlns="http://www.w3.org/2000/svg"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
+			<line x1="4" y1="6" x2="20" y2="6" />
+			<line x1="8" y1="12" x2="16" y2="12" />
+			<line x1="11" y1="18" x2="13" y2="18" />
+		</svg>
+		<span class="hidden sm:inline">Filters</span>
+		{#if activeFilterCount > 0}
+			<span
+				class="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-cyan-500 text-[10px] font-bold text-white"
 			>
-				<line x1="4" y1="6" x2="20" y2="6" />
-				<line x1="8" y1="12" x2="16" y2="12" />
-				<line x1="11" y1="18" x2="13" y2="18" />
-			</svg>
-			<span class="hidden sm:inline">Filters</span>
-			{#if activeFilterCount > 0}
-				<span
-					class="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-cyan-500 text-[10px] font-bold text-white"
-				>
-					{activeFilterCount}
-				</span>
-			{/if}
-		</button>
-	</TopBar>
+				{activeFilterCount}
+			</span>
+		{/if}
+	</button>
+</TopBar>
 
-	<div class="mx-auto flex max-w-6xl gap-6 px-4 py-6">
+<div class="mx-auto grid max-w-6xl gap-6 px-4 py-6 md:grid-cols-[18rem_1fr]">
 		<!-- Sidebar (desktop) / Drawer (mobile) -->
 
 		<!-- Mobile overlay -->
@@ -289,7 +288,7 @@
 
 		<!-- Filter panel -->
 		<aside
-			class="scrollbar-subtle fixed right-0 bottom-0 left-0 z-40 max-h-[85vh] overflow-x-hidden overflow-y-auto rounded-t-2xl border-t border-border bg-bg p-5 transition-transform duration-300 md:sticky md:top-20 md:block md:h-[calc(100vh-5rem)] md:max-h-none md:w-72 md:shrink-0 md:translate-y-0 md:overflow-y-auto md:rounded-none md:border-none md:p-0 {filterDrawerOpen
+			class="scrollbar-subtle fixed right-0 bottom-0 left-0 z-40 max-h-[85vh] overflow-x-hidden overflow-y-auto rounded-t-2xl border-t border-border bg-bg p-5 transition-transform duration-300 md:sticky md:inset-auto md:top-20 md:block md:h-[calc(100vh-5rem)] md:max-h-none md:w-72 md:min-w-72 md:shrink-0 md:translate-y-0 md:overflow-y-auto md:rounded-none md:border-none md:p-0 {filterDrawerOpen
 				? 'translate-y-0'
 				: 'translate-y-full md:translate-y-0'}"
 		>
@@ -321,7 +320,7 @@
 		</aside>
 
 		<!-- Climb list -->
-		<main class="min-w-0 flex-1 p-1">
+		<main class="min-h-96 min-w-0 p-1">
 			{#if displayedClimbs.length === 0 && loadingResults}
 				<!-- Skeleton cards shown only on first load -->
 				<div class="space-y-3">
@@ -380,17 +379,5 @@
 				</div>
 			{/if}
 		</main>
-	</div>
 </div>
 
-<!-- FAB: create custom climb -->
-<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-<a
-	href="/climb/new"
-	title="Create custom climb"
-	class="fixed right-4 bottom-6 z-40 flex size-14 items-center justify-center rounded-full bg-cyan-600 text-white shadow-lg transition hover:bg-cyan-500 active:scale-95"
->
-	<svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-		<path d="M12 5v14M5 12h14" />
-	</svg>
-</a>

@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test'
 
-test('settings panel opens with heading', async ({ page }) => {
-	await page.goto('/#settings')
+test('settings page shows heading', async ({ page }) => {
+	await page.goto('/settings')
 	await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
 })
 
 test('theme options are visible', async ({ page }) => {
-	await page.goto('/#settings')
+	await page.goto('/settings')
 	await expect(page.getByRole('button', { name: /System/ })).toBeVisible()
 	await expect(page.getByRole('button', { name: /Dark/ })).toBeVisible()
 	await expect(page.getByRole('button', { name: /Light/ })).toBeVisible()

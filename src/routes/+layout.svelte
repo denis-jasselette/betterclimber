@@ -2,9 +2,10 @@
 	import './layout.css'
 	import { untrack } from 'svelte'
 	import { browser } from '$app/environment'
-	import { page } from '$app/state'
-	import SettingsPanel from '$lib/components/SettingsPanel.svelte'
+	import { afterNavigate } from '$app/navigation'
+	import Sidebar from '$lib/components/Sidebar.svelte'
 	import { settings } from '$lib/settings-store.svelte'
+	import { sidebarStore } from '$lib/sidebar-store.svelte'
 
 	let { data, children } = $props()
 
@@ -19,12 +20,15 @@
 		document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light')
 	})
 
-	const settingsOpen = $derived(page.url.hash === '#settings')
+	// Close drawer on navigation
+	afterNavigate(() => {
+		sidebarStore.close()
+	})
 
-	// Lock body scroll while settings panel is open
+	// Lock body scroll while sidebar drawer is open on mobile
 	$effect(() => {
 		if (!browser) return
-		document.body.style.overflow = settingsOpen ? 'hidden' : ''
+		document.body.style.overflow = sidebarStore.open ? 'hidden' : ''
 		return () => {
 			document.body.style.overflow = ''
 		}
@@ -37,12 +41,16 @@
 
 <svelte:window
 	onkeydown={(e) => {
-		if (e.key === 'Escape' && settingsOpen) history.back()
+		if (e.key === 'Escape' && sidebarStore.open) sidebarStore.close()
 	}}
 />
 
-{@render children()}
+<div class="flex min-h-screen bg-bg text-text">
+	<!-- Sidebar (persistent on desktop, drawer on mobile) -->
+	<Sidebar open={sidebarStore.open} onclose={() => sidebarStore.close()} />
 
-{#if settingsOpen}
-	<SettingsPanel />
-{/if}
+	<!-- Main content area -->
+	<div class="flex min-w-0 flex-1 flex-col">
+		{@render children()}
+	</div>
+</div>
