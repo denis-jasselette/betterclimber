@@ -25,6 +25,8 @@ export type LogEntry = {
 	lastLitAt?: string | null
 	/** ISO timestamp of when this climb was first ticked (sent). Null when unticked. */
 	tickedAt?: string | null
+	/** ISO timestamp of the last time an attempt was logged for this climb at this angle. */
+	lastAttemptAt?: string | null
 	/** Numeric difficulty at the time of tick (for grade distribution stats). */
 	difficulty?: number | null
 }
@@ -110,6 +112,7 @@ export function incrementAttempts(uuid: string, angle: number | null, difficulty
 	mutateEntry(uuid, angle, (e) => ({
 		...e,
 		attemptCount: e.attemptCount + 1,
+		lastAttemptAt: new Date().toISOString(),
 		difficulty: e.difficulty ?? difficulty ?? null
 	}))
 }
