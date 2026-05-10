@@ -272,7 +272,7 @@
 	</button>
 </TopBar>
 
-<div class="mx-auto flex max-w-6xl gap-6 px-4 py-6">
+<div class="mx-auto flex max-w-6xl items-start gap-6 px-4 py-6">
 		<!-- Sidebar (desktop) / Drawer (mobile) -->
 
 		<!-- Mobile overlay -->
@@ -288,7 +288,7 @@
 
 		<!-- Filter panel -->
 		<aside
-			class="scrollbar-subtle fixed right-0 bottom-0 left-0 z-40 max-h-[85vh] overflow-x-hidden overflow-y-auto rounded-t-2xl border-t border-border bg-bg p-5 transition-transform duration-300 md:sticky md:top-20 md:block md:h-[calc(100vh-5rem)] md:max-h-none md:w-72 md:shrink-0 md:translate-y-0 md:overflow-y-auto md:rounded-none md:border-none md:p-0 {filterDrawerOpen
+			class="scrollbar-subtle fixed right-0 bottom-0 left-0 z-40 max-h-[85vh] overflow-x-hidden overflow-y-auto rounded-t-2xl border-t border-border bg-bg p-5 transition-transform duration-300 md:sticky md:inset-auto md:top-20 md:block md:h-[calc(100vh-5rem)] md:max-h-none md:w-72 md:min-w-72 md:shrink-0 md:translate-y-0 md:overflow-y-auto md:rounded-none md:border-none md:p-0 {filterDrawerOpen
 				? 'translate-y-0'
 				: 'translate-y-full md:translate-y-0'}"
 		>

@@ -49,8 +49,6 @@
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') onclose?.()
 	}
-
-	const isHomePage = $derived(page.url.pathname === '/')
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -109,29 +107,27 @@
 		<!-- Spacer -->
 		<div class="flex-1"></div>
 
-		<!-- FAB: create custom climb (only shown on home page) -->
-		{#if isHomePage}
-			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-			<a
-				href="/climb/new"
-				title="Create custom climb"
-				onclick={handleNavClick}
-				class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted transition hover:bg-surface hover:text-text"
+		<!-- Create custom climb -->
+		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+		<a
+			href="/climb/new"
+			title="Create custom climb"
+			onclick={handleNavClick}
+			class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted transition hover:bg-surface hover:text-text"
+		>
+			<svg
+				class="size-4 shrink-0"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="1.75"
+				stroke-linecap="round"
+				stroke-linejoin="round"
 			>
-				<svg
-					class="size-4 shrink-0"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="1.75"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				>
-					<path d="M12 5v14M5 12h14" />
-				</svg>
-				New climb
-			</a>
-		{/if}
+				<path d="M12 5v14M5 12h14" />
+			</svg>
+			New climb
+		</a>
 
 		<!-- Settings at bottom -->
 		<a

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { goto } from '$app/navigation'
+	import { page } from '$app/state'
 	import { authClient } from '$lib/auth-client.svelte'
 	import { connector } from '$lib/connector.svelte'
 	import type { Angle } from '$lib/data/types'
@@ -50,9 +52,10 @@
 		profileMenuOpen = false
 	}
 
-	async function signIn() {
+	function signIn() {
 		closeProfileMenu()
-		await authClient.signIn.social({ provider: 'google', callbackURL: window.location.href })
+		const redirectTo = page.url.pathname + page.url.search
+		goto(`/login?redirectTo=${encodeURIComponent(redirectTo)}`)
 	}
 
 	async function signOut() {
