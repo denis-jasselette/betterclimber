@@ -239,41 +239,40 @@
 	</div>
 {/if}
 
-<div class="min-h-screen bg-bg text-text">
-	<!-- Top bar — pass data.angle so the dropdown shows the correct value on
-	     hard-refresh before the store has been synced from the URL -->
-	<TopBar angle={data.angle}>
-		<!-- Filter toggle (mobile) -->
-		<button
-			type="button"
-			onclick={toggleFilterDrawerOpen}
-			aria-label="Toggle filters"
-			class="relative flex h-9 items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-3 text-sm font-semibold text-muted transition hover:border-border hover:text-text md:hidden"
+<!-- Top bar — pass data.angle so the dropdown shows the correct value on
+     hard-refresh before the store has been synced from the URL -->
+<TopBar angle={data.angle}>
+	<!-- Filter toggle (mobile) -->
+	<button
+		type="button"
+		onclick={toggleFilterDrawerOpen}
+		aria-label="Toggle filters"
+		class="relative flex h-9 items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-3 text-sm font-semibold text-muted transition hover:border-border hover:text-text md:hidden"
+	>
+		<svg
+			class="size-4"
+			xmlns="http://www.w3.org/2000/svg"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2"
 		>
-			<svg
-				class="size-4"
-				xmlns="http://www.w3.org/2000/svg"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
+			<line x1="4" y1="6" x2="20" y2="6" />
+			<line x1="8" y1="12" x2="16" y2="12" />
+			<line x1="11" y1="18" x2="13" y2="18" />
+		</svg>
+		<span class="hidden sm:inline">Filters</span>
+		{#if activeFilterCount > 0}
+			<span
+				class="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-cyan-500 text-[10px] font-bold text-white"
 			>
-				<line x1="4" y1="6" x2="20" y2="6" />
-				<line x1="8" y1="12" x2="16" y2="12" />
-				<line x1="11" y1="18" x2="13" y2="18" />
-			</svg>
-			<span class="hidden sm:inline">Filters</span>
-			{#if activeFilterCount > 0}
-				<span
-					class="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-cyan-500 text-[10px] font-bold text-white"
-				>
-					{activeFilterCount}
-				</span>
-			{/if}
-		</button>
-	</TopBar>
+				{activeFilterCount}
+			</span>
+		{/if}
+	</button>
+</TopBar>
 
-	<div class="mx-auto flex max-w-6xl gap-6 px-4 py-6">
+<div class="mx-auto flex max-w-6xl gap-6 px-4 py-6">
 		<!-- Sidebar (desktop) / Drawer (mobile) -->
 
 		<!-- Mobile overlay -->
@@ -380,7 +379,6 @@
 				</div>
 			{/if}
 		</main>
-	</div>
 </div>
 
 <!-- FAB: create custom climb -->
