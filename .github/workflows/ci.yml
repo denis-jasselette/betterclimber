@@ -45,10 +45,6 @@ jobs:
       - name: Unit tests with coverage
         run: pnpm test:coverage
 
-      - name: List coverage output (debug)
-        if: always()
-        run: ls -la coverage/ || echo "coverage/ directory not found"
-
       - name: Report coverage
         if: always()
         uses: davelosert/vitest-coverage-report-action@v2
