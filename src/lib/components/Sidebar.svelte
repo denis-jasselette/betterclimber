@@ -23,6 +23,12 @@
 			exact: false
 		},
 		{
+			href: '/sessions',
+			label: 'Sessions',
+			icon: `<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>`,
+			exact: false
+		},
+		{
 			href: '/stats',
 			label: 'Stats',
 			icon: `<rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/>`,
