@@ -8,11 +8,16 @@
  * so that OAuth flows work correctly on Netlify deploy previews, which are not
  * registered in the Google OAuth app. Deploy previews redirect through
  * production auth and receive the session cookie from the production domain.
+ *
+ * $env/dynamic/public is used (not static) so the variable is read at runtime,
+ * meaning an unset value during a deploy-preview build does not break the build.
  */
 
 import { createAuthClient } from 'better-auth/svelte'
-import { PUBLIC_BETTER_AUTH_URL } from '$env/static/public'
+import { env } from '$env/dynamic/public'
 
 export const authClient = createAuthClient({
-	baseURL: PUBLIC_BETTER_AUTH_URL || (typeof window !== 'undefined' ? window.location.origin : '')
+	// Falls back to current origin so local dev and tests work without the var set
+	baseURL:
+		env.PUBLIC_BETTER_AUTH_URL || (typeof window !== 'undefined' ? window.location.origin : '')
 })
