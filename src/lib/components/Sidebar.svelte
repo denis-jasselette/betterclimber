@@ -113,7 +113,13 @@
 			href="/climb/new"
 			title="Create custom climb"
 			onclick={handleNavClick}
-			class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted transition hover:bg-surface hover:text-text"
+			class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition {isActive(
+				'/climb/new',
+				true
+			)
+				? 'bg-cyan-600/15 text-cyan-400'
+				: 'text-muted hover:bg-surface hover:text-text'}"
+			aria-current={isActive('/climb/new', true) ? 'page' : undefined}
 		>
 			<svg
 				class="size-4 shrink-0"

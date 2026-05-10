@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation'
 	import { page } from '$app/state'
 	import { authClient } from '$lib/auth-client.svelte'
 	import { connector } from '$lib/connector.svelte'
@@ -19,6 +18,7 @@
 	const session = authClient.useSession()
 
 	let profileMenuOpen = $state(false)
+	let profileMenuRef = $state<HTMLElement | null>(null)
 
 	// Import prompt state (shown after sign-in when local data exists)
 	let showImportPrompt = $state(false)
@@ -50,12 +50,6 @@
 
 	function closeProfileMenu() {
 		profileMenuOpen = false
-	}
-
-	function signIn() {
-		closeProfileMenu()
-		const redirectTo = page.url.pathname + page.url.search
-		goto(`/login?redirectTo=${encodeURIComponent(redirectTo)}`)
 	}
 
 	async function signOut() {
@@ -91,16 +85,12 @@
 	onkeydown={(e) => {
 		if (e.key === 'Escape') closeProfileMenu()
 	}}
+	onclick={(e) => {
+		if (profileMenuOpen && profileMenuRef && !profileMenuRef.contains(e.target as Node)) {
+			closeProfileMenu()
+		}
+	}}
 />
-
-<!-- Click-outside backdrop for profile menu -->
-{#if profileMenuOpen}
-	<div
-		role="presentation"
-		class="fixed inset-0 z-40"
-		onclick={closeProfileMenu}
-	></div>
-{/if}
 
 <!-- Import prompt (shown after sign-in when local data exists) -->
 {#if showImportPrompt}
@@ -198,7 +188,7 @@
 		{@render children?.()}
 
 		<!-- Profile icon with popup menu -->
-		<div class="relative">
+		<div class="relative" bind:this={profileMenuRef}>
 			<button
 				type="button"
 				aria-label="Profile"
@@ -272,10 +262,10 @@
 						</div>
 					{:else}
 						<div class="p-1">
-							<button
+							<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+							<a
 								role="menuitem"
-								type="button"
-								onclick={signIn}
+								href="/login?redirectTo={encodeURIComponent(page.url.pathname + page.url.search)}"
 								class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-text transition hover:bg-surface"
 							>
 								<!-- Google "G" icon -->
@@ -297,8 +287,8 @@
 										fill="#EA4335"
 									/>
 								</svg>
-								Sign in with Google
-							</button>
+								Sign in
+							</a>
 						</div>
 					{/if}
 				</div>

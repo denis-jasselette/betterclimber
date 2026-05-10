@@ -272,7 +272,7 @@
 	</button>
 </TopBar>
 
-<div class="mx-auto flex max-w-6xl items-start gap-6 px-4 py-6">
+<div class="mx-auto grid max-w-6xl gap-6 px-4 py-6 md:grid-cols-[18rem_1fr]">
 		<!-- Sidebar (desktop) / Drawer (mobile) -->
 
 		<!-- Mobile overlay -->
@@ -320,7 +320,7 @@
 		</aside>
 
 		<!-- Climb list -->
-		<main class="min-h-96 min-w-0 flex-1 p-1">
+		<main class="min-h-96 min-w-0 p-1">
 			{#if displayedClimbs.length === 0 && loadingResults}
 				<!-- Skeleton cards shown only on first load -->
 				<div class="space-y-3">
