@@ -194,15 +194,16 @@ export function getTotalClimbsLit(range?: DateRange): number {
 	}).length
 }
 
-/** Total attempt count summed across all log entries, optionally filtered by lastLitAt date. */
+/** Total attempt count summed across all log entries, optionally filtered by lastAttemptAt date. */
 export function getTotalAttempts(range?: DateRange): number {
 	return Object.values(getAllEntries())
 		.filter((e) => {
+			if (e.attemptCount === 0) return false
 			if (range) {
-				const litAt = e.lastLitAt ? new Date(e.lastLitAt) : null
-				if (!litAt) return false
-				if (range.from && litAt < range.from) return false
-				if (range.to && litAt > range.to) return false
+				const attemptedAt = e.lastAttemptAt ? new Date(e.lastAttemptAt) : null
+				if (!attemptedAt) return false
+				if (range.from && attemptedAt < range.from) return false
+				if (range.to && attemptedAt > range.to) return false
 			}
 			return true
 		})
