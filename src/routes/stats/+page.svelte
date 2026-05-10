@@ -15,7 +15,8 @@
 		type PersonalBests,
 		type WeekActivity
 	} from '$lib/data/log-stats'
-	import { ALL_GRADES } from '$lib/data/types'
+	import { ALL_GRADES, formatGrade } from '$lib/data/types'
+	import { settings } from '$lib/settings-store.svelte'
 
 	// ── Time range filter ─────────────────────────────────────────────────────
 	type RangePreset = 'all' | '1y' | '3m' | '1m' | 'custom'
@@ -254,11 +255,11 @@
 			<div class="grid grid-cols-3 gap-3">
 				<div class="rounded-2xl border border-border bg-surface p-4 text-center">
 					<p class="text-xs font-medium uppercase tracking-widest text-muted">Highest tick</p>
-					<p class="mt-2 text-2xl font-bold text-cyan-400">{personalBests.highestTick ?? '—'}</p>
+					<p class="mt-2 text-2xl font-bold text-cyan-400">{personalBests.highestTick != null ? formatGrade(personalBests.highestTick, settings.gradingSystem) : '—'}</p>
 				</div>
 				<div class="rounded-2xl border border-border bg-surface p-4 text-center">
 					<p class="text-xs font-medium uppercase tracking-widest text-muted">Highest flash</p>
-					<p class="mt-2 text-2xl font-bold text-cyan-400">{personalBests.highestFlash ?? '—'}</p>
+					<p class="mt-2 text-2xl font-bold text-cyan-400">{personalBests.highestFlash != null ? formatGrade(personalBests.highestFlash, settings.gradingSystem) : '—'}</p>
 				</div>
 				<div class="rounded-2xl border border-border bg-surface p-4 text-center">
 					<p class="text-xs font-medium uppercase tracking-widest text-muted">Avg attempts/day</p>
@@ -394,7 +395,7 @@
 						{@const tickedPct = total > 0 ? (ticked / total) * 100 : 0}
 						{@const barPct = total === 0 ? 0 : Math.max(4, (total / gradeMax) * 100)}
 						<div class="flex items-center gap-3">
-							<span class="w-8 text-right text-xs font-semibold text-muted">{grade}</span>
+							<span class="w-8 text-right text-xs font-semibold text-muted">{formatGrade(grade, settings.gradingSystem)}</span>
 							<div class="flex-1 overflow-hidden rounded-full bg-surface">
 								<div
 									class="h-5 rounded-full transition-all duration-500"
