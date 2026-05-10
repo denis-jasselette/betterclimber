@@ -172,7 +172,7 @@
 </script>
 
 <svelte:head>
-	<title>Training Stats — Kilterboard</title>
+	<title>Training Stats — BetterClimber</title>
 </svelte:head>
 
 <div class="min-h-screen bg-bg text-text">

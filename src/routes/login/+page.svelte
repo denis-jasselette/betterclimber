@@ -34,7 +34,7 @@
 </script>
 
 <svelte:head>
-	<title>Sign in — Kilterboard</title>
+	<title>Sign in — BetterClimber</title>
 </svelte:head>
 
 <TopBar hideBoardControls />

@@ -88,7 +88,7 @@
 		const climbName = item?.climb.name ?? 'Climb'
 		if (typeof navigator !== 'undefined' && navigator.share) {
 			try {
-				await navigator.share({ title: `${climbName} — Kilterboard`, url: shareUrl })
+				await navigator.share({ title: `${climbName} — BetterClimber`, url: shareUrl })
 			} catch {
 				// User cancelled or permission denied — ignore
 			}
@@ -153,7 +153,7 @@
 </script>
 
 <svelte:head>
-	<title>{item?.climb.name ?? 'Climb'} — Kilterboard</title>
+	<title>{item?.climb.name ?? 'Climb'} — BetterClimber</title>
 </svelte:head>
 
 <div

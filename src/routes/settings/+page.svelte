@@ -33,7 +33,7 @@
 </script>
 
 <svelte:head>
-	<title>Settings — Kilterboard</title>
+	<title>Settings — BetterClimber</title>
 </svelte:head>
 
 <TopBar hideBoardControls />
