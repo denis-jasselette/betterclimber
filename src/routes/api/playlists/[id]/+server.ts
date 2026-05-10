@@ -2,6 +2,7 @@
  * /api/playlists/[id]
  *
  * GET    — Get a playlist with its ordered items.
+ * PATCH  — Rename a playlist { name }.
  * DELETE — Delete a playlist and its items.
  *
  * Requires an authenticated session (locals.user).
@@ -12,13 +13,11 @@ import { error, json } from '@sveltejs/kit'
 import { asc, eq } from 'drizzle-orm'
 import { db } from '$lib/server/db'
 import { playlistItems, playlists } from '$lib/server/db/schema'
-import { getOwnedPlaylist } from '$lib/server/playlists'
+import { parseJsonBody, requireOwnedPlaylist } from '$lib/server/playlists'
 import type { RequestHandler } from './$types'
 
 export const GET: RequestHandler = async ({ params, locals }) => {
-	if (!locals.user) error(401, 'Authentication required')
-
-	const playlist = await getOwnedPlaylist(params.id, locals.user.id)
+	const playlist = await requireOwnedPlaylist(params.id, locals.user)
 
 	const items = await db
 		.select()
@@ -29,10 +28,25 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 	return json({ ...playlist, items })
 }
 
-export const DELETE: RequestHandler = async ({ params, locals }) => {
-	if (!locals.user) error(401, 'Authentication required')
+export const PATCH: RequestHandler = async ({ params, request, locals }) => {
+	await requireOwnedPlaylist(params.id, locals.user)
 
-	await getOwnedPlaylist(params.id, locals.user.id)
+	const { name } = await parseJsonBody<{ name: string }>(request)
+	if (!name || typeof name !== 'string' || name.trim().length === 0) {
+		error(400, 'name is required')
+	}
+
+	const [updated] = await db
+		.update(playlists)
+		.set({ name: name.trim() })
+		.where(eq(playlists.id, params.id))
+		.returning()
+
+	return json(updated)
+}
+
+export const DELETE: RequestHandler = async ({ params, locals }) => {
+	await requireOwnedPlaylist(params.id, locals.user)
 
 	await db.delete(playlists).where(eq(playlists.id, params.id))
 

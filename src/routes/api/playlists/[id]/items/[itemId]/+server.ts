@@ -12,7 +12,7 @@ import { error, json } from '@sveltejs/kit'
 import { eq } from 'drizzle-orm'
 import { db } from '$lib/server/db'
 import { playlistItems } from '$lib/server/db/schema'
-import { getOwnedPlaylist } from '$lib/server/playlists'
+import { parseJsonBody, requireOwnedPlaylist } from '$lib/server/playlists'
 import type { RequestHandler } from './$types'
 
 async function getPlaylistItem(itemId: string, playlistId: string) {
@@ -25,9 +25,7 @@ async function getPlaylistItem(itemId: string, playlistId: string) {
 }
 
 export const DELETE: RequestHandler = async ({ params, locals }) => {
-	if (!locals.user) error(401, 'Authentication required')
-
-	await getOwnedPlaylist(params.id, locals.user.id)
+	await requireOwnedPlaylist(params.id, locals.user)
 	await getPlaylistItem(params.itemId, params.id)
 
 	await db.delete(playlistItems).where(eq(playlistItems.id, params.itemId))
@@ -36,19 +34,10 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 }
 
 export const PATCH: RequestHandler = async ({ params, request, locals }) => {
-	if (!locals.user) error(401, 'Authentication required')
-
-	await getOwnedPlaylist(params.id, locals.user.id)
+	await requireOwnedPlaylist(params.id, locals.user)
 	await getPlaylistItem(params.itemId, params.id)
 
-	let body: { position: number }
-	try {
-		body = await request.json()
-	} catch {
-		error(400, 'Invalid JSON body')
-	}
-
-	const { position } = body
+	const { position } = await parseJsonBody<{ position: number }>(request)
 	if (typeof position !== 'number' || !Number.isInteger(position) || position < 0) {
 		error(400, 'position must be a non-negative integer')
 	}
