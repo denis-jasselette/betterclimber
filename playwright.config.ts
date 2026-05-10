@@ -17,8 +17,7 @@ export default defineConfig({
 		port: 5173,
 		reuseExistingServer: !process.env.CI,
 		env: {
-			DATABASE_URL: process.env.DATABASE_URL ?? 'postgresql://test:test@localhost/test',
-			PUBLIC_BETTER_AUTH_URL: process.env.PUBLIC_BETTER_AUTH_URL ?? 'http://localhost:5173'
+			DATABASE_URL: process.env.DATABASE_URL ?? 'postgresql://test:test@localhost/test'
 		}
 	}
 })
