@@ -1,5 +1,4 @@
 <script lang="ts">
-	import AuthSection from '$lib/components/AuthSection.svelte'
 	import TopBar from '$lib/components/TopBar.svelte'
 	import { ALL_ANGLES, ALL_GRADES, formatGrade } from '$lib/data/types'
 	import type { GradingSystem, ThemePreference } from '$lib/settings-store.svelte'
@@ -41,9 +40,6 @@
 
 <main class="mx-auto max-w-lg px-4 py-8">
 	<h1 class="mb-8 text-xl font-bold text-text">Settings</h1>
-
-	<!-- Account / Auth -->
-	<AuthSection />
 
 	<!-- Default angle -->
 	<section class="mb-8">

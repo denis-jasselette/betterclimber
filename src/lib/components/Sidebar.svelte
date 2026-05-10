@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { fade, fly } from 'svelte/transition'
+	import { fade } from 'svelte/transition'
 	import { page } from '$app/state'
 
 	interface Props {
@@ -49,6 +49,8 @@
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') onclose?.()
 	}
+
+	const isHomePage = $derived(page.url.pathname === '/')
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -70,32 +72,6 @@
 		: '-translate-x-full lg:translate-x-0'}"
 	aria-label="Main navigation"
 >
-	<!-- Logo (desktop only) -->
-	<div class="hidden items-center gap-2 border-b border-border px-5 py-4 lg:flex">
-		<a href="/" class="flex items-center gap-2" onclick={handleNavClick}>
-			<svg
-				class="size-6 text-cyan-400"
-				xmlns="http://www.w3.org/2000/svg"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-			>
-				<rect x="3" y="3" width="18" height="18" rx="2" />
-				<circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none" />
-				<circle cx="12" cy="8" r="1.5" fill="currentColor" stroke="none" />
-				<circle cx="16" cy="8" r="1.5" fill="currentColor" stroke="none" />
-				<circle cx="8" cy="12" r="1.5" fill="currentColor" stroke="none" />
-				<circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
-				<circle cx="16" cy="12" r="1.5" fill="currentColor" stroke="none" />
-				<circle cx="8" cy="16" r="1.5" fill="currentColor" stroke="none" />
-				<circle cx="12" cy="16" r="1.5" fill="currentColor" stroke="none" />
-				<circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="none" />
-			</svg>
-			<span class="text-base font-bold tracking-tight text-text">Kilterboard</span>
-		</a>
-	</div>
-
 	<!-- Nav links -->
 	<div class="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
 		{#each navLinks as link (link.href)}
@@ -132,6 +108,30 @@
 
 		<!-- Spacer -->
 		<div class="flex-1"></div>
+
+		<!-- FAB: create custom climb (only shown on home page) -->
+		{#if isHomePage}
+			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+			<a
+				href="/climb/new"
+				title="Create custom climb"
+				onclick={handleNavClick}
+				class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted transition hover:bg-surface hover:text-text"
+			>
+				<svg
+					class="size-4 shrink-0"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.75"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<path d="M12 5v14M5 12h14" />
+				</svg>
+				New climb
+			</a>
+		{/if}
 
 		<!-- Settings at bottom -->
 		<a

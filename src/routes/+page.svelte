@@ -320,7 +320,7 @@
 		</aside>
 
 		<!-- Climb list -->
-		<main class="min-w-0 flex-1 p-1">
+		<main class="min-h-96 min-w-0 flex-1 p-1">
 			{#if displayedClimbs.length === 0 && loadingResults}
 				<!-- Skeleton cards shown only on first load -->
 				<div class="space-y-3">
@@ -381,14 +381,3 @@
 		</main>
 </div>
 
-<!-- FAB: create custom climb -->
-<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-<a
-	href="/climb/new"
-	title="Create custom climb"
-	class="fixed right-4 bottom-6 z-40 flex size-14 items-center justify-center rounded-full bg-cyan-600 text-white shadow-lg transition hover:bg-cyan-500 active:scale-95"
->
-	<svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-		<path d="M12 5v14M5 12h14" />
-	</svg>
-</a>
