@@ -67,6 +67,38 @@
 		item?.activeStats ? Math.round(item.activeStats.quality_average) : 0
 	)
 
+	// ── Playlist session context ──────────────────────────────────────────────
+	const playlistCtx = $derived(data.playlistCtx)
+
+	// Playlist prev/next — takes precedence over search result nav when present
+	const playlistPrevUuid = $derived(
+		playlistCtx && playlistCtx.pos > 0 ? playlistCtx.climbUuids[playlistCtx.pos - 1] : null
+	)
+	const playlistNextUuid = $derived(
+		playlistCtx && playlistCtx.pos < playlistCtx.climbUuids.length - 1
+			? playlistCtx.climbUuids[playlistCtx.pos + 1]
+			: null
+	)
+
+	function playlistParamsAt(pos: number): string {
+		if (!playlistCtx) return page.url.search
+		const sp = new URLSearchParams(page.url.search)
+		sp.set('playlist', playlistCtx.playlistId)
+		sp.set('pos', String(pos))
+		return `?${sp.toString()}`
+	}
+
+	const playlistPrevHref = $derived(
+		playlistPrevUuid
+			? `/climb/${playlistPrevUuid}${playlistParamsAt((playlistCtx?.pos ?? 0) - 1)}`
+			: null
+	)
+	const playlistNextHref = $derived(
+		playlistNextUuid
+			? `/climb/${playlistNextUuid}${playlistParamsAt((playlistCtx?.pos ?? 0) + 1)}`
+			: null
+	)
+
 	// ── Prev / Next navigation ─────────────────────────────────────────────────
 	const prevItem = $derived(resultsStore.prev(uuid))
 	const nextItem = $derived(resultsStore.next(uuid))
@@ -161,7 +193,7 @@
 </svelte:head>
 
 <div
-	class="min-h-screen bg-bg text-text"
+	class="min-h-screen bg-bg text-text {playlistCtx ? 'pb-20' : ''}"
 	role="main"
 	ontouchstart={onTouchStart}
 	ontouchend={onTouchEnd}
@@ -659,4 +691,88 @@
 
 {#if playlistOpen && item}
 	<PlaylistPicker climbUuid={item.climb.uuid} onclose={() => (playlistOpen = false)} />
+{/if}
+
+<!-- Session bar: shown when a playlist context is active -->
+{#if playlistCtx}
+	<div
+		class="fixed right-0 bottom-0 left-0 z-30 border-t border-border bg-bg/95 px-4 py-3 backdrop-blur-sm"
+	>
+		<div class="mx-auto flex max-w-2xl items-center justify-between gap-3">
+			<!-- Prev -->
+			{#if playlistPrevHref}
+				<a
+					href={playlistPrevHref}
+					aria-label="Previous climb in playlist"
+					class="flex items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-4 py-2 text-sm font-semibold text-muted transition hover:text-text active:scale-95"
+				>
+					<svg
+						class="size-4"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<path d="M15 18l-6-6 6-6" />
+					</svg>
+					Prev
+				</a>
+			{:else}
+				<span
+					class="flex cursor-not-allowed items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-4 py-2 text-sm font-semibold text-muted opacity-30"
+				>
+					<svg
+						class="size-4"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<path d="M15 18l-6-6 6-6" />
+					</svg>
+					Prev
+				</span>
+			{/if}
+
+			<!-- Position indicator -->
+			<span class="text-xs text-muted">
+				climb {playlistCtx.pos + 1} of {playlistCtx.climbUuids.length}
+			</span>
+
+			<!-- Next -->
+			{#if playlistNextHref}
+				<a
+					href={playlistNextHref}
+					aria-label="Next climb in playlist"
+					class="flex items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-4 py-2 text-sm font-semibold text-muted transition hover:text-text active:scale-95"
+				>
+					Next
+					<svg
+						class="size-4"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<path d="M9 18l6-6-6-6" />
+					</svg>
+				</a>
+			{:else}
+				<span
+					class="flex cursor-not-allowed items-center gap-1.5 rounded-xl border border-border bg-surface-raised px-4 py-2 text-sm font-semibold text-muted opacity-30"
+				>
+					Next
+					<svg
+						class="size-4"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<path d="M9 18l6-6-6-6" />
+					</svg>
+				</span>
+			{/if}
+		</div>
+	</div>
 {/if}
