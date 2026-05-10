@@ -3,12 +3,14 @@
  * POST /api/sessions/logs — create a session log entry.
  *
  * Both routes require authentication (401 if not signed in).
+ *
+ * GET response includes `template_name` joined from session_templates.
  */
 
 import { error, json } from '@sveltejs/kit'
 import { desc, eq } from 'drizzle-orm'
 import { db } from '$lib/server/db'
-import { sessionLogs } from '$lib/server/db/schema'
+import { sessionLogs, sessionTemplates } from '$lib/server/db/schema'
 import type { RequestHandler } from './$types'
 
 export const GET: RequestHandler = async ({ locals }) => {
@@ -17,8 +19,18 @@ export const GET: RequestHandler = async ({ locals }) => {
 	}
 
 	const logs = await db
-		.select()
+		.select({
+			id: sessionLogs.id,
+			user_id: sessionLogs.user_id,
+			template_id: sessionLogs.template_id,
+			template_name: sessionTemplates.name,
+			started_at: sessionLogs.started_at,
+			completed_at: sessionLogs.completed_at,
+			rpe: sessionLogs.rpe,
+			notes: sessionLogs.notes
+		})
 		.from(sessionLogs)
+		.leftJoin(sessionTemplates, eq(sessionLogs.template_id, sessionTemplates.id))
 		.where(eq(sessionLogs.user_id, locals.user.id))
 		.orderBy(desc(sessionLogs.started_at))
 
