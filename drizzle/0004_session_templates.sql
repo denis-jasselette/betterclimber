@@ -94,8 +94,8 @@ b1_mobility AS (
   SELECT id, 4, 'Mobility' FROM t1 RETURNING id
 )
 -- Exercises for all blocks
-INSERT INTO session_exercises (block_id, position, name, type, series_count, rest_s, reps, duration_s, grade_ref, climb_count, duration_per_climb_s, rest_between_climbs_s)
-SELECT b.id, e.position, e.name, e.type, e.series_count, e.rest_s, e.reps, e.duration_s, e.grade_ref, e.climb_count, e.duration_per_climb_s, e.rest_between_climbs_s
+INSERT INTO session_exercises (block_id, position, name, description, type, series_count, rest_s, reps, duration_s, grade_ref, climb_count, duration_per_climb_s, rest_between_climbs_s)
+SELECT b.id, e.position, e.name, e.description, e.type, e.series_count, e.rest_s, e.reps, e.duration_s, e.grade_ref, e.climb_count, e.duration_per_climb_s, e.rest_between_climbs_s
 FROM (
   SELECT id, 'warmup' AS block FROM b1_warmup
   UNION ALL SELECT id, 'explosive' FROM b1_explosive
@@ -103,16 +103,16 @@ FROM (
   UNION ALL SELECT id, 'mobility' FROM b1_mobility
 ) b
 JOIN (VALUES
-  ('warmup', 1, 'Scapula pull-ups', 'reps', 3, 0, 10, NULL, NULL, NULL, NULL, NULL),
-  ('warmup', 2, 'Deep squat hold', 'timed', 3, 0, NULL, 30, NULL, NULL, NULL, NULL),
-  ('warmup', 3, '20mm edge dead hangs', 'timed', 9, 0, NULL, 5, NULL, NULL, NULL, NULL),
-  ('explosive', 1, 'Campus board touches (skip a rung)', 'reps', 4, 120, 5, NULL, NULL, NULL, NULL, NULL),
-  ('explosive', 2, 'Explosive pull-ups', 'reps', 4, 120, 5, NULL, NULL, NULL, NULL, NULL),
-  ('circuit', 1, 'Choose 4 climbs at your flash grade you have never tried', 'climb', 1, 0, NULL, NULL, 'flash_grade', 4, 300, 300),
-  ('mobility', 1, 'Hip flexor stretch', 'timed', 2, 30, NULL, 60, NULL, NULL, NULL, NULL),
-  ('mobility', 2, 'Shoulder CARs', 'reps', 2, 30, 5, NULL, NULL, NULL, NULL, NULL),
-  ('mobility', 3, 'Finger tendon glides', 'reps', 3, 0, 10, NULL, NULL, NULL, NULL, NULL)
-) AS e(block, position, name, type, series_count, rest_s, reps, duration_s, grade_ref, climb_count, duration_per_climb_s, rest_between_climbs_s)
+  ('warmup', 1, 'Scapula pull-ups', NULL::text, 'reps', 3, 0, 10::integer, NULL::integer, NULL::text, NULL::integer, NULL::integer, NULL::integer),
+  ('warmup', 2, 'Deep squat hold', NULL::text, 'timed', 3, 0, NULL::integer, 30::integer, NULL::text, NULL::integer, NULL::integer, NULL::integer),
+  ('warmup', 3, '20mm edge dead hangs', NULL::text, 'timed', 9, 0, NULL::integer, 5::integer, NULL::text, NULL::integer, NULL::integer, NULL::integer),
+  ('explosive', 1, 'Campus board touches (skip a rung)', NULL::text, 'reps', 4, 120, 5::integer, NULL::integer, NULL::text, NULL::integer, NULL::integer, NULL::integer),
+  ('explosive', 2, 'Explosive pull-ups', NULL::text, 'reps', 4, 120, 5::integer, NULL::integer, NULL::text, NULL::integer, NULL::integer, NULL::integer),
+  ('circuit', 1, 'Choose 4 climbs at your flash grade you have never tried', NULL::text, 'climb', 1, 0, NULL::integer, NULL::integer, 'flash_grade', 4::integer, 300::integer, 300::integer),
+  ('mobility', 1, 'Hip flexor stretch', NULL::text, 'timed', 2, 30, NULL::integer, 60::integer, NULL::text, NULL::integer, NULL::integer, NULL::integer),
+  ('mobility', 2, 'Shoulder CARs', NULL::text, 'reps', 2, 30, 5::integer, NULL::integer, NULL::text, NULL::integer, NULL::integer, NULL::integer),
+  ('mobility', 3, 'Finger tendon glides', NULL::text, 'reps', 3, 0, 10::integer, NULL::integer, NULL::text, NULL::integer, NULL::integer, NULL::integer)
+) AS e(block, position, name, description, type, series_count, rest_s, reps, duration_s, grade_ref, climb_count, duration_per_climb_s, rest_between_climbs_s)
 ON b.block = e.block;
 
 -- ════════════════════════════════════════════════════════════════════════════
