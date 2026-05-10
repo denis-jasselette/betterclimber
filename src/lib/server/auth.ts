@@ -8,13 +8,14 @@
  *   BETTER_AUTH_SECRET   — min 32 chars (openssl rand -base64 32)
  *   BETTER_AUTH_URL      — production base URL, e.g. https://betterclimber.netlify.app
  *                          Use the same value in all environments (deploy previews
- *                          are added to trustedOrigins below so auth still works).
+ *                          route OAuth through production via the oAuthProxy plugin).
  *   GOOGLE_CLIENT_ID     — from Google Cloud Console
  *   GOOGLE_CLIENT_SECRET — from Google Cloud Console
  */
 
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { oAuthProxy } from 'better-auth/plugins'
 import {
 	BETTER_AUTH_SECRET,
 	BETTER_AUTH_URL,
@@ -27,11 +28,16 @@ import * as schema from '$lib/server/db/schema'
 export const auth = betterAuth({
 	secret: BETTER_AUTH_SECRET,
 	baseURL: BETTER_AUTH_URL,
-	// Allow Netlify deploy-preview origins so that the OAuth flow works on
-	// preview deployments without registering each URL in Google Cloud Console.
-	// Auth callbacks go through production (BETTER_AUTH_URL); only the final
-	// redirect back to the app is from the deploy-preview origin.
+	// Allow Netlify deploy-preview origins so that the oAuthProxy plugin can
+	// redirect back to the preview after completing the OAuth flow on production.
 	trustedOrigins: ['https://*.netlify.app'],
+	plugins: [
+		// Enables OAuth sign-in from Netlify deploy previews.
+		// Flow: preview → production handles Google callback → encrypts profile →
+		// redirects to preview → preview decrypts using shared BETTER_AUTH_SECRET →
+		// preview creates its own session cookie. No cross-domain cookie issue.
+		oAuthProxy()
+	],
 	database: drizzleAdapter(db, {
 		provider: 'pg',
 		schema: {
