@@ -8,7 +8,7 @@ import type { PageLoad } from './$types'
 export const ssr = false
 
 /** A minimal playlist context as returned by /api/playlists/[id] */
-export type PlaylistContext = {
+type PlaylistContext = {
 	playlistId: string
 	/** Ordered list of climb UUIDs in playlist position order */
 	climbUuids: string[]
