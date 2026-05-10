@@ -9,6 +9,9 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     env:
       DATABASE_URL: postgresql://ci:ci@localhost/ci
       BETTER_AUTH_SECRET: placeholder-secret-at-least-32-chars-long-abc
@@ -41,6 +44,10 @@ jobs:
 
       - name: Unit tests with coverage
         run: pnpm test:coverage
+
+      - name: Report coverage
+        if: always()
+        uses: davelosert/vitest-coverage-report-action@v2
 
       - name: Upload coverage report
         if: always()
