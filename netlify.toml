@@ -4,3 +4,5 @@
 
 [build.environment]
 	NODE_VERSION = "22"
+	BETTER_AUTH_URL = "https://betterclimber.netlify.app"
+	PUBLIC_BETTER_AUTH_URL = "https://betterclimber.netlify.app"
