@@ -13,6 +13,7 @@
  * property names, not SQL column names, when building queries.
  */
 
+import { sql } from 'drizzle-orm'
 import {
 	boolean,
 	doublePrecision,
@@ -202,6 +203,67 @@ export const playlistItems = pgTable(
 	(t) => [unique('playlist_items_playlist_climb_uniq').on(t.playlist_id, t.climb_uuid)]
 )
 
+// ── session_templates ─────────────────────────────────────────────────────────
+
+export const sessionTemplates = pgTable('session_templates', {
+	id: text('id').primaryKey().default(sql`gen_random_uuid()`),
+	name: text('name').notNull(),
+	description: text('description'),
+	is_public: boolean('is_public').notNull().default(true),
+	author_id: text('author_id').references(() => users.id, { onDelete: 'set null' }),
+	created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+})
+
+// ── session_blocks ────────────────────────────────────────────────────────────
+
+export const sessionBlocks = pgTable('session_blocks', {
+	id: text('id').primaryKey().default(sql`gen_random_uuid()`),
+	template_id: text('template_id')
+		.notNull()
+		.references(() => sessionTemplates.id, { onDelete: 'cascade' }),
+	position: integer('position').notNull(),
+	name: text('name').notNull(),
+	description: text('description')
+})
+
+// ── session_exercises ─────────────────────────────────────────────────────────
+
+export const sessionExercises = pgTable('session_exercises', {
+	id: text('id').primaryKey().default(sql`gen_random_uuid()`),
+	block_id: text('block_id')
+		.notNull()
+		.references(() => sessionBlocks.id, { onDelete: 'cascade' }),
+	position: integer('position').notNull(),
+	name: text('name').notNull(),
+	description: text('description'),
+	type: text('type').notNull(),
+	series_count: integer('series_count').notNull().default(1),
+	rest_s: integer('rest_s').notNull().default(0),
+	// reps type
+	reps: integer('reps'),
+	// timed type
+	duration_s: integer('duration_s'),
+	// climb type
+	grade_ref: text('grade_ref'),
+	climb_count: integer('climb_count'),
+	duration_per_climb_s: integer('duration_per_climb_s'),
+	rest_between_climbs_s: integer('rest_between_climbs_s')
+})
+
+// ── session_logs ──────────────────────────────────────────────────────────────
+
+export const sessionLogs = pgTable('session_logs', {
+	id: text('id').primaryKey().default(sql`gen_random_uuid()`),
+	user_id: text('user_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	template_id: text('template_id').references(() => sessionTemplates.id, { onDelete: 'set null' }),
+	started_at: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
+	completed_at: timestamp('completed_at', { withTimezone: true }),
+	rpe: integer('rpe'),
+	notes: text('notes')
+})
+
 // ── Type inference helpers ────────────────────────────────────────────────────
 
 export type ClimbRow = typeof climbs.$inferSelect
@@ -210,3 +272,7 @@ export type UserRow = typeof users.$inferSelect
 export type UserLogRow = typeof userLog.$inferSelect
 export type PlaylistRow = typeof playlists.$inferSelect
 export type PlaylistItemRow = typeof playlistItems.$inferSelect
+export type SessionTemplateRow = typeof sessionTemplates.$inferSelect
+export type SessionBlockRow = typeof sessionBlocks.$inferSelect
+export type SessionExerciseRow = typeof sessionExercises.$inferSelect
+export type SessionLogRow = typeof sessionLogs.$inferSelect
