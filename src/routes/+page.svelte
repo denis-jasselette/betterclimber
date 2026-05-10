@@ -218,7 +218,7 @@
 </script>
 
 <svelte:head>
-	<title>Kilterboard Search</title>
+	<title>BetterClimber</title>
 	<meta name="description" content="Search Kilter Board climbs and send them to your board." />
 </svelte:head>
 

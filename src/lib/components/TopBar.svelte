@@ -169,7 +169,7 @@
 				<circle cx="12" cy="16" r="1.5" fill="currentColor" stroke="none" />
 				<circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="none" />
 			</svg>
-			<span class="hidden text-base font-bold tracking-tight text-text sm:inline">Kilterboard</span>
+			<span class="hidden text-base font-bold tracking-tight text-text sm:inline">BetterClimber</span>
 		</a>
 
 		<div class="flex-1"></div>

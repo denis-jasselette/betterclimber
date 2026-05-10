@@ -19,8 +19,8 @@ export default defineConfig({
 				navigateFallbackDenylist: [/^\/api\//]
 			},
 			manifest: {
-				name: 'Kilterboard Search',
-				short_name: 'Kilterboard',
+				name: 'BetterClimber',
+				short_name: 'BetterClimber',
 				description: 'Search and send Kilter Board climbs to your board',
 				theme_color: '#0f172a',
 				background_color: '#0f172a',
