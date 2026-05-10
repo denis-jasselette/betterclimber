@@ -424,7 +424,7 @@
 
 							<!-- Climb link -->
 							<a
-								href="/climb/{item.climb_uuid}"
+								href="/climb/{item.climb_uuid}?playlist={playlistId}&pos={item.position}"
 								class="min-w-0 flex-1 truncate text-sm font-medium text-text transition hover:text-cyan-300"
 							>
 								{item.climb_uuid}
@@ -467,7 +467,7 @@
 				<!-- Start session button -->
 				<div class="mt-6">
 					<a
-						href="/climb/{playlist.items[0]?.climb_uuid}"
+						href="/climb/{playlist.items[0]?.climb_uuid}?playlist={playlistId}&pos=0"
 						class="flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-600/50 bg-cyan-600/10 py-3 text-sm font-semibold text-cyan-400 transition hover:bg-cyan-600/20 active:scale-[0.99]"
 					>
 						<svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
