@@ -21,6 +21,7 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	unique,
 	varchar
 } from 'drizzle-orm/pg-core'
 
@@ -167,9 +168,44 @@ export const verifications = pgTable('verifications', {
 	updatedAt: timestamp('updated_at', { withTimezone: true })
 })
 
+// ── playlists ─────────────────────────────────────────────────────────────────
+
+export const playlists = pgTable('playlists', {
+	id: text('id')
+		.primaryKey()
+		.$defaultFn(() => crypto.randomUUID()),
+	user_id: text('user_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	name: text('name').notNull(),
+	created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+})
+
+// ── playlist_items ────────────────────────────────────────────────────────────
+
+export const playlistItems = pgTable(
+	'playlist_items',
+	{
+		id: text('id')
+			.primaryKey()
+			.$defaultFn(() => crypto.randomUUID()),
+		playlist_id: text('playlist_id')
+			.notNull()
+			.references(() => playlists.id, { onDelete: 'cascade' }),
+		climb_uuid: varchar('climb_uuid', { length: 36 })
+			.notNull()
+			.references(() => climbs.uuid, { onDelete: 'cascade' }),
+		position: integer('position').notNull(),
+		added_at: timestamp('added_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [unique('playlist_items_playlist_climb_uniq').on(t.playlist_id, t.climb_uuid)]
+)
+
 // ── Type inference helpers ────────────────────────────────────────────────────
 
 export type ClimbRow = typeof climbs.$inferSelect
 export type ClimbStatsRow = typeof climbStats.$inferSelect
 export type UserRow = typeof users.$inferSelect
 export type UserLogRow = typeof userLog.$inferSelect
+export type PlaylistRow = typeof playlists.$inferSelect
+export type PlaylistItemRow = typeof playlistItems.$inferSelect
