@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation'
 	import { authClient } from '$lib/auth-client.svelte'
 	import TopBar from '$lib/components/TopBar.svelte'
+	import { apiCreatePlaylist } from '$lib/data/playlist-api'
 
 	const session = authClient.useSession()
 
@@ -78,13 +79,7 @@
 		saving = true
 		createError = null
 		try {
-			const res = await fetch('/api/playlists', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ name: trimmed })
-			})
-			if (!res.ok) throw new Error('Failed to create playlist')
-			const created: Playlist = await res.json()
+			const created = await apiCreatePlaylist(trimmed)
 			playlists = [created, ...playlists]
 			creating = false
 			newName = ''

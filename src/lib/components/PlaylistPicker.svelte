@@ -12,6 +12,7 @@
 	 */
 
 	import { authClient } from '$lib/auth-client.svelte'
+	import { apiCreatePlaylist } from '$lib/data/playlist-api'
 
 	let {
 		climbUuid,
@@ -155,13 +156,7 @@
 		if (!trimmed || savingNew) return
 		savingNew = true
 		try {
-			const res = await fetch('/api/playlists', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ name: trimmed })
-			})
-			if (!res.ok) throw new Error('Failed to create playlist')
-			const created: PlaylistRow = await res.json()
+			const created: PlaylistRow = await apiCreatePlaylist(trimmed)
 
 			// Optimistically add to list, then immediately add the climb
 			playlists = [...playlists, { ...created, item_count: 0 }]

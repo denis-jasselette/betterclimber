@@ -1,5 +1,11 @@
 {
 	"$schema": "https://docs.fallow.tools/schema/config.json",
-	"ignoreDependencies": ["@tailwindcss/forms", "@tailwindcss/typography", "workbox-window"],
+	"ignoreDependencies": [
+		"@tailwindcss/forms",
+		"@tailwindcss/typography",
+		"workbox-window",
+		"pg",
+		"@types/pg"
+	],
 	"usedClassMembers": ["clearLog", "connect", "disconnect", "lightUpClimb", "clear"]
 }
