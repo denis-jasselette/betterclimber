@@ -11,6 +11,7 @@ import { error, json } from '@sveltejs/kit'
 import { count, eq } from 'drizzle-orm'
 import { db } from '$lib/server/db'
 import { playlistItems, playlists } from '$lib/server/db/schema'
+import { parseJsonBody } from '$lib/server/playlists'
 import type { RequestHandler } from './$types'
 
 export const GET: RequestHandler = async ({ locals }) => {
@@ -34,14 +35,7 @@ export const GET: RequestHandler = async ({ locals }) => {
 export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!locals.user) error(401, 'Authentication required')
 
-	let body: { name: string }
-	try {
-		body = await request.json()
-	} catch {
-		error(400, 'Invalid JSON body')
-	}
-
-	const { name } = body
+	const { name } = await parseJsonBody<{ name: string }>(request)
 	if (!name || typeof name !== 'string' || name.trim().length === 0) {
 		error(400, 'name is required')
 	}

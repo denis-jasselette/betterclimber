@@ -11,22 +11,13 @@ import { error, json } from '@sveltejs/kit'
 import { count, eq } from 'drizzle-orm'
 import { db } from '$lib/server/db'
 import { playlistItems } from '$lib/server/db/schema'
-import { getOwnedPlaylist } from '$lib/server/playlists'
+import { parseJsonBody, requireOwnedPlaylist } from '$lib/server/playlists'
 import type { RequestHandler } from './$types'
 
 export const POST: RequestHandler = async ({ params, request, locals }) => {
-	if (!locals.user) error(401, 'Authentication required')
+	await requireOwnedPlaylist(params.id, locals.user)
 
-	await getOwnedPlaylist(params.id, locals.user.id)
-
-	let body: { climb_uuid: string }
-	try {
-		body = await request.json()
-	} catch {
-		error(400, 'Invalid JSON body')
-	}
-
-	const { climb_uuid } = body
+	const { climb_uuid } = await parseJsonBody<{ climb_uuid: string }>(request)
 	if (!climb_uuid || typeof climb_uuid !== 'string') {
 		error(400, 'climb_uuid is required')
 	}
