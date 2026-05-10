@@ -163,7 +163,7 @@ export function getActivityByWeek(range?: DateRange): WeekActivity[] {
 /**
  * Returns ticked + attempted-only climb counts per V-grade (all grades, zero counts included).
  * Only counts entries where difficulty is stored.
- * Ticked rows filtered by tickedAt; attempted-only rows filtered by lastLitAt.
+ * Ticked rows filtered by tickedAt; attempted-only rows filtered by lastAttemptAt.
  */
 export function getGradeDistribution(range?: DateRange): GradeCount[] {
 	const entries = getAllEntries()
@@ -177,7 +177,7 @@ export function getGradeDistribution(range?: DateRange): GradeCount[] {
 			if (range && !inRange(entry.tickedAt, range)) continue
 			tickedCounts.set(grade, (tickedCounts.get(grade) ?? 0) + 1)
 		} else if ((entry.attemptCount ?? 0) > 0) {
-			if (range && !inRange(entry.lastLitAt, range)) continue
+			if (range && !inRange(entry.lastAttemptAt, range)) continue
 			attemptedCounts.set(grade, (attemptedCounts.get(grade) ?? 0) + 1)
 		}
 	}
@@ -213,14 +213,14 @@ export function getPersonalBests(range?: DateRange): PersonalBests {
 		}
 	}
 
-	// Avg attempts per day: total attempts / distinct active days (proxy: lastLitAt date)
+	// Avg attempts per day: total attempts / distinct active days (proxy: lastAttemptAt date)
 	const activeDays = new Set<string>()
 	let totalAttempts = 0
 	for (const entry of entries) {
-		if ((entry.attemptCount ?? 0) > 0 && entry.lastLitAt) {
-			if (range && !inRange(entry.lastLitAt, range)) continue
+		if ((entry.attemptCount ?? 0) > 0 && entry.lastAttemptAt) {
+			if (range && !inRange(entry.lastAttemptAt, range)) continue
 			totalAttempts += entry.attemptCount ?? 0
-			activeDays.add(entry.lastLitAt.slice(0, 10))
+			activeDays.add(entry.lastAttemptAt.slice(0, 10))
 		}
 	}
 	const avgAttemptsPerDay =
