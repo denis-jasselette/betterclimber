@@ -53,6 +53,7 @@ export default defineConfig({
 			provider: 'v8',
 			reporter: ['text', 'lcov', 'json-summary', 'json'],
 			reportsDirectory: './coverage',
+			reportOnFailure: true,
 			exclude: ['src/lib/data/mock/**', '*.config.*', '**/*.d.ts', '.svelte-kit/**', 'scripts/**'],
 			thresholds: {
 				statements: 85,
