@@ -187,7 +187,7 @@
 
 <!-- Backdrop (covers the page; click outside closes) -->
 <div
-	class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+	class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm sm:flex sm:items-start sm:justify-center sm:pt-[20vh]"
 	role="presentation"
 	onclick={(e) => {
 		if (e.target === e.currentTarget) onclose()
@@ -196,7 +196,7 @@
 >
 	<!-- Sheet / popover panel -->
 	<div
-		class="fixed bottom-0 left-0 right-0 z-50 max-h-[80vh] rounded-t-2xl border-t border-border bg-bg shadow-2xl sm:bottom-auto sm:left-auto sm:right-auto sm:mx-auto sm:mt-[20vh] sm:w-[360px] sm:rounded-2xl sm:border"
+		class="fixed bottom-0 left-0 right-0 z-50 max-h-[80vh] rounded-t-2xl border-t border-border bg-bg shadow-2xl sm:relative sm:bottom-auto sm:left-auto sm:right-auto sm:w-[360px] sm:rounded-2xl sm:border"
 		role="dialog"
 		aria-modal="true"
 		aria-label="Add to playlist"
