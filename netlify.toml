@@ -5,3 +5,12 @@
 [build.environment]
 	NODE_VERSION = "22"
 	BETTER_AUTH_URL = "https://betterclimber.netlify.app"
+
+# Production deploys (main branch): build then migrate
+[context.production]
+	command = "pnpm build && pnpm db:migrate"
+
+# Deploy previews: migrations are handled by the neon-branches.yml GitHub Actions
+# workflow before Netlify builds, so just build here.
+[context.deploy-preview]
+	command = "pnpm build"
