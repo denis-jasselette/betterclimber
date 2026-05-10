@@ -141,7 +141,3 @@ This outputs SQL or JSON suitable for re-seeding the Neon database.
 - `.claude/` excluded from all Biome processing
 - `noUnusedExpressions` disabled globally (Svelte `$effect` tracking expressions)
 - `noNonNullAssertion`, `noDocumentCookie`, `noAssignInExpressions` suppressed inline with `biome-ignore` where intentional
-
-## Git / SSH Note
-
-Remote is `git@github.com:denis-jasselette/betterclimber.git`. Push requires SSH key for `denis-jasselette` account, not `djasselette-evs`.

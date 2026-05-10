@@ -79,7 +79,7 @@ export function createClimbActions(
 		if (attemptPressTimer !== null) {
 			clearTimeout(attemptPressTimer)
 			attemptPressTimer = null
-			incrementAttempts(getUuid(), getAngle())
+			incrementAttempts(getUuid(), getAngle(), getDifficulty?.())
 			refreshLog()
 		}
 	}
