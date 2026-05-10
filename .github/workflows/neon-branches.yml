@@ -48,6 +48,12 @@ jobs:
           branch_name: preview/pr-${{ github.event.number }}-${{ needs.setup.outputs.branch }}
           api_key: ${{ secrets.NEON_API_KEY }}
           expires_at: ${{ env.EXPIRES_AT }}
+          username: neondb_owner
+
+      - name: Debug connection outputs
+        run: |
+          echo "db_url empty: ${{ steps.create_neon_branch.outputs.db_url == '' }}"
+          echo "db_url_with_pooler empty: ${{ steps.create_neon_branch.outputs.db_url_with_pooler == '' }}"
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -59,6 +65,8 @@ jobs:
         run: pnpm db:migrate
         env:
           DATABASE_URL: ${{ steps.create_neon_branch.outputs.db_url_with_pooler }}
+        # Note: db_url_with_pooler is set by neondatabase/create-branch-action@v6
+        # If empty, check that NEON_API_KEY and NEON_PROJECT_ID are set correctly.
 
       - name: Post schema diff comment to PR
         uses: neondatabase/schema-diff-action@v1
