@@ -1,41 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state'
 	import TopBar from '$lib/components/TopBar.svelte'
-
-	// ── Types ──────────────────────────────────────────────────────────────────
-
-	type Exercise = {
-		id: string
-		name: string
-		description: string | null
-		type: string
-		series_count: number
-		rest_s: number
-		// reps
-		reps: number | null
-		// timed
-		duration_s: number | null
-		// climb
-		grade_ref: string | null
-		climb_count: number | null
-		duration_per_climb_s: number | null
-		rest_between_climbs_s: number | null
-	}
-
-	type Block = {
-		id: string
-		name: string
-		description: string | null
-		position: number
-		exercises: Exercise[]
-	}
-
-	type Template = {
-		id: string
-		name: string
-		description: string | null
-		blocks: Block[]
-	}
+	import { type Block, type Exercise, formatDuration, type Template } from '../session-types'
 
 	// ── State ─────────────────────────────────────────────────────────────────
 
@@ -82,14 +48,6 @@
 			next.add(id)
 		}
 		expandedBlocks = next
-	}
-
-	/** Format seconds as "Xm Ys" or just "Ys" */
-	function formatDuration(s: number): string {
-		if (s < 60) return `${s}s`
-		const m = Math.floor(s / 60)
-		const rem = s % 60
-		return rem > 0 ? `${m}m ${rem}s` : `${m}m`
 	}
 
 	/** Build the exercise detail line based on type */
@@ -335,11 +293,10 @@
 
 			<!-- Footer actions -->
 			<div class="mt-8 flex flex-wrap gap-3">
-				<!-- Start session (placeholder — wired in next issue) -->
-				<button
-					type="button"
+				<!-- Start session — links to the follow-along run page -->
+				<a
+					href="/sessions/{template.id}/run"
 					class="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-500 active:scale-95"
-					onclick={() => alert('Session follow-along coming soon!')}
 				>
 					<svg
 						class="size-4"
@@ -353,7 +310,7 @@
 						<polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none" />
 					</svg>
 					Start session
-				</button>
+				</a>
 
 				<!-- History link (placeholder) -->
 				<a
