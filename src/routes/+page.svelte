@@ -272,7 +272,7 @@
 	</button>
 </TopBar>
 
-<div class="mx-auto grid max-w-6xl gap-6 px-4 py-6 md:grid-cols-[18rem_1fr]">
+<div class="mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 px-4 py-6 md:grid-cols-[18rem_1fr]">
 		<!-- Sidebar (desktop) / Drawer (mobile) -->
 
 		<!-- Mobile overlay -->
