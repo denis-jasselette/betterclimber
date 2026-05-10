@@ -12,8 +12,14 @@
  */
 
 import { createAuthClient } from 'better-auth/svelte'
+import { browser } from '$app/environment'
 import { PUBLIC_BETTER_AUTH_URL } from '$env/static/public'
 
+// Use PUBLIC_BETTER_AUTH_URL when set (enables oAuthProxy flow on deploy previews).
+// Fall back to the current origin in the browser (or empty string on SSR) so that
+// local dev and CI environments work without the variable being defined.
+const authBase = PUBLIC_BETTER_AUTH_URL || (browser ? window.location.origin : '')
+
 export const authClient = createAuthClient({
-	baseURL: PUBLIC_BETTER_AUTH_URL
+	baseURL: authBase
 })
