@@ -19,7 +19,7 @@ jobs:
       GOOGLE_CLIENT_ID: placeholder-google-client-id
       GOOGLE_CLIENT_SECRET: placeholder-google-client-secret
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: pnpm/action-setup@v6
         with:
@@ -65,7 +65,7 @@ jobs:
     env:
       DATABASE_URL: postgresql://ci:ci@localhost/ci
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: pnpm/action-setup@v6
         with:
